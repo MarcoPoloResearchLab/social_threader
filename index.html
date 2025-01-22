@@ -1,212 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Text Chunker</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-  }
-  #controls {
-    margin-bottom: 10px;
-  }
-  button {
-    margin-right: 5px;
-    padding: 8px 12px;
-    cursor: pointer;
-  }
-  #customControl {
-    margin-top: 10px;
-  }
-  #customControl input {
-    width: 100px;
-    padding: 6px;
-    margin-right: 5px;
-  }
-  #results {
-    margin-top: 20px;
-  }
-  .chunkContainer {
-    position: relative;
-    margin-bottom: 20px;
-    padding-left: 20px;
-    border-left: 2px solid #ccc;
-  }
-  .chunkContainer:before {
-    content: '';
-    position: absolute;
-    left: -5px;
-    top: 10px;
-    width: 10px;
-    height: 10px;
-    background: #fff;
-    border: 2px solid #ccc;
-    border-radius: 50%;
-  }
-  textarea {
-    width: 100%;
-    height: 80px;
-    margin-bottom: 10px;
-    resize: vertical;
-    font-family: inherit;
-    font-size: 14px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Page Breaker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #controls {
+      margin-bottom: 10px;
+    }
+    button {
+      margin-right: 5px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    #customControl {
+      margin-top: 10px;
+    }
+    #customControl input {
+      width: 100px;
+      padding: 6px;
+      margin-right: 5px;
+    }
+    #results {
+      margin-top: 20px;
+    }
+    .chunkContainer {
+      position: relative;
+      margin-bottom: 20px;
+      padding-left: 20px;
+      border-left: 2px solid #ccc;
+    }
+    .chunkContainer:before {
+      content: '';
+      position: absolute;
+      left: -5px;
+      top: 10px;
+      width: 10px;
+      height: 10px;
+      background: #fff;
+      border: 2px solid #ccc;
+      border-radius: 50%;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      margin-bottom: 5px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    .stats {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 15px;
+    }
+    .inputStats {
+      margin-top: 5px;
+    }
+  </style>
 </head>
 <body>
 
-<h2>Text Chunker</h2>
-<p>Paste or type your text below:</p>
-<textarea id="sourceText" placeholder="Enter your text here..." rows="6"></textarea>
+  <h2>Page Breaker</h2>
+  <p>Paste or type your text below:</p>
+  <textarea id="sourceText" placeholder="Enter your text here..." rows="6"></textarea>
+  <div id="inputStats" class="stats inputStats"></div>
 
-<div id="controls">
-  <button data-length="512">Break into Threads (512)</button>
-  <button data-length="300">Break into Bluesky (300)</button>
-  <button data-length="280">Break into X (280)</button>
-</div>
+  <div id="controls">
+    <button data-length="512">Break into Threads (512)</button>
+    <button data-length="300">Break into Bluesky (300)</button>
+    <button data-length="280">Break into X (280)</button>
+  </div>
 
-<div id="customControl">
-  <input type="number" id="customLength" placeholder="Enter size" min="1" />
-  <button id="customButton">Break with Custom Size</button>
-</div>
+  <div id="customControl">
+    <input type="number" id="customLength" placeholder="Enter size" min="1" />
+    <button id="customButton">Break with Custom Size</button>
+  </div>
 
-<div id="results"></div>
+  <div id="results"></div>
 
-<script>
-  /**
-   * Splits the input text into chunks based on the specified maximum length.
-   * The splitting prefers sentence boundaries within a 20-character buffer.
-   * If no suitable sentence boundary is found, it breaks at the nearest word boundary.
-   * 
-   * @param {string} text - The input text to be split.
-   * @param {number} maxLen - The maximum length of each chunk.
-   * @returns {string[]} An array of text chunks.
-   */
-  function splitText(text, maxLen) {
-    const chunks = [];
-    let startIndex = 0;
-    const textLength = text.length;
-    const buffer = 20;
+  <script>
+    /**
+     * Splits the input text into chunks based on the specified maximum length.
+     * The splitting prefers sentence boundaries within a 20-character buffer.
+     * If no suitable sentence boundary is found, it breaks at the nearest word boundary.
+     * 
+     * @param {string} text - The input text to be split.
+     * @param {number} maxLen - The maximum length of each chunk.
+     * @returns {string[]} An array of text chunks.
+     */
+    function splitText(text, maxLen) {
+      const chunks = [];
+      let startIndex = 0;
+      const textLength = text.length;
+      const buffer = 20;
 
-    while (startIndex < textLength) {
-      // If remaining text is shorter than maxLen, push the remainder
-      if (startIndex + maxLen >= textLength) {
-        chunks.push(text.substring(startIndex).trim());
-        break;
-      }
-
-      // Prepare a slice that extends maxLen by the buffer to check for sentence boundaries
-      let slice = text.substring(startIndex, startIndex + maxLen + buffer);
-      let lowerBound = Math.max(maxLen - buffer, 0);
-
-      // Search for a sentence-ending punctuation within [maxLen-buffer, maxLen]
-      let sentenceBoundary = -1;
-      for (let i = lowerBound; i < maxLen && i < slice.length; i++) {
-        if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') && 
-            (i + 1 === slice.length || slice[i + 1] === ' ')) {
-          sentenceBoundary = i + 1;
+      while (startIndex < textLength) {
+        // If remaining text is shorter than maxLen, push the remainder
+        if (startIndex + maxLen >= textLength) {
+          chunks.push(text.substring(startIndex).trim());
+          break;
         }
-      }
 
-      let breakIndex;
-      if (sentenceBoundary !== -1) {
-        // Prefer sentence break if found within the desired window
-        breakIndex = sentenceBoundary;
-      } else {
-        // Otherwise, fill up to maxLen by breaking at a word boundary
-        let wordBoundary = slice.lastIndexOf(' ', maxLen);
-        if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
-          breakIndex = wordBoundary;
+        // Prepare a slice that extends maxLen by the buffer to check for sentence boundaries
+        let slice = text.substring(startIndex, startIndex + maxLen + buffer);
+        let lowerBound = Math.max(maxLen - buffer, 0);
+
+        // Search for a sentence-ending punctuation within [maxLen-buffer, maxLen]
+        let sentenceBoundary = -1;
+        for (let i = lowerBound; i < maxLen && i < slice.length; i++) {
+          if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') && 
+              (i + 1 === slice.length || slice[i + 1] === ' ')) {
+            sentenceBoundary = i + 1;
+          }
+        }
+
+        let breakIndex;
+        if (sentenceBoundary !== -1) {
+          // Prefer sentence break if found within the desired window
+          breakIndex = sentenceBoundary;
         } else {
-          breakIndex = maxLen;
+          // Otherwise, fill up to maxLen by breaking at a word boundary
+          let wordBoundary = slice.lastIndexOf(' ', maxLen);
+          if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
+            breakIndex = wordBoundary;
+          } else {
+            breakIndex = maxLen;
+          }
         }
+
+        let chunk = text.substring(startIndex, startIndex + breakIndex).trim();
+        chunks.push(chunk);
+        startIndex += breakIndex;
+      }
+      return chunks;
+    }
+
+    /**
+     * Calculates statistics for a given text.
+     * 
+     * @param {string} text - The text to calculate statistics for.
+     * @returns {object} An object containing character, word, and sentence counts.
+     */
+    function calculateStats(text) {
+      const characters = text.length;
+      // Match words using regex: sequences of non-space characters
+      const words = text.match(/\b\w+\b/g);
+      const wordCount = words ? words.length : 0;
+      // Match sentences ending with ., !, or ?
+      const sentences = text.match(/[^.!?]+[.!?]+/g);
+      const sentenceCount = sentences ? sentences.length : 0;
+
+      return {
+        characters,
+        words: wordCount,
+        sentences: sentenceCount
+      };
+    }
+
+    /**
+     * Displays statistics in a specified element.
+     * 
+     * @param {HTMLElement} element - The element to display statistics in.
+     * @param {object} stats - The statistics object containing characters, words, and sentences.
+     */
+    function displayStats(element, stats) {
+      element.innerHTML = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
+    }
+
+    /**
+     * Handles the splitting of text when a predefined platform button is clicked.
+     * 
+     * @param {Event} event - The click event.
+     */
+    function handleSplit(event) {
+      const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
+      const sourceText = document.getElementById('sourceText').value;
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = ''; // Clear previous results
+
+      if (!sourceText.trim()) {
+        alert('Please enter some text to split.');
+        return;
       }
 
-      let chunk = text.substring(startIndex, startIndex + breakIndex).trim();
-      chunks.push(chunk);
-      startIndex += breakIndex;
-    }
-    return chunks;
-  }
-
-  /**
-   * Handles the splitting of text when a predefined platform button is clicked.
-   * 
-   * @param {Event} event - The click event.
-   */
-  function handleSplit(event) {
-    const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
-    const sourceText = document.getElementById('sourceText').value;
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = ''; // Clear previous results
-
-    if (!sourceText.trim()) {
-      alert('Please enter some text to split.');
-      return;
+      const chunks = splitText(sourceText, maxLen);
+      displayChunks(chunks);
     }
 
-    const chunks = splitText(sourceText, maxLen);
+    /**
+     * Displays the chunks in the results section as connected text areas with statistics.
+     * 
+     * @param {string[]} chunks - The array of text chunks to display.
+     */
+    function displayChunks(chunks) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = ''; // Clear previous results
 
-    displayChunks(chunks);
-  }
+      chunks.forEach((chunk, index) => {
+        const container = document.createElement('div');
+        container.className = 'chunkContainer';
 
-  /**
-   * Displays the chunks in the results section as connected text areas.
-   * 
-   * @param {string[]} chunks - The array of text chunks to display.
-   */
-  function displayChunks(chunks) {
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = ''; // Clear previous results
+        const textArea = document.createElement('textarea');
+        textArea.readOnly = true;
+        textArea.value = chunk;
+        textArea.title = `Chunk ${index + 1}`;
 
-    chunks.forEach((chunk, index) => {
-      const container = document.createElement('div');
-      container.className = 'chunkContainer';
+        // Calculate and display statistics for the chunk
+        const stats = calculateStats(chunk);
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'stats';
+        statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
 
-      const textArea = document.createElement('textarea');
-      textArea.readOnly = true;
-      textArea.value = chunk;
-      textArea.title = `Chunk ${index + 1}`;
+        container.appendChild(textArea);
+        container.appendChild(statsDiv);
+        resultsDiv.appendChild(container);
+      });
+    }
 
-      container.appendChild(textArea);
-      resultsDiv.appendChild(container);
+    /**
+     * Handles the splitting of text when the custom size button is clicked.
+     */
+    function handleCustomSplit() {
+      const customInput = document.getElementById('customLength');
+      const customLen = parseInt(customInput.value, 10);
+      const sourceText = document.getElementById('sourceText').value;
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = ''; // Clear previous results
+
+      if (!sourceText.trim()) {
+        alert('Please enter some text to split.');
+        return;
+      }
+
+      if (isNaN(customLen) || customLen <= 0) {
+        alert('Please enter a valid positive number for custom size.');
+        return;
+      }
+
+      const chunks = splitText(sourceText, customLen);
+      displayChunks(chunks);
+    }
+
+    /**
+     * Updates and displays statistics for the input text.
+     */
+    function updateInputStats() {
+      const sourceText = document.getElementById('sourceText').value;
+      const statsDiv = document.getElementById('inputStats');
+      const stats = calculateStats(sourceText);
+      displayStats(statsDiv, stats);
+    }
+
+    // Attach event listeners to predefined platform buttons
+    document.querySelectorAll('#controls button').forEach(button => {
+      button.addEventListener('click', handleSplit);
     });
-  }
 
-  /**
-   * Handles the splitting of text when the custom size button is clicked.
-   */
-  function handleCustomSplit() {
-    const customInput = document.getElementById('customLength');
-    const customLen = parseInt(customInput.value, 10);
-    const sourceText = document.getElementById('sourceText').value;
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = ''; // Clear previous results
+    // Attach event listener to custom size button
+    document.getElementById('customButton').addEventListener('click', handleCustomSplit);
 
-    if (!sourceText.trim()) {
-      alert('Please enter some text to split.');
-      return;
-    }
-
-    if (isNaN(customLen) || customLen <= 0) {
-      alert('Please enter a valid positive number for custom size.');
-      return;
-    }
-
-    const chunks = splitText(sourceText, customLen);
-    displayChunks(chunks);
-  }
-
-  // Attach event listeners to predefined platform buttons
-  document.querySelectorAll('#controls button').forEach(button => {
-    button.addEventListener('click', handleSplit);
-  });
-
-  // Attach event listener to custom size button
-  document.getElementById('customButton').addEventListener('click', handleCustomSplit);
-</script>
+    // Attach event listener to input textarea to update stats on input
+    document.getElementById('sourceText').addEventListener('input', updateInputStats);
+  </script>
 
 </body>
 </html>
