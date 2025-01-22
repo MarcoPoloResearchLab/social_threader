@@ -68,18 +68,17 @@
     const buffer = 20;
 
     while (startIndex < textLength) {
-      let endIndex = startIndex + maxLen;
-      if (endIndex >= textLength) {
+      // If remaining text is shorter than maxLen, push the remainder
+      if (startIndex + maxLen >= textLength) {
         chunks.push(text.substring(startIndex).trim());
         break;
       }
 
-      // Create a slice that goes from startIndex to maxLen + buffer characters ahead
+      // Prepare a slice that extends maxLen by the buffer to check for sentence boundaries
       let slice = text.substring(startIndex, startIndex + maxLen + buffer);
-      let lowerBound = maxLen - buffer;
-      if(lowerBound < 0) lowerBound = 0;
+      let lowerBound = Math.max(maxLen - buffer, 0);
 
-      // Look for a sentence boundary between [maxLen-buffer, maxLen]
+      // Search for a sentence-ending punctuation within [maxLen-buffer, maxLen]
       let sentenceBoundary = -1;
       for (let i = lowerBound; i < maxLen && i < slice.length; i++) {
         if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') && 
@@ -90,28 +89,15 @@
 
       let breakIndex;
       if (sentenceBoundary !== -1) {
-        // If sentence boundary found in the desired range, break there
+        // Prefer sentence break if found within the desired window
         breakIndex = sentenceBoundary;
       } else {
-        // If no sentence boundary found in [maxLen-buffer, maxLen], try to find one before that
-        let earlierSentence = -1;
-        for (let i = lowerBound - 1; i >= 0; i--) {
-          if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') && 
-              (i + 1 === slice.length || slice[i + 1] === ' ')) {
-            earlierSentence = i + 1;
-            break;
-          }
-        }
-        if (earlierSentence !== -1) {
-          breakIndex = earlierSentence;
+        // Otherwise, fill up to maxLen by breaking at a word boundary
+        let wordBoundary = slice.lastIndexOf(' ', maxLen);
+        if (wordBoundary !== -1) {
+          breakIndex = wordBoundary;
         } else {
-          // No suitable sentence boundary found, fallback to word boundary near maxLen
-          let wordBoundary = slice.lastIndexOf(' ', maxLen);
-          if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
-            breakIndex = wordBoundary;
-          } else {
-            breakIndex = maxLen;
-          }
+          breakIndex = maxLen;
         }
       }
 
