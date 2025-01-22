@@ -9,21 +9,30 @@
       font-family: Arial, sans-serif;
       margin: 20px;
     }
+    h2 {
+      margin-bottom: 10px;
+    }
     #controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 10px;
     }
     button {
-      margin-right: 5px;
       padding: 8px 12px;
       cursor: pointer;
+      font-size: 14px;
     }
-    #customControl {
-      margin-top: 10px;
+    #customButton {
+      display: flex;
+      align-items: center;
     }
-    #customControl input {
-      width: 100px;
+    #customLength {
+      width: 80px;
       padding: 6px;
-      margin-right: 5px;
+      margin-left: 5px;
+      font-size: 14px;
     }
     #results {
       margin-top: 20px;
@@ -60,6 +69,22 @@
     }
     .inputStats {
       margin-top: 5px;
+      font-size: 12px;
+      color: #555;
+    }
+    @media (max-width: 600px) {
+      #controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      #customButton {
+        width: 100%;
+      }
+      #customLength {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 5px;
+      }
     }
   </style>
 </head>
@@ -68,17 +93,15 @@
   <h2>Page Breaker</h2>
   <p>Paste or type your text below:</p>
   <textarea id="sourceText" placeholder="Enter your text here..." rows="6"></textarea>
-  <div id="inputStats" class="stats inputStats"></div>
+  <div id="inputStats" class="inputStats"></div>
 
   <div id="controls">
     <button data-length="512">Break into Threads (512)</button>
     <button data-length="300">Break into Bluesky (300)</button>
     <button data-length="280">Break into X (280)</button>
-  </div>
-
-  <div id="customControl">
-    <input type="number" id="customLength" placeholder="Enter size" min="1" />
-    <button id="customButton">Break with Custom Size</button>
+    <button id="customButton">Break with Custom Size
+      <input type="number" id="customLength" placeholder="Size" min="1" />
+    </button>
   </div>
 
   <div id="results"></div>
@@ -256,8 +279,26 @@
       displayStats(statsDiv, stats);
     }
 
+    /**
+     * Updates the custom button label based on the input value.
+     */
+    function updateCustomButtonLabel() {
+      const customInput = document.getElementById('customLength');
+      const customButton = document.getElementById('customButton');
+      const customLen = parseInt(customInput.value, 10);
+
+      if (!isNaN(customLen) && customLen > 0) {
+        customButton.textContent = `Break with Custom (${customLen}) Size`;
+      } else {
+        customButton.textContent = 'Break with Custom Size';
+      }
+
+      // Re-append the input field after changing textContent
+      customButton.appendChild(customInput);
+    }
+
     // Attach event listeners to predefined platform buttons
-    document.querySelectorAll('#controls button').forEach(button => {
+    document.querySelectorAll('#controls button[data-length]').forEach(button => {
       button.addEventListener('click', handleSplit);
     });
 
@@ -266,6 +307,9 @@
 
     // Attach event listener to input textarea to update stats on input
     document.getElementById('sourceText').addEventListener('input', updateInputStats);
+
+    // Attach event listener to custom length input to update button label on input
+    document.getElementById('customLength').addEventListener('input', updateCustomButtonLabel);
   </script>
 
 </body>
