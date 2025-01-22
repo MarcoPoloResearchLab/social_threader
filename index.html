@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Post Breaker</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  #controls {
+    margin-bottom: 10px;
+  }
+  button {
+    margin-right: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  #results {
+    margin-top: 20px;
+  }
+  .chunkContainer {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 20px;
+    border-left: 2px solid #ccc;
+  }
+  .chunkContainer:before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 10px;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+  }
+  textarea {
+    width: 100%;
+    height: 80px;
+    margin-bottom: 10px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<h2>Post Breaker</h2>
+<p>Paste or type your text below:</p>
+<textarea id="sourceText" placeholder="Enter your text here..." rows="6"></textarea>
+
+<div id="controls">
+  <button data-length="512">Break into Threads (512)</button>
+  <button data-length="300">Break into Bluesky (300)</button>
+</div>
+
+<div id="results"></div>
+
+<script>
+  // Splits text into chunks based on maxLen, optimizing for sentences and words
+  function splitText(text, maxLen) {
+    const chunks = [];
+    let startIndex = 0;
+    const textLength = text.length;
+
+    while (startIndex < textLength) {
+      let endIndex = startIndex + maxLen;
+      if (endIndex >= textLength) {
+        chunks.push(text.substring(startIndex).trim());
+        break;
+      }
+
+      // Try to break at sentence end within the limit
+      let slice = text.substring(startIndex, endIndex + 1);
+      let sentenceEndIndex = Math.max(
+        slice.lastIndexOf('. '),
+        slice.lastIndexOf('! '),
+        slice.lastIndexOf('? ')
+      );
+
+      // If no sentence boundary found, try word boundary
+      if (sentenceEndIndex === -1) {
+        sentenceEndIndex = slice.lastIndexOf(' ');
+      }
+
+      // Fallback to maxLen if no good break point found or break is too short
+      if (sentenceEndIndex === -1 || sentenceEndIndex < maxLen * 0.7) {
+        sentenceEndIndex = maxLen;
+      }
+
+      let chunk = text.substring(startIndex, startIndex + sentenceEndIndex).trim();
+      chunks.push(chunk);
+      startIndex += sentenceEndIndex;
+    }
+    return chunks;
+  }
+
+  // Handle button click for splitting text
+  function handleSplit(event) {
+    const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
+    const sourceText = document.getElementById('sourceText').value;
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = ''; // Clear previous results
+
+    if (!sourceText.trim()) {
+      alert('Please enter some text to split.');
+      return;
+    }
+
+    const chunks = splitText(sourceText, maxLen);
+
+    chunks.forEach((chunk, index) => {
+      // Create container for each chunk with visual thread connection
+      const container = document.createElement('div');
+      container.className = 'chunkContainer';
+
+      // Create a textarea for each chunk
+      const textArea = document.createElement('textarea');
+      textArea.readOnly = true;
+      textArea.value = chunk;
+      textArea.title = `Chunk ${index + 1}`;
+
+      container.appendChild(textArea);
+      resultsDiv.appendChild(container);
+    });
+  }
+
+  // Attach event listeners to buttons
+  document.querySelectorAll('#controls button').forEach(button => {
+    button.addEventListener('click', handleSplit);
+  });
+</script>
+
+</body>
+</html>
