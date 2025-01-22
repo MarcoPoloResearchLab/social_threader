@@ -61,11 +61,11 @@
 <div id="results"></div>
 
 <script>
-  // Splits text into chunks based on maxLen, optimizing for sentences and words
   function splitText(text, maxLen) {
     const chunks = [];
     let startIndex = 0;
     const textLength = text.length;
+    const buffer = 20;
 
     while (startIndex < textLength) {
       let endIndex = startIndex + maxLen;
@@ -74,37 +74,59 @@
         break;
       }
 
-      // Try to break at sentence end within the limit
-      let slice = text.substring(startIndex, endIndex + 1);
-      let sentenceEndIndex = Math.max(
-        slice.lastIndexOf('. '),
-        slice.lastIndexOf('! '),
-        slice.lastIndexOf('? ')
-      );
+      // Create a slice that goes from startIndex to maxLen + buffer characters ahead
+      let slice = text.substring(startIndex, startIndex + maxLen + buffer);
+      let lowerBound = maxLen - buffer;
+      if(lowerBound < 0) lowerBound = 0;
 
-      // If no sentence boundary found, try word boundary
-      if (sentenceEndIndex === -1) {
-        sentenceEndIndex = slice.lastIndexOf(' ');
+      // Look for a sentence boundary between [maxLen-buffer, maxLen]
+      let sentenceBoundary = -1;
+      for (let i = lowerBound; i < maxLen && i < slice.length; i++) {
+        if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') && 
+            (i + 1 === slice.length || slice[i + 1] === ' ')) {
+          sentenceBoundary = i + 1;
+        }
       }
 
-      // Fallback to maxLen if no good break point found or break is too short
-      if (sentenceEndIndex === -1 || sentenceEndIndex < maxLen * 0.7) {
-        sentenceEndIndex = maxLen;
+      let breakIndex;
+      if (sentenceBoundary !== -1) {
+        // If sentence boundary found in the desired range, break there
+        breakIndex = sentenceBoundary;
+      } else {
+        // If no sentence boundary found in [maxLen-buffer, maxLen], try to find one before that
+        let earlierSentence = -1;
+        for (let i = lowerBound - 1; i >= 0; i--) {
+          if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') && 
+              (i + 1 === slice.length || slice[i + 1] === ' ')) {
+            earlierSentence = i + 1;
+            break;
+          }
+        }
+        if (earlierSentence !== -1) {
+          breakIndex = earlierSentence;
+        } else {
+          // No suitable sentence boundary found, fallback to word boundary near maxLen
+          let wordBoundary = slice.lastIndexOf(' ', maxLen);
+          if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
+            breakIndex = wordBoundary;
+          } else {
+            breakIndex = maxLen;
+          }
+        }
       }
 
-      let chunk = text.substring(startIndex, startIndex + sentenceEndIndex).trim();
+      let chunk = text.substring(startIndex, startIndex + breakIndex).trim();
       chunks.push(chunk);
-      startIndex += sentenceEndIndex;
+      startIndex += breakIndex;
     }
     return chunks;
   }
 
-  // Handle button click for splitting text
   function handleSplit(event) {
     const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
     const sourceText = document.getElementById('sourceText').value;
     const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = ''; // Clear previous results
+    resultsDiv.innerHTML = '';
 
     if (!sourceText.trim()) {
       alert('Please enter some text to split.');
@@ -112,13 +134,10 @@
     }
 
     const chunks = splitText(sourceText, maxLen);
-
     chunks.forEach((chunk, index) => {
-      // Create container for each chunk with visual thread connection
       const container = document.createElement('div');
       container.className = 'chunkContainer';
 
-      // Create a textarea for each chunk
       const textArea = document.createElement('textarea');
       textArea.readOnly = true;
       textArea.value = chunk;
@@ -129,7 +148,6 @@
     });
   }
 
-  // Attach event listeners to buttons
   document.querySelectorAll('#controls button').forEach(button => {
     button.addEventListener('click', handleSplit);
   });
