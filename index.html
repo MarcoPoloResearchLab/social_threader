@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Post Breaker</title>
+<title>Text Chunker</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -16,6 +16,14 @@
     margin-right: 5px;
     padding: 8px 12px;
     cursor: pointer;
+  }
+  #customControl {
+    margin-top: 10px;
+  }
+  #customControl input {
+    width: 100px;
+    padding: 6px;
+    margin-right: 5px;
   }
   #results {
     margin-top: 20px;
@@ -49,18 +57,33 @@
 </head>
 <body>
 
-<h2>Post Breaker</h2>
+<h2>Text Chunker</h2>
 <p>Paste or type your text below:</p>
 <textarea id="sourceText" placeholder="Enter your text here..." rows="6"></textarea>
 
 <div id="controls">
   <button data-length="512">Break into Threads (512)</button>
   <button data-length="300">Break into Bluesky (300)</button>
+  <button data-length="280">Break into X (280)</button>
+</div>
+
+<div id="customControl">
+  <input type="number" id="customLength" placeholder="Enter size" min="1" />
+  <button id="customButton">Break with Custom Size</button>
 </div>
 
 <div id="results"></div>
 
 <script>
+  /**
+   * Splits the input text into chunks based on the specified maximum length.
+   * The splitting prefers sentence boundaries within a 20-character buffer.
+   * If no suitable sentence boundary is found, it breaks at the nearest word boundary.
+   * 
+   * @param {string} text - The input text to be split.
+   * @param {number} maxLen - The maximum length of each chunk.
+   * @returns {string[]} An array of text chunks.
+   */
   function splitText(text, maxLen) {
     const chunks = [];
     let startIndex = 0;
@@ -94,7 +117,7 @@
       } else {
         // Otherwise, fill up to maxLen by breaking at a word boundary
         let wordBoundary = slice.lastIndexOf(' ', maxLen);
-        if (wordBoundary !== -1) {
+        if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
           breakIndex = wordBoundary;
         } else {
           breakIndex = maxLen;
@@ -108,11 +131,16 @@
     return chunks;
   }
 
+  /**
+   * Handles the splitting of text when a predefined platform button is clicked.
+   * 
+   * @param {Event} event - The click event.
+   */
   function handleSplit(event) {
     const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
     const sourceText = document.getElementById('sourceText').value;
     const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = '';
+    resultsDiv.innerHTML = ''; // Clear previous results
 
     if (!sourceText.trim()) {
       alert('Please enter some text to split.');
@@ -120,6 +148,19 @@
     }
 
     const chunks = splitText(sourceText, maxLen);
+
+    displayChunks(chunks);
+  }
+
+  /**
+   * Displays the chunks in the results section as connected text areas.
+   * 
+   * @param {string[]} chunks - The array of text chunks to display.
+   */
+  function displayChunks(chunks) {
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = ''; // Clear previous results
+
     chunks.forEach((chunk, index) => {
       const container = document.createElement('div');
       container.className = 'chunkContainer';
@@ -134,9 +175,37 @@
     });
   }
 
+  /**
+   * Handles the splitting of text when the custom size button is clicked.
+   */
+  function handleCustomSplit() {
+    const customInput = document.getElementById('customLength');
+    const customLen = parseInt(customInput.value, 10);
+    const sourceText = document.getElementById('sourceText').value;
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = ''; // Clear previous results
+
+    if (!sourceText.trim()) {
+      alert('Please enter some text to split.');
+      return;
+    }
+
+    if (isNaN(customLen) || customLen <= 0) {
+      alert('Please enter a valid positive number for custom size.');
+      return;
+    }
+
+    const chunks = splitText(sourceText, customLen);
+    displayChunks(chunks);
+  }
+
+  // Attach event listeners to predefined platform buttons
   document.querySelectorAll('#controls button').forEach(button => {
     button.addEventListener('click', handleSplit);
   });
+
+  // Attach event listener to custom size button
+  document.getElementById('customButton').addEventListener('click', handleCustomSplit);
 </script>
 
 </body>
