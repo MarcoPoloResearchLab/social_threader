@@ -23,16 +23,21 @@
       padding: 8px 12px;
       cursor: pointer;
       font-size: 14px;
-    }
-    #customButton {
+      height: 40px;
       display: flex;
       align-items: center;
+      justify-content: center;
+    }
+    #customControl {
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
     #customLength {
       width: 80px;
       padding: 6px;
-      margin-left: 5px;
       font-size: 14px;
+      height: 28px;
     }
     #results {
       margin-top: 20px;
@@ -72,17 +77,22 @@
       font-size: 12px;
       color: #555;
     }
+    .error {
+      color: red;
+      font-size: 12px;
+      margin-top: 5px;
+    }
     @media (max-width: 600px) {
       #controls {
         flex-direction: column;
         align-items: stretch;
       }
-      #customButton {
+      #customControl {
         width: 100%;
+        justify-content: flex-start;
       }
       #customLength {
         width: 100%;
-        margin-left: 0;
         margin-top: 5px;
       }
     }
@@ -94,14 +104,16 @@
   <p>Paste or type your text below:</p>
   <textarea id="sourceText" placeholder="Enter your text here..." rows="6"></textarea>
   <div id="inputStats" class="inputStats"></div>
+  <div id="inputError" class="error"></div>
 
   <div id="controls">
     <button data-length="512">Break into Threads (512)</button>
     <button data-length="300">Break into Bluesky (300)</button>
     <button data-length="280">Break into X (280)</button>
-    <button id="customButton">Break with Custom Size
+    <div id="customControl">
+      <button id="customButton">Break with Custom Size</button>
       <input type="number" id="customLength" placeholder="Size" min="1" />
-    </button>
+    </div>
   </div>
 
   <div id="results"></div>
@@ -204,10 +216,12 @@
       const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
       const sourceText = document.getElementById('sourceText').value;
       const resultsDiv = document.getElementById('results');
+      const inputError = document.getElementById('inputError');
       resultsDiv.innerHTML = ''; // Clear previous results
+      inputError.innerHTML = ''; // Clear previous errors
 
       if (!sourceText.trim()) {
-        alert('Please enter some text to split.');
+        inputError.textContent = 'Please enter some text to split.';
         return;
       }
 
@@ -253,15 +267,17 @@
       const customLen = parseInt(customInput.value, 10);
       const sourceText = document.getElementById('sourceText').value;
       const resultsDiv = document.getElementById('results');
+      const inputError = document.getElementById('inputError');
       resultsDiv.innerHTML = ''; // Clear previous results
+      inputError.innerHTML = ''; // Clear previous errors
 
       if (!sourceText.trim()) {
-        alert('Please enter some text to split.');
+        inputError.textContent = 'Please enter some text to split.';
         return;
       }
 
       if (isNaN(customLen) || customLen <= 0) {
-        alert('Please enter a valid positive number for custom size.');
+        inputError.textContent = 'Please enter a valid positive number for custom size.';
         return;
       }
 
@@ -292,9 +308,6 @@
       } else {
         customButton.textContent = 'Break with Custom Size';
       }
-
-      // Re-append the input field after changing textContent
-      customButton.appendChild(customInput);
     }
 
     // Attach event listeners to predefined platform buttons
