@@ -30,14 +30,14 @@
     }
 
     .left-pane {
-      flex: 2; /* 2/3 of width */
+      flex: 2; /* 2/3 */
       padding: 20px;
       border-right: 1px solid #ccc;
       display: flex;
       flex-direction: column;
     }
     .right-pane {
-      flex: 1; /* 1/3 of width */
+      flex: 1; /* 1/3 */
       display: flex;
       flex-direction: column;
       padding: 20px;
@@ -83,7 +83,6 @@
       margin-bottom: 20px;
       align-items: center;
     }
-
     .button-group,
     .custom-control {
       width: 90%;
@@ -92,7 +91,6 @@
       flex-direction: column;
       gap: 10px;
     }
-
     button {
       background-color: #007BFF;
       color: white;
@@ -129,6 +127,7 @@
       text-align: center;
     }
 
+    /* Toggle for sentence-based chunking */
     .toggle-sentence-break {
       width: 90%;
       max-width: 600px;
@@ -220,6 +219,7 @@
       cursor: default;
     }
 
+    /* Turn the circle green & label with copy order */
     .chunkContainer.copied::before {
       content: attr(data-copied-order);
       background-color: #28a745;
@@ -273,7 +273,6 @@
 
     <!-- Right Pane: Buttons and Output -->
     <div class="right-pane">
-      
       <div class="upper-right-pane">
         <div class="button-group">
           <button data-length="512">Break into Threads (512)</button>
@@ -286,7 +285,7 @@
           <input type="number" id="customLength" placeholder="Size" min="1" />
         </div>
 
-        <!-- Toggle for sentence-based chunking with best-effort grouping -->
+        <!-- Toggle for sentence-based chunking with best effort -->
         <div class="toggle-sentence-break">
           <input type="checkbox" id="sentenceToggle" />
           <label for="sentenceToggle">Break on full sentences (best effort)</label>
@@ -299,16 +298,15 @@
   </div>
 
   <script>
-    let copyOrder = 0;          // Tracks order of chunk copying
-    let autoRechunk = false;    // Whether to automatically re-chunk on input
-    let breakOnSentences = false; // If toggle is checked, try to group sentences up to max length
-    // Memo of how we chunked: type= 'length' or 'sentenceHybrid', value= number if length-based
+    let copyOrder = 0;         // Tracks the chunk copy order
+    let autoRechunk = false;   // True after we've done first chunk
+    let breakOnSentences = false;  // Whether user toggles the sentence-based chunk
+    // We store the last chunk method so we can re-chunk after toggling or typing more text
     let lastChunkMethod = { type: 'length', value: 280 };
 
     /**
-     * Fallback chunking by length alone (original approach).
-     * Splits text while respecting sentence boundaries if possible, 
-     * but ultimately uses a ~maxLen limit and partial chunking.
+     * Original partial-chunk approach. Break on or near sentence boundaries,
+     * but ultimately ensures we do not exceed maxLen.
      */
     function splitTextByLength(rawText, maxLen) {
       let text = rawText.replace(/\s+/g, ' ').trim();
@@ -353,46 +351,42 @@
     }
 
     /**
-     * BEST-EFFORT Sentence Grouping with maxLen constraint:
-     * 1) Split raw text into basic sentences.
-     * 2) Try to combine as many sentences as will fit into a single chunk (<= maxLen).
-     * 3) If a single sentence is longer than maxLen, break *that sentence* by words or partial chunk.
+     * Best-effort sentence grouping that respects maxLen.
+     * 1) Breaks text into basic sentences.
+     * 2) Tries to fit as many sentences as possible into a chunk up to maxLen.
+     * 3) If a single sentence exceeds maxLen, we'll fallback to partial-chunking that sentence.
      */
     function splitTextBySentencesWithMaxLen(rawText, maxLen) {
-      // Basic parse by sentence endings
       let text = rawText.trim();
-      // We capture the delimiter so we keep punctuation, e.g. "Hello world."
-      // Using a simpler approach: split on /([.?!])(\s|$)/
-      // but let's do a safer approach with a match:
+      // e.g. "Call me Ishmael. Some years..." => array of sentences
       let rawSentences = text.match(/[^.!?]+[.!?]+(\s|$)?|[^.!?]+$/g) || [];
       
       const allChunks = [];
       let currentChunk = '';
 
-      // Helper to safely append a sentence to the current chunk if it fits
+      // Helper to attempt appending a sentence to the current chunk
       function tryAppend(sentence) {
         if (!currentChunk) {
-          // If chunk is empty, just start it
+          // If chunk is empty, start with this sentence
           currentChunk = sentence;
         } else {
-          // Add 1 space of separation if needed
           if (currentChunk.length + 1 + sentence.length <= maxLen) {
+            // +1 for space
             currentChunk += ' ' + sentence;
           } else {
-            // We can't fit this sentence => push current chunk, start a new one
             allChunks.push(currentChunk.trim());
             currentChunk = sentence;
           }
         }
       }
 
-      // If a single sentence is bigger than maxLen, we fallback to partial-chunk logic
+      // If a single sentence is bigger than maxLen, break it further using partial-chunk approach
       function chunkLongSentence(sentence) {
-        // Reuse the old partial chunk approach for that too-long sentence
+        // Use the partial-chunk approach for that too-long sentence
         const parts = splitTextByLength(sentence, maxLen);
         parts.forEach(part => {
-          // If we have dangling text in currentChunk and can't fit part, push it first
           if (currentChunk && (currentChunk.length + 1 + part.length > maxLen)) {
+            // push out the current chunk first
             allChunks.push(currentChunk.trim());
             currentChunk = '';
           }
@@ -401,7 +395,6 @@
           } else {
             currentChunk += ' ' + part;
           }
-          // If currentChunk is exactly at or near max, push it
           if (currentChunk.length >= maxLen) {
             allChunks.push(currentChunk.trim());
             currentChunk = '';
@@ -409,7 +402,7 @@
         });
       }
 
-      // For each sentence, see if it fits or if we need partial chunking
+      // Loop over each sentence to attempt grouping
       rawSentences.forEach(sentence => {
         sentence = sentence.trim();
         if (!sentence) return;
@@ -425,7 +418,6 @@
         }
       });
 
-      // If anything remains in currentChunk, push it
       if (currentChunk) {
         allChunks.push(currentChunk.trim());
       }
@@ -433,8 +425,7 @@
     }
 
     /**
-     * Based on the breakOnSentences toggle,
-     * either do best-effort sentence grouping or pure length-based chunking.
+     * Decide which chunking method to call based on breakOnSentences flag.
      */
     function getChunks(rawText, maxLen) {
       if (breakOnSentences) {
@@ -445,48 +436,7 @@
     }
 
     /**
-     * Calculates simple text stats.
-     */
-    function calculateStats(text) {
-      const characters = text.length;
-      const words = text.match(/\b\w+\b/g);
-      const wordCount = words ? words.length : 0;
-      const sentences = text.match(/[^.!?]+[.!?]+/g);
-      const sentenceCount = sentences ? sentences.length : 0;
-      return { characters, words: wordCount, sentences: sentenceCount };
-    }
-
-    /**
-     * Displays stats in the given element.
-     */
-    function displayStats(element, stats) {
-      element.innerHTML = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
-    }
-
-    /**
-     * Handler for the "Break into X" or "Break with Custom" buttons.
-     */
-    function handleSplitButton(event) {
-      const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
-      if (!isNaN(maxLen)) {
-        doChunk(maxLen);
-      }
-    }
-    function handleCustomSplit() {
-      const customInput = document.getElementById('customLength');
-      const customLen = parseInt(customInput.value, 10);
-      const inputError = document.getElementById('inputError');
-      inputError.innerHTML = '';
-
-      if (isNaN(customLen) || customLen <= 0) {
-        inputError.textContent = 'Please enter a valid positive number for custom size.';
-        return;
-      }
-      doChunk(customLen);
-    }
-
-    /**
-     * Actually performs chunking, displays the chunks, and remembers how we chunked.
+     * Actually chunk the text and display the results.
      */
     function doChunk(maxLen) {
       const sourceText = document.getElementById('sourceText').value;
@@ -495,10 +445,10 @@
 
       resultsDiv.innerHTML = '';
       inputError.innerHTML = '';
-      copyOrder = 0;       // reset copy numbering
-      autoRechunk = true;  // enable dynamic re-chunk after the first chunk
+      copyOrder = 0; // reset copy numbering
+      autoRechunk = true; // we have chunked at least once now
 
-      // Remember the method
+      // Keep track of the chosen method & length
       if (breakOnSentences) {
         lastChunkMethod = { type: 'sentenceHybrid', value: maxLen };
       } else {
@@ -515,18 +465,18 @@
     }
 
     /**
-     * Renders each chunk inside a threadWrapper with stats & a copy button.
+     * Render the chunks in .lower-right-pane
      */
     function displayChunks(chunks) {
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = '';
 
-      if (chunks.length === 0) return;
+      if (!chunks.length) return;
 
       const threadWrapper = document.createElement('div');
       threadWrapper.className = 'threadWrapper';
 
-      chunks.forEach(chunk => {
+      chunks.forEach((chunk) => {
         const container = document.createElement('div');
         container.className = 'chunkContainer';
 
@@ -560,7 +510,7 @@
     }
 
     /**
-     * Copies text to clipboard, providing success feedback & updating the circle.
+     * Copy chunk text to clipboard
      */
     function handleCopy(container, chunkText, copyBtn) {
       navigator.clipboard.writeText(chunkText).then(() => {
@@ -568,7 +518,7 @@
         copyBtn.classList.add('success');
         copyBtn.disabled = true;
 
-        // Fill the circle with green + order
+        // fill circle with green plus order
         copyOrder += 1;
         container.setAttribute('data-copied-order', copyOrder);
         container.classList.add('copied');
@@ -584,44 +534,59 @@
     }
 
     /**
-     * Automatically re-chunk if the user has already done an initial chunk pass.
+     * Re-chunk if we've chunked at least once (autoRechunk is true).
      */
     function reChunkWithLastMethod() {
-      if (!autoRechunk) return; // No chunking done yet
-      const sourceText = document.getElementById('sourceText').value.trim();
+      if (!autoRechunk) return; // haven't chunked yet, so do nothing
+      const sourceText = document.getElementById('sourceText').value;
       const resultsDiv = document.getElementById('results');
 
-      // If user cleared out text, clear the chunk display
-      if (!sourceText) {
+      if (!sourceText.trim()) {
+        // if user cleared the text, just clear the results
         resultsDiv.innerHTML = '';
         return;
       }
 
+      // Now actually chunk using the last known method & length
       if (lastChunkMethod.type === 'sentenceHybrid') {
-        const chunks = splitTextBySentencesWithMaxLen(sourceText, lastChunkMethod.value);
+        // user had toggled sentence-based mode
+        let chunks = splitTextBySentencesWithMaxLen(sourceText, lastChunkMethod.value);
         displayChunks(chunks);
       } else {
-        const chunks = splitTextByLength(sourceText, lastChunkMethod.value);
+        // purely length-based
+        let chunks = splitTextByLength(sourceText, lastChunkMethod.value);
         displayChunks(chunks);
       }
     }
 
     /**
-     * Updates input area stats + triggers auto re-chunk if applicable.
+     * Calculate stats for the displayed text
+     */
+    function calculateStats(text) {
+      const characters = text.length;
+      const words = text.match(/\b\w+\b/g);
+      const wordCount = words ? words.length : 0;
+      const sentences = text.match(/[^.!?]+[.!?]+/g);
+      const sentenceCount = sentences ? sentences.length : 0;
+      return { characters, words: wordCount, sentences: sentenceCount };
+    }
+
+    /**
+     * Display stats above the main input & handle auto re-chunk
      */
     function updateInputStats() {
       const sourceText = document.getElementById('sourceText').value;
       const statsDiv = document.getElementById('inputStats');
       const stats = calculateStats(sourceText);
-      displayStats(statsDiv, stats);
+      statsDiv.innerHTML = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
       adjustFontSize();
 
-      // Re-chunk if user has chunked at least once
+      // If user typed more text or removed text after chunking
       reChunkWithLastMethod();
     }
 
     /**
-     * Dynamically adjust the font size in the main textarea up to max of 24px.
+     * Grow the main textarea font up to 24px as the user types more text
      */
     function adjustFontSize() {
       const textArea = document.getElementById('sourceText');
@@ -638,35 +603,52 @@
     }
 
     /**
-     * Update the label for the custom button.
+     * Update button label for custom size
      */
     function updateCustomButtonLabel() {
       const customInput = document.getElementById('customLength');
       const customButton = document.getElementById('customButton');
-      const customLen = parseInt(customInput.value, 10);
+      const num = parseInt(customInput.value, 10);
 
-      if (!isNaN(customLen) && customLen > 0) {
-        customButton.textContent = `Break with Custom (${customLen}) Size`;
+      if (!isNaN(num) && num > 0) {
+        customButton.textContent = `Break with Custom (${num}) Size`;
       } else {
         customButton.textContent = 'Break with Custom Size';
       }
     }
 
-    // ------------------------------------------
-    // Set up event listeners
-    // ------------------------------------------
+    /**
+     * Event Handlers
+     */
     document.querySelectorAll('.button-group button[data-length]').forEach(button => {
-      button.addEventListener('click', handleSplitButton);
+      button.addEventListener('click', (ev) => {
+        const maxLen = parseInt(ev.target.getAttribute('data-length'), 10);
+        doChunk(maxLen);
+      });
     });
-    document.getElementById('customButton').addEventListener('click', handleCustomSplit);
+
+    document.getElementById('customButton').addEventListener('click', () => {
+      const customInput = document.getElementById('customLength');
+      const customLen = parseInt(customInput.value, 10);
+      if (!isNaN(customLen) && customLen > 0) {
+        doChunk(customLen);
+      } else {
+        document.getElementById('inputError').textContent =
+          'Please enter a valid positive number for custom size.';
+      }
+    });
+
     document.getElementById('sourceText').addEventListener('input', updateInputStats);
     document.getElementById('customLength').addEventListener('input', updateCustomButtonLabel);
 
     const sentenceToggle = document.getElementById('sentenceToggle');
     sentenceToggle.addEventListener('change', () => {
       breakOnSentences = sentenceToggle.checked;
-      // Immediately re-chunk if we've done an initial chunk
-      reChunkWithLastMethod();
+      // If we've already chunked (autoRechunk==true), re-chunk now 
+      // with the same length we used last time:
+      if (autoRechunk) {
+        doChunk(lastChunkMethod.value);
+      }
     });
   </script>
 </body>
