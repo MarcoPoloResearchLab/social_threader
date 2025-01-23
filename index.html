@@ -101,14 +101,6 @@
       height: 40px;
     }
 
-    /* Option 2: Grey Buttons (Uncomment to use grey buttons)
-    .button-group button,
-    .custom-control button {
-      background-color: #6c757d; /* Grey color for all buttons */
-      color: white;
-    }
-    */
-
     .button-group button:hover,
     .custom-control button:hover {
       background-color: #0056b3; /* Darker blue on hover */
@@ -135,10 +127,11 @@
       overflow-y: auto;
       padding-top: 10px;
       position: relative;
+      /* The default vertical line was removed from here */
     }
 
-    /* Vertical Thread Line */
-    .lower-right-pane::before {
+    /* Show the vertical line only if .has-threads is present */
+    .lower-right-pane.has-threads::before {
       content: '';
       position: absolute;
       top: 0;
@@ -233,7 +226,7 @@
         flex: none;
         height: 80%;
       }
-      .lower-right-pane::before {
+      .lower-right-pane.has-threads::before {
         left: 15px; /* Adjust line position for smaller screens */
       }
       .chunkContainer {
@@ -389,12 +382,20 @@
 
     /**
      * Displays the chunks in the results section as connected text areas with statistics and copy buttons.
+     * Adds or removes the 'has-threads' CSS class to toggle the vertical line.
      * 
      * @param {string[]} chunks - The array of text chunks to display.
      */
     function displayChunks(chunks) {
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = ''; // Clear previous results
+
+      // Toggle vertical line only if we have threads
+      if (chunks.length > 0) {
+        resultsDiv.classList.add('has-threads');
+      } else {
+        resultsDiv.classList.remove('has-threads');
+      }
 
       chunks.forEach((chunk, index) => {
         const container = document.createElement('div');
