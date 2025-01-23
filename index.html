@@ -1,48 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Page Breaker</title>
   <style>
-    body {
+    /* Reset some basic styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      height: 100%;
       font-family: Arial, sans-serif;
-      margin: 20px;
     }
-    h2 {
-      margin-bottom: 10px;
-    }
-    #controls {
+
+    /* Container for the entire page */
+    .container {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Left Pane Styles */
+    .left-pane {
+      flex: 2;
+      padding: 20px;
+      border-right: 1px solid #ccc;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .left-pane h2 {
       margin-bottom: 10px;
     }
-    button {
-      padding: 8px 12px;
-      cursor: pointer;
+
+    .left-pane textarea {
+      flex: 1;
+      width: 100%;
+      padding: 10px;
       font-size: 14px;
-      height: 40px;
+      resize: none;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .left-pane .inputStats {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .left-pane .error {
+      color: red;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    /* Right Pane Styles */
+    .right-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    /* Upper Right Pane (Buttons) */
+    .upper-right-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .button-group button {
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background-color: #007BFF;
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
+      transition: background-color 0.3s;
+      height: 40px;
     }
-    #customControl {
+
+    .button-group button:hover {
+      background-color: #0056b3;
+    }
+
+    .custom-control {
       display: flex;
       align-items: center;
       gap: 5px;
     }
-    #customLength {
+
+    .custom-control button {
+      flex: none;
+    }
+
+    .custom-control input {
       width: 80px;
       padding: 6px;
       font-size: 14px;
       height: 28px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
-    #results {
-      margin-top: 20px;
+
+    /* Lower Right Pane (Output) */
+    .lower-right-pane {
+      flex: 4;
+      overflow-y: auto;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
     }
+
     .chunkContainer {
       position: relative;
       margin-bottom: 20px;
@@ -52,6 +137,7 @@
       align-items: flex-start;
       gap: 10px;
     }
+
     .chunkContainer:before {
       content: '';
       position: absolute;
@@ -63,93 +149,106 @@
       border: 2px solid #ccc;
       border-radius: 50%;
     }
-    textarea {
-      width: 100%;
+
+    .chunkContainer textarea {
+      flex: 1;
       height: 80px;
       resize: vertical;
       font-family: inherit;
       font-size: 14px;
-      padding-right: 40px; /* Space for the copy button */
+      padding-right: 60px; /* Space for the copy button */
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
-    .stats {
+
+    .chunkContainer .stats {
       font-size: 12px;
       color: #555;
       margin-top: 5px;
     }
-    .inputStats {
-      margin-top: 5px;
-      font-size: 12px;
-      color: #555;
-    }
-    .error {
-      color: red;
-      font-size: 12px;
-      margin-top: 5px;
-    }
+
     .copyButton {
       position: absolute;
       right: 10px;
       top: 10px;
-      background: none;
+      background: #28a745;
       border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
       cursor: pointer;
-      font-size: 14px;
-      color: #007BFF;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-size: 12px;
+      transition: background-color 0.3s;
     }
-    .copyButton:disabled {
-      color: #aaa;
-      cursor: not-allowed;
+
+    .copyButton:hover {
+      background-color: #218838;
     }
+
     .copyButton.success {
-      color: green;
+      background-color: #28a745;
+      cursor: default;
     }
-    @media (max-width: 600px) {
-      #controls {
+
+    @media (max-width: 800px) {
+      .container {
         flex-direction: column;
-        align-items: stretch;
       }
-      #customControl {
+      .left-pane, .right-pane {
+        flex: none;
         width: 100%;
-        justify-content: flex-start;
+        height: 50vh;
       }
-      #customLength {
-        width: 100%;
-        margin-top: 5px;
+      .upper-right-pane {
+        flex: none;
+        height: 20%;
       }
-      .copyButton {
-        position: static;
-        margin-top: 5px;
+      .lower-right-pane {
+        flex: none;
+        height: 80%;
       }
       .chunkContainer {
         flex-direction: column;
         align-items: stretch;
+      }
+      .copyButton {
+        position: static;
+        margin-top: 5px;
+        align-self: flex-end;
       }
     }
   </style>
 </head>
 <body>
 
-  <h2>Page Breaker</h2>
-  <p>Paste or type your text below:</p>
-  <textarea id="sourceText" placeholder="Enter your text here..." rows="6"></textarea>
-  <div id="inputStats" class="inputStats"></div>
-  <div id="inputError" class="error"></div>
+  <div class="container">
+    <!-- Left Pane: Text Input -->
+    <div class="left-pane">
+      <h2>Page Breaker</h2>
+      <textarea id="sourceText" placeholder="Enter your text here..." rows="10"></textarea>
+      <div id="inputStats" class="inputStats"></div>
+      <div id="inputError" class="error"></div>
+    </div>
 
-  <div id="controls">
-    <button data-length="512">Break into Threads (512)</button>
-    <button data-length="300">Break into Bluesky (300)</button>
-    <button data-length="280">Break into X (280)</button>
-    <div id="customControl">
-      <button id="customButton">Break with Custom Size</button>
-      <input type="number" id="customLength" placeholder="Size" min="1" />
+    <!-- Right Pane: Buttons and Output -->
+    <div class="right-pane">
+      <!-- Upper Right Pane: Buttons -->
+      <div class="upper-right-pane">
+        <div class="button-group">
+          <button data-length="512">Break into Threads (512)</button>
+          <button data-length="300">Break into Bluesky (300)</button>
+          <button data-length="280">Break into X (280)</button>
+        </div>
+        <div class="custom-control">
+          <button id="customButton">Break with Custom Size</button>
+          <input type="number" id="customLength" placeholder="Size" min="1" />
+        </div>
+      </div>
+
+      <!-- Lower Right Pane: Output Chunks -->
+      <div class="lower-right-pane" id="results"></div>
     </div>
   </div>
-
-  <div id="results"></div>
 
   <script>
     /**
@@ -289,7 +388,7 @@
         // Create copy button
         const copyButton = document.createElement('button');
         copyButton.className = 'copyButton';
-        copyButton.innerHTML = 'Copy';
+        copyButton.textContent = 'Copy';
 
         // Add event listener to copy button
         copyButton.addEventListener('click', () => {
@@ -312,14 +411,15 @@
     function copyToClipboard(text, button) {
       navigator.clipboard.writeText(text).then(() => {
         // Change button text to indicate success
-        const originalText = button.textContent;
         button.textContent = 'Copied!';
         button.classList.add('success');
+        button.disabled = true;
 
         // Revert back after 2 seconds
         setTimeout(() => {
           button.textContent = 'Copy';
           button.classList.remove('success');
+          button.disabled = false;
         }, 2000);
       }).catch(err => {
         console.error('Failed to copy text: ', err);
@@ -378,7 +478,7 @@
     }
 
     // Attach event listeners to predefined platform buttons
-    document.querySelectorAll('#controls button[data-length]').forEach(button => {
+    document.querySelectorAll('.button-group button[data-length]').forEach(button => {
       button.addEventListener('click', handleSplit);
     });
 
