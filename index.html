@@ -27,6 +27,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
     #customControl {
       display: flex;
@@ -47,6 +48,9 @@
       margin-bottom: 20px;
       padding-left: 20px;
       border-left: 2px solid #ccc;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
     }
     .chunkContainer:before {
       content: '';
@@ -62,15 +66,15 @@
     textarea {
       width: 100%;
       height: 80px;
-      margin-bottom: 5px;
       resize: vertical;
       font-family: inherit;
       font-size: 14px;
+      padding-right: 40px; /* Space for the copy button */
     }
     .stats {
       font-size: 12px;
       color: #555;
-      margin-bottom: 15px;
+      margin-top: 5px;
     }
     .inputStats {
       margin-top: 5px;
@@ -81,6 +85,27 @@
       color: red;
       font-size: 12px;
       margin-top: 5px;
+    }
+    .copyButton {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: #007BFF;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .copyButton:disabled {
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    .copyButton.success {
+      color: green;
     }
     @media (max-width: 600px) {
       #controls {
@@ -94,6 +119,14 @@
       #customLength {
         width: 100%;
         margin-top: 5px;
+      }
+      .copyButton {
+        position: static;
+        margin-top: 5px;
+      }
+      .chunkContainer {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
   </style>
@@ -230,7 +263,7 @@
     }
 
     /**
-     * Displays the chunks in the results section as connected text areas with statistics.
+     * Displays the chunks in the results section as connected text areas with statistics and copy buttons.
      * 
      * @param {string[]} chunks - The array of text chunks to display.
      */
@@ -253,9 +286,43 @@
         statsDiv.className = 'stats';
         statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
 
+        // Create copy button
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copyButton';
+        copyButton.innerHTML = 'Copy';
+
+        // Add event listener to copy button
+        copyButton.addEventListener('click', () => {
+          copyToClipboard(chunk, copyButton);
+        });
+
         container.appendChild(textArea);
+        container.appendChild(copyButton);
         container.appendChild(statsDiv);
         resultsDiv.appendChild(container);
+      });
+    }
+
+    /**
+     * Copies the provided text to the clipboard and provides visual feedback.
+     * 
+     * @param {string} text - The text to copy.
+     * @param {HTMLElement} button - The copy button element to provide feedback.
+     */
+    function copyToClipboard(text, button) {
+      navigator.clipboard.writeText(text).then(() => {
+        // Change button text to indicate success
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.classList.add('success');
+
+        // Revert back after 2 seconds
+        setTimeout(() => {
+          button.textContent = 'Copy';
+          button.classList.remove('success');
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy text: ', err);
       });
     }
 
