@@ -14,7 +14,7 @@
 
     body, html {
       height: 100%;
-      font-family: Arial, sans-serif;
+      font-family: Arial, sans-serif; /* Changed to Arial for better readability */
     }
 
     /* Container for the entire page */
@@ -45,6 +45,8 @@
       resize: none;
       border: 1px solid #ccc;
       border-radius: 4px;
+      font-family: Arial, sans-serif; /* Ensures textarea uses Arial */
+      transition: font-size 0.2s ease; /* Smooth transition for font size changes */
     }
 
     .left-pane .inputStats {
@@ -82,13 +84,15 @@
       gap: 10px;
     }
 
-    .button-group button {
+    /* Uniform Button Styles */
+    .button-group button,
+    .custom-control button {
       padding: 10px;
       font-size: 14px;
       cursor: pointer;
       border: none;
       border-radius: 4px;
-      background-color: #007BFF;
+      background-color: #007BFF; /* Blue color for all buttons */
       color: white;
       display: flex;
       align-items: center;
@@ -97,18 +101,23 @@
       height: 40px;
     }
 
-    .button-group button:hover {
-      background-color: #0056b3;
+    /* Option 2: Grey Buttons (Uncomment to use grey buttons)
+    .button-group button,
+    .custom-control button {
+      background-color: #6c757d; /* Grey color for all buttons */
+      color: white;
+    }
+    */
+
+    .button-group button:hover,
+    .custom-control button:hover {
+      background-color: #0056b3; /* Darker blue on hover */
     }
 
     .custom-control {
       display: flex;
       align-items: center;
       gap: 5px;
-    }
-
-    .custom-control button {
-      flex: none;
     }
 
     .custom-control input {
@@ -154,7 +163,7 @@
       flex: 1;
       height: 80px;
       resize: vertical;
-      font-family: inherit;
+      font-family: Arial, sans-serif; /* Changed to Arial */
       font-size: 14px;
       padding-right: 60px; /* Space for the copy button */
       border: 1px solid #ccc;
@@ -171,7 +180,7 @@
       position: absolute;
       right: 10px;
       top: 10px;
-      background: #28a745;
+      background: #28a745; /* Green color for copy button */
       border: none;
       color: white;
       padding: 5px 10px;
@@ -182,14 +191,15 @@
     }
 
     .copyButton:hover {
-      background-color: #218838;
+      background-color: #218838; /* Darker green on hover */
     }
 
     .copyButton.success {
-      background-color: #28a745;
+      background-color: #28a745; /* Green color when copied */
       cursor: default;
     }
 
+    /* Responsive Design */
     @media (max-width: 800px) {
       .container {
         flex-direction: column;
@@ -460,6 +470,25 @@
       const statsDiv = document.getElementById('inputStats');
       const stats = calculateStats(sourceText);
       displayStats(statsDiv, stats);
+      adjustFontSize(); // Adjust font size based on text length
+    }
+
+    /**
+     * Adjusts the font size of the input textarea based on the length of the text.
+     * The font size increases up to a maximum of 24px.
+     */
+    function adjustFontSize() {
+      const textArea = document.getElementById('sourceText');
+      const textLength = textArea.value.length;
+      const minFontSize = 14; // Minimum font size in px
+      const maxFontSize = 24; // Maximum font size in px
+      const incrementPerChar = 0.05; // Font size increases by 0.05px per character
+
+      let newFontSize = minFontSize + (textLength * incrementPerChar);
+      if (newFontSize > maxFontSize) {
+        newFontSize = maxFontSize;
+      }
+      textArea.style.fontSize = `${newFontSize}px`;
     }
 
     /**
