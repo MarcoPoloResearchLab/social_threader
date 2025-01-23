@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Page Breaker With Thread Wrapper</title>
+  <title>Page Breaker With Flexible Layout</title>
   <style>
     /* ---------------------------
        1) Global & Reset
@@ -15,9 +15,9 @@
     }
     html, body {
       height: 100%;
-      font-family: Arial, sans-serif; /* Ensures the entire page uses Arial */
-      background-color: #fff;        /* Light background if you prefer */
-      color: #000;                   /* Ensures text is black (not greyed out) */
+      font-family: Arial, sans-serif; /* Keep everything in Arial/sans-serif */
+      background-color: #fff;
+      color: #000;
     }
 
     /* ---------------------------
@@ -29,16 +29,28 @@
       width: 100vw;
     }
 
-    /* ---------------------------
-       3) Left Pane
-    ----------------------------*/
+    /* 
+      Make the left pane take 1 share of flex,
+      the right pane 2 shares => left is 1/3 total,
+      right is 2/3 total.
+    */
     .left-pane {
-      flex: 2;
+      flex: 1;
       padding: 20px;
       border-right: 1px solid #ccc;
       display: flex;
       flex-direction: column;
     }
+    .right-pane {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    /* ---------------------------
+       3) Left Pane
+    ----------------------------*/
     .left-pane h2 {
       margin-bottom: 10px;
     }
@@ -50,9 +62,8 @@
       resize: none;
       border: 1px solid #ccc;
       border-radius: 4px;
-      font-family: Arial, sans-serif;     /* Keep Arial for consistency */
-      background-color: #f9f9f9;         /* Light background if desired */
-      color: #212529;                    /* Slightly off-black for text */
+      background-color: #f9f9f9;
+      color: #212529;
       transition: font-size 0.2s ease;
     }
     .left-pane .inputStats {
@@ -67,81 +78,74 @@
     }
 
     /* ---------------------------
-       4) Right Pane
+       4) Right Pane: Buttons & Output
     ----------------------------*/
-    .right-pane {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-    }
     .upper-right-pane {
       flex: 1;
       display: flex;
       flex-direction: column;
       gap: 10px;
       margin-bottom: 20px;
+      align-items: center;  /* center buttons horizontally */
     }
-    .button-group {
+
+    /* 
+      We want each set of buttons
+      to be ~90% of the pane's width.
+    */
+    .button-group, 
+    .custom-control {
+      width: 90%;
+      max-width: 600px; /* optional max if you want narrower on large screens */
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
     /* 
-      Make our standard buttons a fixed width so they all match.
-      Here 280px is an example; adjust as you like.
+      For the three fixed-size splits, 
+      they can be full width inside .button-group
     */
     .button-group button {
-      width: 280px; /* same width for all platform buttons */
+      width: 100%;
     }
 
-    /* ---------------------------
-       5) Buttons & Custom Control
-    ----------------------------*/
-    .button-group button,
+    /* 
+      For our custom size row: a button plus an input in one row.
+      We'll keep them side by side.
+    */
+    .custom-control {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
     .custom-control button {
-      padding: 10px;
-      font-size: 14px;
-      cursor: pointer;
       border: none;
       border-radius: 4px;
       background-color: #007BFF;
       color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.3s;
+      font-size: 14px;
       height: 40px;
+      flex: 1; /* Let the button expand */
+      margin-right: 10px; /* spacing between button & input */
+      cursor: pointer;
+      transition: background-color 0.3s;
     }
-    .button-group button:hover,
     .custom-control button:hover {
-      background-color: #0056b3; 
-    }
-
-    .custom-control {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      /* match the total width of a single big button */
-      width: 280px;
-    }
-    /* Let the button and input share that 280px total width */
-    .custom-control button {
-      flex: 3; /* or any ratio you like */
+      background-color: #0056b3;
     }
     .custom-control input {
-      flex: 1;
-      padding: 6px;
+      width: 80px;        /* or flex: 1 if you prefer it to stretch */
+      height: 40px;
       font-size: 14px;
-      height: 28px;
+      padding: 6px;
       border: 1px solid #ccc;
       border-radius: 4px;
       text-align: center;
     }
 
     /* ---------------------------
-       6) Lower Right Pane (Output)
+       5) Lower Right Pane: Output
     ----------------------------*/
     .lower-right-pane {
       flex: 4;
@@ -191,13 +195,13 @@
       width: 100%;
       height: 80px;
       resize: vertical;
-      font-family: Arial, sans-serif; 
+      font-family: Arial, sans-serif;
       font-size: 14px;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
       background-color: #f9f9f9;
-      color: #212529; 
+      color: #212529;
       transition: font-size 0.2s ease;
     }
 
@@ -226,12 +230,12 @@
       background-color: #218838;
     }
     .copyButton.success {
-      background-color: #28a745; 
+      background-color: #28a745;
       cursor: default;
     }
 
     /* ---------------------------
-       7) Responsive Design
+       6) Responsive Design
     ----------------------------*/
     @media (max-width: 800px) {
       .container {
@@ -258,13 +262,6 @@
       }
       .chunkContainer::before {
         left: 6px;
-      }
-      /* Make the big buttons narrower for mobile */
-      .button-group button {
-        width: 100%;
-      }
-      .custom-control {
-        width: 100%;
       }
     }
   </style>
@@ -303,7 +300,7 @@
   <script>
     /**
      * Splits the input text into chunks based on the specified maximum length.
-     * We trim and collapse extra whitespace first to avoid floating spaces or line breaks.
+     * We trim and collapse whitespace to avoid stray newlines.
      */
     function splitText(rawText, maxLen) {
       let text = rawText.replace(/\s+/g, ' ').trim();
@@ -317,7 +314,6 @@
           chunks.push(text.substring(startIndex).trim());
           break;
         }
-
         let slice = text.substring(startIndex, startIndex + maxLen + buffer);
         let lowerBound = Math.max(maxLen - buffer, 0);
 
@@ -349,7 +345,7 @@
     }
 
     /**
-     * Calculates statistics for a given text.
+     * Calculates minimal stats for a given string.
      */
     function calculateStats(text) {
       const characters = text.length;
@@ -361,14 +357,14 @@
     }
 
     /**
-     * Displays statistics in a specified element.
+     * Displays stats in a target element.
      */
     function displayStats(element, stats) {
       element.innerHTML = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
     }
 
     /**
-     * Handler for the three predefined platform buttons.
+     * Common handler for the platform buttons.
      */
     function handleSplit(event) {
       const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
@@ -376,7 +372,7 @@
     }
 
     /**
-     * Splits and displays chunks in the #results div.
+     * Splits and displays chunks in the results area.
      */
     function splitAndDisplayChunks(maxLen) {
       const sourceText = document.getElementById('sourceText').value;
@@ -396,8 +392,7 @@
     }
 
     /**
-     * Displays the chunks inside a threadWrapper so the vertical line
-     * precisely matches the total height. 
+     * Renders each chunk with stats and a copy button inside a .threadWrapper.
      */
     function displayChunks(chunks) {
       const resultsDiv = document.getElementById('results');
@@ -443,7 +438,7 @@
     }
 
     /**
-     * Copies text to clipboard with a little success feedback.
+     * Handles copy-to-clipboard with a brief success message.
      */
     function copyToClipboard(text, button) {
       navigator.clipboard.writeText(text).then(() => {
@@ -462,7 +457,7 @@
     }
 
     /**
-     * Handler for the custom size button.
+     * Custom-size button logic.
      */
     function handleCustomSplit() {
       const customInput = document.getElementById('customLength');
@@ -478,7 +473,7 @@
     }
 
     /**
-     * Updates the input-stats area as user types.
+     * Live-update stats while typing in the main textarea.
      */
     function updateInputStats() {
       const sourceText = document.getElementById('sourceText').value;
@@ -489,7 +484,7 @@
     }
 
     /**
-     * Dynamically adjusts font size in the main textarea, up to a max.
+     * Adjusts font size of main textarea up to a max.
      */
     function adjustFontSize() {
       const textArea = document.getElementById('sourceText');
@@ -506,7 +501,7 @@
     }
 
     /**
-     * Updates the custom button label to show the user-chosen size.
+     * Updates the custom button's label based on numeric input.
      */
     function updateCustomButtonLabel() {
       const customInput = document.getElementById('customLength');
@@ -520,19 +515,12 @@
       }
     }
 
-    // ---------------------------------
     // Attach event listeners
-    // ---------------------------------
-
-    // Platform buttons
     document.querySelectorAll('.button-group button[data-length]').forEach(button => {
       button.addEventListener('click', handleSplit);
     });
-    // Custom size button
     document.getElementById('customButton').addEventListener('click', handleCustomSplit);
-    // Stats & font resizing as user types
     document.getElementById('sourceText').addEventListener('input', updateInputStats);
-    // Update the custom button label as user types in the custom length
     document.getElementById('customLength').addEventListener('input', updateCustomButtonLabel);
   </script>
 </body>
