@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Page Breaker</title>
+  <title>Page Breaker With Thread Wrapper</title>
   <style>
     /* Reset some basic styles */
     * {
@@ -14,7 +14,7 @@
 
     body, html {
       height: 100%;
-      font-family: Arial, sans-serif; /* Changed to Arial for better readability */
+      font-family: Arial, sans-serif;
     }
 
     /* Container for the entire page */
@@ -45,8 +45,7 @@
       resize: none;
       border: 1px solid #ccc;
       border-radius: 4px;
-      font-family: Arial, sans-serif; /* Ensures textarea uses Arial */
-      transition: font-size 0.2s ease; /* Smooth transition for font size changes */
+      transition: font-size 0.2s ease;
     }
 
     .left-pane .inputStats {
@@ -92,7 +91,7 @@
       cursor: pointer;
       border: none;
       border-radius: 4px;
-      background-color: #007BFF; /* Blue color for all buttons */
+      background-color: #007BFF; 
       color: white;
       display: flex;
       align-items: center;
@@ -103,7 +102,7 @@
 
     .button-group button:hover,
     .custom-control button:hover {
-      background-color: #0056b3; /* Darker blue on hover */
+      background-color: #0056b3;
     }
 
     .custom-control {
@@ -127,17 +126,25 @@
       overflow-y: auto;
       padding-top: 10px;
       position: relative;
-      /* The default vertical line was removed from here */
     }
 
-    /* Show the vertical line only if .has-threads is present */
-    .lower-right-pane.has-threads::before {
+    /*
+      We no longer use .lower-right-pane::before.
+      Instead, we create a .threadWrapper to precisely match
+      the total height of the chunk containers.
+    */
+    .threadWrapper {
+      position: relative; /* so we can place a vertical line absolutely inside */
+      margin-bottom: 20px; /* optional spacing below the entire thread */
+    }
+
+    .threadWrapper::before {
       content: '';
       position: absolute;
       top: 0;
-      left: 20px; /* Positioning the line relative to chunk containers */
+      left: 20px;
       width: 2px;
-      height: 100%;
+      height: 100%; /* grows exactly with .threadWrapper's height */
       background-color: #ccc;
     }
 
@@ -146,8 +153,8 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      margin-bottom: 40px; /* Space to accommodate the vertical line */
-      padding-left: 40px; /* Space for the vertical line and circle */
+      margin-bottom: 40px; 
+      padding-left: 40px;
     }
 
     /* Circle Indicator */
@@ -155,11 +162,11 @@
       content: '';
       position: absolute;
       top: 0;
-      left: 11px; /* Centered on the vertical line */
+      left: 11px;
       width: 18px;
       height: 18px;
       background-color: #fff;
-      border: 2px solid #007BFF; /* Blue border to match buttons */
+      border: 2px solid #007BFF;
       border-radius: 50%;
       z-index: 1;
     }
@@ -168,7 +175,7 @@
       width: 100%;
       height: 80px;
       resize: vertical;
-      font-family: Arial, sans-serif; /* Changed to Arial */
+      font-family: Arial, sans-serif;
       font-size: 14px;
       padding: 10px;
       border: 1px solid #ccc;
@@ -189,7 +196,7 @@
     }
 
     .copyButton {
-      background: #28a745; /* Green color for copy button */
+      background: #28a745;
       border: none;
       color: white;
       padding: 5px 10px;
@@ -200,11 +207,11 @@
     }
 
     .copyButton:hover {
-      background-color: #218838; /* Darker green on hover */
+      background-color: #218838;
     }
 
     .copyButton.success {
-      background-color: #28a745; /* Green color when copied */
+      background-color: #28a745;
       cursor: default;
     }
 
@@ -226,14 +233,14 @@
         flex: none;
         height: 80%;
       }
-      .lower-right-pane.has-threads::before {
-        left: 15px; /* Adjust line position for smaller screens */
+      .threadWrapper::before {
+        left: 15px;
       }
       .chunkContainer {
-        padding-left: 35px; /* Adjust padding for smaller screens */
+        padding-left: 35px;
       }
       .chunkContainer::before {
-        left: 6px; /* Adjust circle position for smaller screens */
+        left: 6px;
       }
     }
   </style>
@@ -272,14 +279,13 @@
   <script>
     /**
      * Splits the input text into chunks based on the specified maximum length.
-     * The splitting prefers sentence boundaries within a 20-character buffer.
-     * If no suitable sentence boundary is found, it breaks at the nearest word boundary.
-     * 
-     * @param {string} text - The input text to be split.
-     * @param {number} maxLen - The maximum length of each chunk.
-     * @returns {string[]} An array of text chunks.
+     * We trim and collapse extra whitespace first to avoid floating spaces/line-breaks.
+     * The splitting also prefers sentence boundaries within a 20-character buffer.
      */
-    function splitText(text, maxLen) {
+    function splitText(rawText, maxLen) {
+      // Collapse extra whitespace and remove leading/trailing spaces:
+      let text = rawText.replace(/\s+/g, ' ').trim();
+      
       const chunks = [];
       let startIndex = 0;
       const textLength = text.length;
@@ -292,14 +298,14 @@
           break;
         }
 
-        // Prepare a slice that extends maxLen by the buffer to check for sentence boundaries
+        // Prepare a slice that extends maxLen by the buffer
         let slice = text.substring(startIndex, startIndex + maxLen + buffer);
         let lowerBound = Math.max(maxLen - buffer, 0);
 
         // Search for a sentence-ending punctuation within [maxLen-buffer, maxLen]
         let sentenceBoundary = -1;
         for (let i = lowerBound; i < maxLen && i < slice.length; i++) {
-          if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') && 
+          if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') &&
               (i + 1 === slice.length || slice[i + 1] === ' ')) {
             sentenceBoundary = i + 1;
           }
@@ -307,10 +313,10 @@
 
         let breakIndex;
         if (sentenceBoundary !== -1) {
-          // Prefer sentence break if found within the desired window
+          // Prefer sentence break if found
           breakIndex = sentenceBoundary;
         } else {
-          // Otherwise, fill up to maxLen by breaking at a word boundary
+          // Otherwise break at a word boundary
           let wordBoundary = slice.lastIndexOf(' ', maxLen);
           if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
             breakIndex = wordBoundary;
@@ -328,13 +334,10 @@
 
     /**
      * Calculates statistics for a given text.
-     * 
-     * @param {string} text - The text to calculate statistics for.
-     * @returns {object} An object containing character, word, and sentence counts.
      */
     function calculateStats(text) {
       const characters = text.length;
-      // Match words using regex: sequences of non-space characters
+      // Match words by sequences of non-space characters
       const words = text.match(/\b\w+\b/g);
       const wordCount = words ? words.length : 0;
       // Match sentences ending with ., !, or ?
@@ -350,24 +353,27 @@
 
     /**
      * Displays statistics in a specified element.
-     * 
-     * @param {HTMLElement} element - The element to display statistics in.
-     * @param {object} stats - The statistics object containing characters, words, and sentences.
      */
     function displayStats(element, stats) {
       element.innerHTML = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
     }
 
     /**
-     * Handles the splitting of text when a predefined platform button is clicked.
-     * 
-     * @param {Event} event - The click event.
+     * Generic handler for splitting text based on the button's data-length.
      */
     function handleSplit(event) {
       const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
+      splitAndDisplayChunks(maxLen);
+    }
+
+    /**
+     * Splits the text and displays it in the #results div.
+     */
+    function splitAndDisplayChunks(maxLen) {
       const sourceText = document.getElementById('sourceText').value;
       const resultsDiv = document.getElementById('results');
       const inputError = document.getElementById('inputError');
+
       resultsDiv.innerHTML = ''; // Clear previous results
       inputError.innerHTML = ''; // Clear previous errors
 
@@ -381,21 +387,20 @@
     }
 
     /**
-     * Displays the chunks in the results section as connected text areas with statistics and copy buttons.
-     * Adds or removes the 'has-threads' CSS class to toggle the vertical line.
-     * 
-     * @param {string[]} chunks - The array of text chunks to display.
+     * Displays the chunks. Creates a .threadWrapper so the vertical line
+     * lines up exactly with the chunk containers.
      */
     function displayChunks(chunks) {
       const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = ''; // Clear previous results
+      resultsDiv.innerHTML = '';
 
-      // Toggle vertical line only if we have threads
-      if (chunks.length > 0) {
-        resultsDiv.classList.add('has-threads');
-      } else {
-        resultsDiv.classList.remove('has-threads');
-      }
+      if (chunks.length === 0) return;
+
+      // 1) Create a wrapper that will hold all chunk containers.
+      //    This wrapper has the vertical line as ::before,
+      //    set to height: 100%, so it ends exactly after the last chunk container.
+      const threadWrapper = document.createElement('div');
+      threadWrapper.className = 'threadWrapper';
 
       chunks.forEach((chunk, index) => {
         const container = document.createElement('div');
@@ -406,23 +411,21 @@
         textArea.value = chunk;
         textArea.title = `Chunk ${index + 1}`;
 
-        // Calculate and display statistics for the chunk
+        // Calculate and display stats
         const stats = calculateStats(chunk);
         const statsDiv = document.createElement('div');
         statsDiv.className = 'stats';
         statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
 
-        // Create copy button
+        // Copy button
         const copyButton = document.createElement('button');
         copyButton.className = 'copyButton';
         copyButton.textContent = 'Copy';
-
-        // Add event listener to copy button
         copyButton.addEventListener('click', () => {
           copyToClipboard(chunk, copyButton);
         });
 
-        // Create info row
+        // Info row
         const infoRow = document.createElement('div');
         infoRow.className = 'chunkInfo';
         infoRow.appendChild(statsDiv);
@@ -430,24 +433,23 @@
 
         container.appendChild(textArea);
         container.appendChild(infoRow);
-        resultsDiv.appendChild(container);
+
+        threadWrapper.appendChild(container);
       });
+
+      // 2) Append the wrapper to results.
+      resultsDiv.appendChild(threadWrapper);
     }
 
     /**
      * Copies the provided text to the clipboard and provides visual feedback.
-     * 
-     * @param {string} text - The text to copy.
-     * @param {HTMLElement} button - The copy button element to provide feedback.
      */
     function copyToClipboard(text, button) {
       navigator.clipboard.writeText(text).then(() => {
-        // Change button text to indicate success
         button.textContent = 'Copied!';
         button.classList.add('success');
         button.disabled = true;
 
-        // Revert back after 2 seconds
         setTimeout(() => {
           button.textContent = 'Copy';
           button.classList.remove('success');
@@ -459,52 +461,42 @@
     }
 
     /**
-     * Handles the splitting of text when the custom size button is clicked.
+     * Handler for custom size splits.
      */
     function handleCustomSplit() {
       const customInput = document.getElementById('customLength');
       const customLen = parseInt(customInput.value, 10);
-      const sourceText = document.getElementById('sourceText').value;
-      const resultsDiv = document.getElementById('results');
       const inputError = document.getElementById('inputError');
-      resultsDiv.innerHTML = ''; // Clear previous results
-      inputError.innerHTML = ''; // Clear previous errors
 
-      if (!sourceText.trim()) {
-        inputError.textContent = 'Please enter some text to split.';
-        return;
-      }
+      inputError.innerHTML = '';
 
       if (isNaN(customLen) || customLen <= 0) {
         inputError.textContent = 'Please enter a valid positive number for custom size.';
         return;
       }
-
-      const chunks = splitText(sourceText, customLen);
-      displayChunks(chunks);
+      splitAndDisplayChunks(customLen);
     }
 
     /**
-     * Updates and displays statistics for the input text.
+     * Updates and displays statistics for the input text as the user types.
      */
     function updateInputStats() {
       const sourceText = document.getElementById('sourceText').value;
       const statsDiv = document.getElementById('inputStats');
       const stats = calculateStats(sourceText);
       displayStats(statsDiv, stats);
-      adjustFontSize(); // Adjust font size based on text length
+      adjustFontSize();
     }
 
     /**
-     * Adjusts the font size of the input textarea based on the length of the text.
-     * The font size increases up to a maximum of 24px.
+     * Adjusts font size of the textarea based on text length, up to 24px max.
      */
     function adjustFontSize() {
       const textArea = document.getElementById('sourceText');
       const textLength = textArea.value.length;
-      const minFontSize = 14; // Minimum font size in px
-      const maxFontSize = 24; // Maximum font size in px
-      const incrementPerChar = 0.05; // Font size increases by 0.05px per character
+      const minFontSize = 14;
+      const maxFontSize = 24;
+      const incrementPerChar = 0.05;
 
       let newFontSize = minFontSize + (textLength * incrementPerChar);
       if (newFontSize > maxFontSize) {
@@ -514,7 +506,7 @@
     }
 
     /**
-     * Updates the custom button label based on the input value.
+     * Updates the custom button label as the user enters a custom length.
      */
     function updateCustomButtonLabel() {
       const customInput = document.getElementById('customLength');
@@ -528,18 +520,12 @@
       }
     }
 
-    // Attach event listeners to predefined platform buttons
+    // Attach event listeners
     document.querySelectorAll('.button-group button[data-length]').forEach(button => {
       button.addEventListener('click', handleSplit);
     });
-
-    // Attach event listener to custom size button
     document.getElementById('customButton').addEventListener('click', handleCustomSplit);
-
-    // Attach event listener to input textarea to update stats on input
     document.getElementById('sourceText').addEventListener('input', updateInputStats);
-
-    // Attach event listener to custom length input to update button label on input
     document.getElementById('customLength').addEventListener('input', updateCustomButtonLabel);
   </script>
 
