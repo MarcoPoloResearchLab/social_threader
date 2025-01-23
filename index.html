@@ -133,18 +133,42 @@
     .lower-right-pane {
       flex: 4;
       overflow-y: auto;
-      border-top: 1px solid #ccc;
       padding-top: 10px;
+      position: relative;
     }
 
+    /* Vertical Thread Line */
+    .lower-right-pane::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 20px; /* Positioning the line relative to chunk containers */
+      width: 2px;
+      height: 100%;
+      background-color: #ccc;
+    }
+
+    /* Chunk Container Styles */
     .chunkContainer {
+      position: relative;
       display: flex;
       flex-direction: column;
-      margin-bottom: 20px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background-color: #f9f9f9;
+      margin-bottom: 40px; /* Space to accommodate the vertical line */
+      padding-left: 40px; /* Space for the vertical line and circle */
+    }
+
+    /* Circle Indicator */
+    .chunkContainer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 11px; /* Centered on the vertical line */
+      width: 18px;
+      height: 18px;
+      background-color: #fff;
+      border: 2px solid #007BFF; /* Blue border to match buttons */
+      border-radius: 50%;
+      z-index: 1;
     }
 
     .chunkContainer textarea {
@@ -209,9 +233,14 @@
         flex: none;
         height: 80%;
       }
-      .copyButton {
-        margin-top: 5px;
-        align-self: flex-end;
+      .lower-right-pane::before {
+        left: 15px; /* Adjust line position for smaller screens */
+      }
+      .chunkContainer {
+        padding-left: 35px; /* Adjust padding for smaller screens */
+      }
+      .chunkContainer::before {
+        left: 6px; /* Adjust circle position for smaller screens */
       }
     }
   </style>
