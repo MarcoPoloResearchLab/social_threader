@@ -5,26 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Page Breaker With Thread Wrapper</title>
   <style>
-    /* Reset some basic styles */
+    /* ---------------------------
+       1) Global & Reset
+    ----------------------------*/
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-
-    body, html {
+    html, body {
       height: 100%;
-      font-family: Arial, sans-serif;
+      font-family: Arial, sans-serif; /* Ensures the entire page uses Arial */
+      background-color: #fff;        /* Light background if you prefer */
+      color: #000;                   /* Ensures text is black (not greyed out) */
     }
 
-    /* Container for the entire page */
+    /* ---------------------------
+       2) Page Container
+    ----------------------------*/
     .container {
       display: flex;
       height: 100vh;
       width: 100vw;
     }
 
-    /* Left Pane Styles */
+    /* ---------------------------
+       3) Left Pane
+    ----------------------------*/
     .left-pane {
       flex: 2;
       padding: 20px;
@@ -32,11 +39,9 @@
       display: flex;
       flex-direction: column;
     }
-
     .left-pane h2 {
       margin-bottom: 10px;
     }
-
     .left-pane textarea {
       flex: 1;
       width: 100%;
@@ -45,30 +50,31 @@
       resize: none;
       border: 1px solid #ccc;
       border-radius: 4px;
+      font-family: Arial, sans-serif;     /* Keep Arial for consistency */
+      background-color: #f9f9f9;         /* Light background if desired */
+      color: #212529;                    /* Slightly off-black for text */
       transition: font-size 0.2s ease;
     }
-
     .left-pane .inputStats {
       margin-top: 10px;
       font-size: 12px;
       color: #555;
     }
-
     .left-pane .error {
       color: red;
       font-size: 12px;
       margin-top: 5px;
     }
 
-    /* Right Pane Styles */
+    /* ---------------------------
+       4) Right Pane
+    ----------------------------*/
     .right-pane {
       flex: 1;
       display: flex;
       flex-direction: column;
       padding: 20px;
     }
-
-    /* Upper Right Pane (Buttons) */
     .upper-right-pane {
       flex: 1;
       display: flex;
@@ -76,14 +82,23 @@
       gap: 10px;
       margin-bottom: 20px;
     }
-
     .button-group {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    /* Uniform Button Styles */
+    /* 
+      Make our standard buttons a fixed width so they all match.
+      Here 280px is an example; adjust as you like.
+    */
+    .button-group button {
+      width: 280px; /* same width for all platform buttons */
+    }
+
+    /* ---------------------------
+       5) Buttons & Custom Control
+    ----------------------------*/
     .button-group button,
     .custom-control button {
       padding: 10px;
@@ -91,7 +106,7 @@
       cursor: pointer;
       border: none;
       border-radius: 4px;
-      background-color: #007BFF; 
+      background-color: #007BFF;
       color: white;
       display: flex;
       align-items: center;
@@ -99,28 +114,35 @@
       transition: background-color 0.3s;
       height: 40px;
     }
-
     .button-group button:hover,
     .custom-control button:hover {
-      background-color: #0056b3;
+      background-color: #0056b3; 
     }
 
     .custom-control {
       display: flex;
       align-items: center;
       gap: 5px;
+      /* match the total width of a single big button */
+      width: 280px;
     }
-
+    /* Let the button and input share that 280px total width */
+    .custom-control button {
+      flex: 3; /* or any ratio you like */
+    }
     .custom-control input {
-      width: 80px;
+      flex: 1;
       padding: 6px;
       font-size: 14px;
       height: 28px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      text-align: center;
     }
 
-    /* Lower Right Pane (Output) */
+    /* ---------------------------
+       6) Lower Right Pane (Output)
+    ----------------------------*/
     .lower-right-pane {
       flex: 4;
       overflow-y: auto;
@@ -128,36 +150,31 @@
       position: relative;
     }
 
-    /*
-      We no longer use .lower-right-pane::before.
-      Instead, we create a .threadWrapper to precisely match
-      the total height of the chunk containers.
+    /* 
+      We wrap all chunk containers within .threadWrapper
+      that draws the vertical line as height: 100%.
     */
     .threadWrapper {
-      position: relative; /* so we can place a vertical line absolutely inside */
-      margin-bottom: 20px; /* optional spacing below the entire thread */
+      position: relative;
+      margin-bottom: 20px;
     }
-
     .threadWrapper::before {
       content: '';
       position: absolute;
       top: 0;
       left: 20px;
       width: 2px;
-      height: 100%; /* grows exactly with .threadWrapper's height */
+      height: 100%;
       background-color: #ccc;
     }
 
-    /* Chunk Container Styles */
     .chunkContainer {
       position: relative;
       display: flex;
       flex-direction: column;
-      margin-bottom: 40px; 
+      margin-bottom: 40px;
       padding-left: 40px;
     }
-
-    /* Circle Indicator */
     .chunkContainer::before {
       content: '';
       position: absolute;
@@ -170,16 +187,17 @@
       border-radius: 50%;
       z-index: 1;
     }
-
     .chunkContainer textarea {
       width: 100%;
       height: 80px;
       resize: vertical;
-      font-family: Arial, sans-serif;
+      font-family: Arial, sans-serif; 
       font-size: 14px;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      background-color: #f9f9f9;
+      color: #212529; 
       transition: font-size 0.2s ease;
     }
 
@@ -189,7 +207,6 @@
       align-items: center;
       margin-top: 10px;
     }
-
     .chunkInfo .stats {
       font-size: 12px;
       color: #555;
@@ -205,17 +222,17 @@
       font-size: 12px;
       transition: background-color 0.3s;
     }
-
     .copyButton:hover {
       background-color: #218838;
     }
-
     .copyButton.success {
-      background-color: #28a745;
+      background-color: #28a745; 
       cursor: default;
     }
 
-    /* Responsive Design */
+    /* ---------------------------
+       7) Responsive Design
+    ----------------------------*/
     @media (max-width: 800px) {
       .container {
         flex-direction: column;
@@ -241,6 +258,13 @@
       }
       .chunkContainer::before {
         left: 6px;
+      }
+      /* Make the big buttons narrower for mobile */
+      .button-group button {
+        width: 100%;
+      }
+      .custom-control {
+        width: 100%;
       }
     }
   </style>
@@ -279,30 +303,24 @@
   <script>
     /**
      * Splits the input text into chunks based on the specified maximum length.
-     * We trim and collapse extra whitespace first to avoid floating spaces/line-breaks.
-     * The splitting also prefers sentence boundaries within a 20-character buffer.
+     * We trim and collapse extra whitespace first to avoid floating spaces or line breaks.
      */
     function splitText(rawText, maxLen) {
-      // Collapse extra whitespace and remove leading/trailing spaces:
       let text = rawText.replace(/\s+/g, ' ').trim();
-      
       const chunks = [];
       let startIndex = 0;
       const textLength = text.length;
       const buffer = 20;
 
       while (startIndex < textLength) {
-        // If remaining text is shorter than maxLen, push the remainder
         if (startIndex + maxLen >= textLength) {
           chunks.push(text.substring(startIndex).trim());
           break;
         }
 
-        // Prepare a slice that extends maxLen by the buffer
         let slice = text.substring(startIndex, startIndex + maxLen + buffer);
         let lowerBound = Math.max(maxLen - buffer, 0);
 
-        // Search for a sentence-ending punctuation within [maxLen-buffer, maxLen]
         let sentenceBoundary = -1;
         for (let i = lowerBound; i < maxLen && i < slice.length; i++) {
           if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') &&
@@ -313,10 +331,8 @@
 
         let breakIndex;
         if (sentenceBoundary !== -1) {
-          // Prefer sentence break if found
           breakIndex = sentenceBoundary;
         } else {
-          // Otherwise break at a word boundary
           let wordBoundary = slice.lastIndexOf(' ', maxLen);
           if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
             breakIndex = wordBoundary;
@@ -337,18 +353,11 @@
      */
     function calculateStats(text) {
       const characters = text.length;
-      // Match words by sequences of non-space characters
       const words = text.match(/\b\w+\b/g);
       const wordCount = words ? words.length : 0;
-      // Match sentences ending with ., !, or ?
       const sentences = text.match(/[^.!?]+[.!?]+/g);
       const sentenceCount = sentences ? sentences.length : 0;
-
-      return {
-        characters,
-        words: wordCount,
-        sentences: sentenceCount
-      };
+      return { characters, words: wordCount, sentences: sentenceCount };
     }
 
     /**
@@ -359,7 +368,7 @@
     }
 
     /**
-     * Generic handler for splitting text based on the button's data-length.
+     * Handler for the three predefined platform buttons.
      */
     function handleSplit(event) {
       const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
@@ -367,15 +376,15 @@
     }
 
     /**
-     * Splits the text and displays it in the #results div.
+     * Splits and displays chunks in the #results div.
      */
     function splitAndDisplayChunks(maxLen) {
       const sourceText = document.getElementById('sourceText').value;
       const resultsDiv = document.getElementById('results');
       const inputError = document.getElementById('inputError');
 
-      resultsDiv.innerHTML = ''; // Clear previous results
-      inputError.innerHTML = ''; // Clear previous errors
+      resultsDiv.innerHTML = '';
+      inputError.innerHTML = '';
 
       if (!sourceText.trim()) {
         inputError.textContent = 'Please enter some text to split.';
@@ -387,8 +396,8 @@
     }
 
     /**
-     * Displays the chunks. Creates a .threadWrapper so the vertical line
-     * lines up exactly with the chunk containers.
+     * Displays the chunks inside a threadWrapper so the vertical line
+     * precisely matches the total height. 
      */
     function displayChunks(chunks) {
       const resultsDiv = document.getElementById('results');
@@ -396,9 +405,6 @@
 
       if (chunks.length === 0) return;
 
-      // 1) Create a wrapper that will hold all chunk containers.
-      //    This wrapper has the vertical line as ::before,
-      //    set to height: 100%, so it ends exactly after the last chunk container.
       const threadWrapper = document.createElement('div');
       threadWrapper.className = 'threadWrapper';
 
@@ -411,13 +417,11 @@
         textArea.value = chunk;
         textArea.title = `Chunk ${index + 1}`;
 
-        // Calculate and display stats
         const stats = calculateStats(chunk);
         const statsDiv = document.createElement('div');
         statsDiv.className = 'stats';
         statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
 
-        // Copy button
         const copyButton = document.createElement('button');
         copyButton.className = 'copyButton';
         copyButton.textContent = 'Copy';
@@ -425,7 +429,6 @@
           copyToClipboard(chunk, copyButton);
         });
 
-        // Info row
         const infoRow = document.createElement('div');
         infoRow.className = 'chunkInfo';
         infoRow.appendChild(statsDiv);
@@ -433,16 +436,14 @@
 
         container.appendChild(textArea);
         container.appendChild(infoRow);
-
         threadWrapper.appendChild(container);
       });
 
-      // 2) Append the wrapper to results.
       resultsDiv.appendChild(threadWrapper);
     }
 
     /**
-     * Copies the provided text to the clipboard and provides visual feedback.
+     * Copies text to clipboard with a little success feedback.
      */
     function copyToClipboard(text, button) {
       navigator.clipboard.writeText(text).then(() => {
@@ -461,13 +462,12 @@
     }
 
     /**
-     * Handler for custom size splits.
+     * Handler for the custom size button.
      */
     function handleCustomSplit() {
       const customInput = document.getElementById('customLength');
       const customLen = parseInt(customInput.value, 10);
       const inputError = document.getElementById('inputError');
-
       inputError.innerHTML = '';
 
       if (isNaN(customLen) || customLen <= 0) {
@@ -478,7 +478,7 @@
     }
 
     /**
-     * Updates and displays statistics for the input text as the user types.
+     * Updates the input-stats area as user types.
      */
     function updateInputStats() {
       const sourceText = document.getElementById('sourceText').value;
@@ -489,7 +489,7 @@
     }
 
     /**
-     * Adjusts font size of the textarea based on text length, up to 24px max.
+     * Dynamically adjusts font size in the main textarea, up to a max.
      */
     function adjustFontSize() {
       const textArea = document.getElementById('sourceText');
@@ -506,7 +506,7 @@
     }
 
     /**
-     * Updates the custom button label as the user enters a custom length.
+     * Updates the custom button label to show the user-chosen size.
      */
     function updateCustomButtonLabel() {
       const customInput = document.getElementById('customLength');
@@ -520,14 +520,20 @@
       }
     }
 
+    // ---------------------------------
     // Attach event listeners
+    // ---------------------------------
+
+    // Platform buttons
     document.querySelectorAll('.button-group button[data-length]').forEach(button => {
       button.addEventListener('click', handleSplit);
     });
+    // Custom size button
     document.getElementById('customButton').addEventListener('click', handleCustomSplit);
+    // Stats & font resizing as user types
     document.getElementById('sourceText').addEventListener('input', updateInputStats);
+    // Update the custom button label as user types in the custom length
     document.getElementById('customLength').addEventListener('input', updateCustomButtonLabel);
   </script>
-
 </body>
 </html>
