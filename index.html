@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Page Breaker With Flexible Layout</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page Breaker With Updated Styling</title>
   <style>
     /* ---------------------------
        1) Global & Reset
@@ -15,7 +15,7 @@
     }
     html, body {
       height: 100%;
-      font-family: Arial, sans-serif; /* Keep everything in Arial/sans-serif */
+      font-family: Arial, sans-serif;
       background-color: #fff;
       color: #000;
     }
@@ -30,9 +30,8 @@
     }
 
     /* 
-      Make the left pane take 1 share of flex,
-      the right pane 2 shares => left is 1/3 total,
-      right is 2/3 total.
+      Left pane => flex: 2  (2/3 width)
+      Right pane => flex: 1 (1/3 width)
     */
     .left-pane {
       flex: 2;
@@ -86,56 +85,57 @@
       flex-direction: column;
       gap: 10px;
       margin-bottom: 20px;
-      align-items: center;  /* center buttons horizontally */
+      align-items: center; /* center them horizontally */
     }
 
     /* 
-      We want each set of buttons
-      to be ~90% of the pane's width.
+      Buttons share 90% width of the parent container 
+      (with optional max-width to avoid ultra-wide on big screens).
     */
     .button-group, 
     .custom-control {
       width: 90%;
-      max-width: 600px; /* optional max if you want narrower on large screens */
+      max-width: 600px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    /* 
-      For the three fixed-size splits, 
-      they can be full width inside .button-group
-    */
+    /* ---------------------------
+       5) Unify All Buttons
+         (Blue with hover -> darker blue)
+    ----------------------------*/
+    button {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      height: 40px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    /* Make them fill the container’s width except for custom row’s layout */
     .button-group button {
       width: 100%;
     }
 
-    /* 
-      For our custom size row: a button plus an input in one row.
-      We'll keep them side by side.
-    */
+    /* Custom row: put button and input side-by-side */
     .custom-control {
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
     }
     .custom-control button {
-      border: none;
-      border-radius: 4px;
-      background-color: #007BFF;
-      color: white;
-      font-size: 14px;
-      height: 40px;
-      flex: 1; /* Let the button expand */
-      margin-right: 10px; /* spacing between button & input */
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    .custom-control button:hover {
-      background-color: #0056b3;
+      margin-right: 10px;
+      flex: 1;
     }
     .custom-control input {
-      width: 80px;        /* or flex: 1 if you prefer it to stretch */
+      width: 80px;
       height: 40px;
       font-size: 14px;
       padding: 6px;
@@ -145,7 +145,7 @@
     }
 
     /* ---------------------------
-       5) Lower Right Pane: Output
+       6) Lower Right Pane: Output
     ----------------------------*/
     .lower-right-pane {
       flex: 4;
@@ -217,14 +217,7 @@
     }
 
     .copyButton {
-      background: #28a745;
-      border: none;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: background-color 0.3s;
+      background: #28a745; /* green copy button */
     }
     .copyButton:hover {
       background-color: #218838;
@@ -235,7 +228,7 @@
     }
 
     /* ---------------------------
-       6) Responsive Design
+       7) Responsive Design
     ----------------------------*/
     @media (max-width: 800px) {
       .container {
@@ -247,11 +240,9 @@
         height: 50vh;
       }
       .upper-right-pane {
-        flex: none;
         height: 20%;
       }
       .lower-right-pane {
-        flex: none;
         height: 80%;
       }
       .threadWrapper::before {
@@ -269,7 +260,7 @@
 <body>
 
   <div class="container">
-    <!-- Left Pane: Text Input -->
+    <!-- Left Pane: Text Input (2/3) -->
     <div class="left-pane">
       <h2>Page Breaker</h2>
       <textarea id="sourceText" placeholder="Enter your text here..." rows="10"></textarea>
@@ -277,7 +268,7 @@
       <div id="inputError" class="error"></div>
     </div>
 
-    <!-- Right Pane: Buttons and Output -->
+    <!-- Right Pane: Buttons & Output (1/3) -->
     <div class="right-pane">
       <!-- Upper Right Pane: Buttons -->
       <div class="upper-right-pane">
@@ -300,7 +291,7 @@
   <script>
     /**
      * Splits the input text into chunks based on the specified maximum length.
-     * We trim and collapse whitespace to avoid stray newlines.
+     * We trim and collapse whitespace to avoid stray newlines and spaces.
      */
     function splitText(rawText, maxLen) {
       let text = rawText.replace(/\s+/g, ' ').trim();
@@ -314,6 +305,7 @@
           chunks.push(text.substring(startIndex).trim());
           break;
         }
+
         let slice = text.substring(startIndex, startIndex + maxLen + buffer);
         let lowerBound = Math.max(maxLen - buffer, 0);
 
@@ -345,7 +337,7 @@
     }
 
     /**
-     * Calculates minimal stats for a given string.
+     * Calculates simple text stats (characters, words, sentences).
      */
     function calculateStats(text) {
       const characters = text.length;
@@ -357,14 +349,14 @@
     }
 
     /**
-     * Displays stats in a target element.
+     * Displays stats in the given element.
      */
     function displayStats(element, stats) {
       element.innerHTML = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
     }
 
     /**
-     * Common handler for the platform buttons.
+     * Handler for "Break into..." buttons.
      */
     function handleSplit(event) {
       const maxLen = parseInt(event.target.getAttribute('data-length'), 10);
@@ -372,7 +364,7 @@
     }
 
     /**
-     * Splits and displays chunks in the results area.
+     * Splits the text, then displays the resulting chunks.
      */
     function splitAndDisplayChunks(maxLen) {
       const sourceText = document.getElementById('sourceText').value;
@@ -392,7 +384,7 @@
     }
 
     /**
-     * Renders each chunk with stats and a copy button inside a .threadWrapper.
+     * Renders each chunk inside a threadWrapper with stats and a copy button.
      */
     function displayChunks(chunks) {
       const resultsDiv = document.getElementById('results');
@@ -438,7 +430,7 @@
     }
 
     /**
-     * Handles copy-to-clipboard with a brief success message.
+     * Copies text to clipboard, providing success feedback on the copy button.
      */
     function copyToClipboard(text, button) {
       navigator.clipboard.writeText(text).then(() => {
@@ -457,7 +449,7 @@
     }
 
     /**
-     * Custom-size button logic.
+     * Handles the "Break with Custom Size" button click.
      */
     function handleCustomSplit() {
       const customInput = document.getElementById('customLength');
@@ -473,7 +465,7 @@
     }
 
     /**
-     * Live-update stats while typing in the main textarea.
+     * Live updates stats as the user types in the main textarea.
      */
     function updateInputStats() {
       const sourceText = document.getElementById('sourceText').value;
@@ -484,7 +476,7 @@
     }
 
     /**
-     * Adjusts font size of main textarea up to a max.
+     * Adjusts the font size in the main textarea up to a maximum.
      */
     function adjustFontSize() {
       const textArea = document.getElementById('sourceText');
@@ -501,7 +493,7 @@
     }
 
     /**
-     * Updates the custom button's label based on numeric input.
+     * Updates the custom button label according to user input.
      */
     function updateCustomButtonLabel() {
       const customInput = document.getElementById('customLength');
@@ -515,7 +507,9 @@
       }
     }
 
+    // -------------------
     // Attach event listeners
+    // -------------------
     document.querySelectorAll('.button-group button[data-length]').forEach(button => {
       button.addEventListener('click', handleSplit);
     });
