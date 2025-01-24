@@ -237,19 +237,45 @@
     ----------------------------*/
     @media (max-width: 800px) {
       .container {
+        /* Stack elements vertically instead of side by side */
         flex-direction: column;
+    
+        /* Remove or override any fixed heights so the page can scroll naturally */
+        height: auto;
+        overflow-y: auto;
       }
-      .left-pane, .right-pane {
-        flex: none;
+    
+      /* Remove forced heights on each pane and let them size naturally */
+      .left-pane,
+      .right-pane {
         width: 100%;
-        height: 50vh;
+        height: auto !important; /* override 50vh */
+        border-right: none; /* no vertical divider */
       }
+    
+      /* If you want a small separating border between input area and buttons */
+      .left-pane {
+        border-bottom: 1px solid #ccc;
+        order: 1; /* Make sure this is on top (input first) */
+        padding-bottom: 20px; /* a little breathing room */
+      }
+    
+      /* The button group goes second */
       .upper-right-pane {
-        height: 20%;
+        order: 2;
+        height: auto !important;
+        width: 100%;
       }
+    
+      /* The chunk results go last */
       .lower-right-pane {
-        height: 80%;
+        order: 3;
+        height: auto !important;
+        width: 100%;
+        overflow-y: auto; /* Scroll through your chunks if they get long */
       }
+    
+      /* Optional: Adjust the chunk arrows for narrower screens */
       .threadWrapper::before {
         left: 15px;
       }
