@@ -237,45 +237,38 @@
     ----------------------------*/
     @media (max-width: 800px) {
       .container {
-        /* Stack elements vertically instead of side by side */
         flex-direction: column;
-    
-        /* Remove or override any fixed heights so the page can scroll naturally */
         height: auto;
         overflow-y: auto;
       }
-    
-      /* Remove forced heights on each pane and let them size naturally */
-      .left-pane,
+
+      /* Put .left-pane on top by giving it order:0 */
+      .left-pane {
+        border-right: none;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 20px;
+        order: 0; 
+      }
+
+      /* .right-pane will appear below left-pane because it has the default order of 0 as well,
+         but it is second in the DOM, so it gets stacked below left-pane automatically. */
       .right-pane {
         width: 100%;
-        height: auto !important; /* override 50vh */
-        border-right: none; /* no vertical divider */
+        height: auto;
       }
-    
-      /* If you want a small separating border between input area and buttons */
-      .left-pane {
-        border-bottom: 1px solid #ccc;
-        order: 1; /* Make sure this is on top (input first) */
-        padding-bottom: 20px; /* a little breathing room */
-      }
-    
-      /* The button group goes second */
+
       .upper-right-pane {
-        order: 2;
-        height: auto !important;
+        order: 1;
         width: 100%;
       }
-    
-      /* The chunk results go last */
+
       .lower-right-pane {
-        order: 3;
-        height: auto !important;
+        order: 2;
         width: 100%;
-        overflow-y: auto; /* Scroll through your chunks if they get long */
+        overflow-y: auto;
       }
-    
-      /* Optional: Adjust the chunk arrows for narrower screens */
+
+      /* Narrower arrow lines for the chunk containers */
       .threadWrapper::before {
         left: 15px;
       }
