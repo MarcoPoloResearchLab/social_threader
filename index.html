@@ -185,10 +185,15 @@
       border-radius: 50%;
       z-index: 1;
     }
+
+    /* 
+      BUGFIX: Remove fixed height so the chunk textareas 
+      can grow with content 
+    */
     .chunkContainer textarea {
       width: 100%;
-      height: 80px;
-      resize: vertical;
+      display: block;
+      resize: none; /* user can't resize manually, we'll do it automatically */
       font-family: Arial, sans-serif;
       font-size: 14px;
       padding: 10px;
@@ -197,6 +202,8 @@
       background-color: #f9f9f9;
       color: #212529;
       transition: font-size 0.2s ease;
+      overflow: hidden; /* ensures no scrollbar while resizing */
+      /* no fixed height, let JS auto-resize after setting value */
     }
 
     .chunkInfo {
@@ -247,11 +254,9 @@
         border-right: none;
         border-bottom: 1px solid #ccc;
         padding-bottom: 20px;
-        order: 0; 
+        order: 0; /* ensure it's on top in mobile */
       }
 
-      /* .right-pane will appear below left-pane because it has the default order of 0 as well,
-         but it is second in the DOM, so it gets stacked below left-pane automatically. */
       .right-pane {
         width: 100%;
         height: auto;
@@ -268,7 +273,7 @@
         overflow-y: auto;
       }
 
-      /* Narrower arrow lines for the chunk containers */
+      /* Adjust arrow position in narrower screens */
       .threadWrapper::before {
         left: 15px;
       }
