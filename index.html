@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Threader lets you break long text into bite-sized threads for social media. Perfect for splitting text into manageable chunks for Threads, Bluesky, X, or any short form content." />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Threader lets you break long text into bite-sized threads for social media. Perfect for splitting text into manageable chunks for Threads, Bluesky, X, or any short-form platform." />
   <meta name="keywords" content="text chunker, thread splitter, social media text, sentence chunking, Twitter threads, Bluesky posts, content tool, copywriting tool" />
   <title>Social Threader</title>
   <style>
-    /* ---------------------------
-       1) Global & Reset
-    ----------------------------*/
+    /* 1) Global Reset */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -22,15 +20,12 @@
       color: #000;
     }
 
-    /* ---------------------------
-       2) Page Container
-    ----------------------------*/
+    /* 2) Main Layout */
     .container {
       display: flex;
       height: 100vh;
       width: 100vw;
     }
-
     .left-pane {
       flex: 2;
       padding: 20px;
@@ -45,9 +40,7 @@
       padding: 20px;
     }
 
-    /* ---------------------------
-       3) Left Pane
-    ----------------------------*/
+    /* 3) Left Pane */
     .left-pane h2 {
       margin-bottom: 10px;
     }
@@ -74,9 +67,7 @@
       margin-top: 5px;
     }
 
-    /* ---------------------------
-       4) Right Pane: Buttons & Output
-    ----------------------------*/
+    /* 4) Right Pane & Controls */
     .upper-right-pane {
       flex: 1;
       display: flex;
@@ -95,7 +86,7 @@
     }
     button {
       background-color: #007BFF;
-      color: white;
+      color: #fff;
       padding: 10px;
       font-size: 14px;
       border: none;
@@ -134,17 +125,21 @@
       max-width: 600px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
       margin-top: 5px;
+      justify-content: space-between;
+    }
+    .toggle-sentence-break .toggle-options {
+      display: flex;
+      gap: 12px;
+      align-items: center;
     }
     .toggle-sentence-break label {
       font-size: 14px;
       user-select: none;
     }
 
-    /* ---------------------------
-       5) Lower Right Pane: Output
-    ----------------------------*/
+    /* 5) Output Pane */
     .lower-right-pane {
       flex: 4;
       overflow-y: auto;
@@ -164,7 +159,6 @@
       height: 100%;
       background-color: #ccc;
     }
-
     .chunkContainer {
       position: relative;
       display: flex;
@@ -199,7 +193,6 @@
       min-height: 40px;
       overflow-y: hidden;
     }
-
     .chunkInfo {
       display: flex;
       justify-content: space-between;
@@ -221,7 +214,6 @@
       background-color: #28a745;
       cursor: default;
     }
-
     .chunkContainer.copied::before {
       content: attr(data-copied-order);
       background-color: #28a745;
@@ -232,9 +224,7 @@
       font-weight: bold;
     }
 
-    /* ---------------------------
-       6) Responsive Design
-    ----------------------------*/
+    /* 6) Responsive Layout */
     @media (max-width: 800px) {
       .container {
         flex-direction: column;
@@ -274,30 +264,48 @@
 </head>
 <body>
   <div class="container">
+    <!-- Left pane -->
     <div class="left-pane">
       <h2>Social Threader</h2>
-      <p>With Social Threader, you can split your text into smaller chunks ideal for Twitter/X, Bluesky, Threads, or any platform that limits character count. Easily create threads, track word counts, and copy each chunk with a single click.</p>
-      <textarea id="sourceText" spellcheck="true" placeholder="Enter your text here..." rows="10"></textarea>
+      <p>
+        With Social Threader, you can split your text into smaller chunks ideal 
+        for Twitter/X, Bluesky, Threads, or any platform that limits character count. 
+        Easily create threads, track word counts, and copy each chunk with a single click.
+      </p>
+      <textarea id="sourceText" spellcheck="true" placeholder="Enter text here..." rows="10"></textarea>
       <div id="inputStats" class="inputStats"></div>
       <div id="inputError" class="error"></div>
     </div>
 
+    <!-- Right pane -->
     <div class="right-pane">
       <div class="upper-right-pane">
+        <!-- Preset chunk sizes -->
         <div class="button-group">
           <button data-length="512">Break into Threads (512)</button>
           <button data-length="300">Break into Bluesky (300)</button>
           <button data-length="280">Break into X (280)</button>
         </div>
+
+        <!-- Custom chunk size -->
         <div class="custom-control">
           <button id="customButton">Break with Custom Size</button>
           <input type="number" id="customLength" placeholder="Size" min="1" />
         </div>
+
+        <!-- Sentence break + enumeration toggles -->
         <div class="toggle-sentence-break">
-          <input type="checkbox" id="sentenceToggle" />
-          <label for="sentenceToggle">Break on full sentences (best effort)</label>
+          <div class="toggle-options">
+            <input type="checkbox" id="sentenceToggle" />
+            <label for="sentenceToggle">Full sentences</label>
+          </div>
+          <div class="toggle-options">
+            <input type="checkbox" id="enumerationToggle" />
+            <label for="enumerationToggle">Enumerate posts</label>
+          </div>
         </div>
       </div>
+      <!-- Results go here -->
       <div class="lower-right-pane" id="results"></div>
     </div>
   </div>
@@ -307,17 +315,26 @@
     let autoRechunk = false;
     let breakOnSentences = false;
     let lastChunkMethod = { type: 'length', value: 280 };
+    let enumerateChunks = false;
 
+    /*
+      Auto-expand a textarea based on its scrollHeight.
+    */
     function autoExpandTextarea(textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
+      textarea.style.height = textarea.scrollHeight + 'px';
     }
 
+    /*
+      Splits text by length, with a "fuzzy" sentence boundary if possible.
+      (Enumeration not considered yet.)
+    */
     function splitTextByLength(rawText, maxLen) {
-      let text = rawText.replace(/\s+/g, ' ').trim();
+      const text = rawText.replace(/\s+/g, ' ').trim();
       const chunks = [];
       let startIndex = 0;
       const textLength = text.length;
+      // Additional buffer for clean breaks on punctuation
       const buffer = 20;
 
       while (startIndex < textLength) {
@@ -325,38 +342,72 @@
           chunks.push(text.substring(startIndex).trim());
           break;
         }
-        let slice = text.substring(startIndex, startIndex + maxLen + buffer);
-        let lowerBound = Math.max(maxLen - buffer, 0);
+        const slice = text.substring(startIndex, startIndex + maxLen + buffer);
+        const lowerBound = Math.max(maxLen - buffer, 0);
 
-        let sentenceBoundary = -1;
+        let boundary = -1;
         for (let i = lowerBound; i < maxLen && i < slice.length; i++) {
           if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') &&
               (i + 1 === slice.length || slice[i + 1] === ' ')) {
-            sentenceBoundary = i + 1;
+            boundary = i + 1;
           }
         }
 
-        let breakIndex = sentenceBoundary !== -1 ? sentenceBoundary : 
-          (slice.lastIndexOf(' ', maxLen) >= maxLen * 0.7 ? 
-           slice.lastIndexOf(' ', maxLen) : maxLen);
-
+        let breakIndex;
+        if (boundary !== -1) {
+          breakIndex = boundary;
+        } else {
+          const wordBoundary = slice.lastIndexOf(' ', maxLen);
+          if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
+            breakIndex = wordBoundary;
+          } else {
+            breakIndex = maxLen;
+          }
+        }
         chunks.push(text.substring(startIndex, startIndex + breakIndex).trim());
         startIndex += breakIndex;
       }
+
       return chunks;
     }
 
+    /*
+      Splits text by sentences, then ensures no chunk exceeds maxLen.
+      (Enumeration not considered yet.)
+    */
     function splitTextBySentencesWithMaxLen(rawText, maxLen) {
-      let text = rawText.trim();
-      let rawSentences = text.match(/[^.!?]+[.!?]+(\s|$)?|[^.!?]+$/g) || [];
+      const text = rawText.trim();
+      const rawSentences = text.match(/[^.!?]+[.!?]+(\s|$)?|[^.!?]+$/g) || [];
       const allChunks = [];
       let currentChunk = '';
 
-      function tryAppend(sentence) {
-        if (!currentChunk) {
-          currentChunk = sentence;
+      for (let sentence of rawSentences) {
+        sentence = sentence.trim();
+        if (!sentence) continue;
+
+        if (sentence.length > maxLen) {
+          // If the sentence itself is too large, chunk it by length
+          if (currentChunk) {
+            allChunks.push(currentChunk.trim());
+            currentChunk = '';
+          }
+          const parts = splitTextByLength(sentence, maxLen);
+          for (const part of parts) {
+            if (currentChunk && (currentChunk.length + 1 + part.length > maxLen)) {
+              allChunks.push(currentChunk.trim());
+              currentChunk = '';
+            }
+            currentChunk = currentChunk ? currentChunk + ' ' + part : part;
+            if (currentChunk.length >= maxLen) {
+              allChunks.push(currentChunk.trim());
+              currentChunk = '';
+            }
+          }
         } else {
-          if (currentChunk.length + 1 + sentence.length <= maxLen) {
+          // If the sentence fits into maxLen, try to append or push new chunk
+          if (!currentChunk) {
+            currentChunk = sentence;
+          } else if (currentChunk.length + 1 + sentence.length <= maxLen) {
             currentChunk += ' ' + sentence;
           } else {
             allChunks.push(currentChunk.trim());
@@ -365,43 +416,93 @@
         }
       }
 
-      function chunkLongSentence(sentence) {
-        const parts = splitTextByLength(sentence, maxLen);
-        parts.forEach(part => {
-          if (currentChunk && (currentChunk.length + 1 + part.length > maxLen)) {
-            allChunks.push(currentChunk.trim());
-            currentChunk = '';
-          }
-          currentChunk = currentChunk ? currentChunk + ' ' + part : part;
-          if (currentChunk.length >= maxLen) {
-            allChunks.push(currentChunk.trim());
-            currentChunk = '';
-          }
-        });
-      }
-
-      rawSentences.forEach(sentence => {
-        sentence = sentence.trim();
-        if (!sentence) return;
-        if (sentence.length > maxLen) {
-          if (currentChunk) allChunks.push(currentChunk.trim());
-          currentChunk = '';
-          chunkLongSentence(sentence);
-        } else {
-          tryAppend(sentence);
-        }
-      });
-
       if (currentChunk) allChunks.push(currentChunk.trim());
       return allChunks;
     }
 
-    function getChunks(rawText, maxLen) {
-      return breakOnSentences ? 
-        splitTextBySentencesWithMaxLen(rawText, maxLen) : 
-        splitTextByLength(rawText, maxLen);
+    /*
+      Get chunks ignoring fraction first (just normal length or sentence break).
+    */
+    function getChunksWithoutFraction(txt, maxLen) {
+      return breakOnSentences
+        ? splitTextBySentencesWithMaxLen(txt, maxLen)
+        : splitTextByLength(txt, maxLen);
     }
 
+    /*
+      Once we know how many chunks we have, we figure out how many
+      characters the fraction "(i/total)" would take.
+      For instance:
+        - if total < 10, it’s "(1/9)" -> 5 chars max
+        - if total = 12, it’s "(1/12)" -> 6 chars
+        - if total = 120, it’s "(1/120)" -> 7 chars
+      We then re-chunk the text using (maxLen - fractionLen) as the limit,
+      repeating until stable if the total changes.
+    */
+    function finalizeChunksWithFraction(txt, maxLen, rawChunks) {
+      let totalChunks = rawChunks.length;
+      let finalChunks = rawChunks;
+
+      // Re-chunk until stable
+      while (true) {
+        const fractionLen = calcFractionLen(totalChunks); // e.g. 5, 6, or 7...
+        const newMax = maxLen - fractionLen;
+        if (newMax < 1) {
+          // Pathological case: Not enough room even for fraction! Force some fallback:
+          return ['[Cannot fit fraction within this max length]'];
+        }
+
+        // Re-chunk ignoring fraction, but now with reduced length
+        const newChunks = breakOnSentences
+          ? splitTextBySentencesWithMaxLen(txt, newMax)
+          : splitTextByLength(txt, newMax);
+
+        if (newChunks.length === totalChunks) {
+          finalChunks = newChunks;
+          break;
+        } else {
+          totalChunks = newChunks.length;
+          finalChunks = newChunks;
+        }
+      }
+
+      // Now that totalChunks is stable, actually append the fraction to each chunk
+      return finalChunks.map((chunk, idx) => {
+        // 1-based chunk index
+        const i = idx + 1;
+        const fraction = ` (${i}/${totalChunks})`;
+        return chunk + fraction;
+      });
+    }
+
+    /*
+      Approx. how many chars does "(i/total)" have?
+      We assume i is at most the digit-length of total.
+    */
+    function calcFractionLen(total) {
+      const digits = String(total).length;
+      // parentheses + slash + possible space
+      // Example: (1/12) => length 6
+      // If total has 'd' digits, fraction has d+3 or d+4 chars.
+      // e.g. total=12 => digits=2 => "(n/12)" => 1 ( "(" ) + 2 ( "12" ) + 1 ( slash ) + 1 ( ")" ) + possibly 1 space
+      // We'll do: 3 + digits => plus 1 if you want a space before "("
+      // But from your request, there's a space before "(" => " (" => that's 1 more.
+      // So total = 1(space) + 1("(") + digits(for i, assume same digits length as total) + 1("/") + digits(for total) + 1(")")
+      // => 1 + 1 + 2*digits + 1 => 3 + 2*digits
+      // For single-digit total => 3 + 2*1=5 => e.g. " (1/9)"
+      // For double-digit total => 3 + 2*2=7 => e.g. " (1/99)"
+      // However, if i < 10 but total=99 => that might be " (1/99)" => 6 chars or 7?
+      // For simplicity, assume worst-case for i => same digit count as total
+      return 3 + 2 * digits;
+    }
+
+    /*
+      Main to-chunk flow: 
+      1) We chunk ignoring fraction to get a baseline set.
+      2) We finalize with fraction if enumeration is toggled on,
+         repeating chunking until stable.
+      3) We display the final array.
+    */
     function doChunk(maxLen) {
       const sourceText = document.getElementById('sourceText').value;
       const resultsDiv = document.getElementById('results');
@@ -412,18 +513,35 @@
       copyOrder = 0;
       autoRechunk = true;
 
-      lastChunkMethod = breakOnSentences ? 
-        { type: 'sentenceHybrid', value: maxLen } : 
-        { type: 'length', value: maxLen };
+      // Update last chunk method based on toggles
+      lastChunkMethod = breakOnSentences
+        ? { type: 'sentenceHybrid', value: maxLen }
+        : { type: 'length', value: maxLen };
 
       if (!sourceText.trim()) {
         inputError.textContent = 'Please enter some text to split.';
         return;
       }
 
-      displayChunks(getChunks(sourceText, maxLen));
+      // Step 1: Basic chunk ignoring fraction
+      const baseChunks = getChunksWithoutFraction(sourceText, maxLen);
+
+      // Step 2: If enumerating, embed fraction in chunk length.
+      let finalChunks;
+      if (!enumerateChunks) {
+        finalChunks = baseChunks;
+      } else {
+        finalChunks = finalizeChunksWithFraction(sourceText, maxLen, baseChunks);
+      }
+
+      // Step 3: Display
+      displayChunks(finalChunks);
     }
 
+    /*
+      Inserts the chunked text into the DOM. 
+      Now each chunk may already have e.g. " (i/total)" appended if enumeration is on.
+    */
     function displayChunks(chunks) {
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = '';
@@ -436,20 +554,25 @@
         const container = document.createElement('div');
         container.className = 'chunkContainer';
 
+        // The text area includes the fraction if enumeration was toggled
         const textArea = document.createElement('textarea');
         textArea.readOnly = true;
         textArea.value = chunk;
+
+        // Auto-expand based on content
         autoExpandTextarea(textArea);
 
+        // Build stats info (counting the fraction too, if present)
         const stats = calculateStats(chunk);
         const statsDiv = document.createElement('div');
         statsDiv.className = 'stats';
         statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
 
+        // Copy button
         const copyButton = document.createElement('button');
         copyButton.className = 'copyButton';
         copyButton.textContent = 'Copy';
-        copyButton.addEventListener('click', () => handleCopy(container, chunk, copyButton));
+        copyButton.addEventListener('click', () => handleCopy(container, textArea.value, copyButton));
 
         const infoRow = document.createElement('div');
         infoRow.className = 'chunkInfo';
@@ -460,19 +583,24 @@
       });
 
       resultsDiv.appendChild(threadWrapper);
+      // Re-check sizing if container resizes
       new ResizeObserver(() => {
         threadWrapper.querySelectorAll('textarea').forEach(autoExpandTextarea);
       }).observe(resultsDiv);
     }
 
-    function handleCopy(container, chunkText, copyBtn) {
-      navigator.clipboard.writeText(chunkText).then(() => {
+    /*
+      Copies text to clipboard, updates UI state.
+    */
+    function handleCopy(container, text, copyBtn) {
+      navigator.clipboard.writeText(text).then(() => {
         copyBtn.textContent = 'Copied!';
         copyBtn.classList.add('success');
         copyBtn.disabled = true;
-        copyOrder += 1;
+        copyOrder++;
         container.setAttribute('data-copied-order', copyOrder);
         container.classList.add('copied');
+
         setTimeout(() => {
           copyBtn.textContent = 'Copy';
           copyBtn.classList.remove('success');
@@ -481,77 +609,105 @@
       }).catch(console.error);
     }
 
+    /*
+      Redo chunking with last method if autoRechunk is on.
+    */
     function reChunkWithLastMethod() {
       if (!autoRechunk) return;
-      const sourceText = document.getElementById('sourceText').value;
-      const resultsDiv = document.getElementById('results');
-      
-      if (!sourceText.trim()) {
-        resultsDiv.innerHTML = '';
+
+      const sourceText = document.getElementById('sourceText').value.trim();
+      if (!sourceText) {
+        document.getElementById('results').innerHTML = '';
         return;
       }
 
-      if (lastChunkMethod.type === 'sentenceHybrid') {
-        displayChunks(splitTextBySentencesWithMaxLen(sourceText, lastChunkMethod.value));
-      } else {
-        displayChunks(splitTextByLength(sourceText, lastChunkMethod.value));
-      }
+      const { type, value } = lastChunkMethod;
+
+      // re-run doChunk to ensure fraction-length logic is repeated properly
+      doChunk(value);
     }
 
-    function calculateStats(text) {
+    /*
+      Basic text stats, counting everything present in chunk (including fraction).
+    */
+    function calculateStats(txt) {
       return {
-        characters: text.length,
-        words: (text.match(/\b\w+\b/g) || []).length,
-        sentences: (text.match(/[^.!?]+[.!?]+/g) || []).length
+        characters: txt.length,
+        words: (txt.match(/\b\w+\b/g) || []).length,
+        sentences: (txt.match(/[^.!?]+[.!?]+/g) || []).length
       };
     }
 
+    /*
+      Called on each input change to update stats and possibly re-chunk
+    */
     function updateInputStats() {
-      const sourceText = document.getElementById('sourceText').value;
-      const stats = calculateStats(sourceText);
-      document.getElementById('inputStats').innerHTML = 
+      const src = document.getElementById('sourceText').value;
+      const stats = calculateStats(src);
+      document.getElementById('inputStats').textContent =
         `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
       adjustFontSize();
       reChunkWithLastMethod();
     }
 
+    /*
+      Dynamically adjust the source textarea’s font size based on length
+    */
     function adjustFontSize() {
       const textArea = document.getElementById('sourceText');
       const textLength = textArea.value.length;
-      textArea.style.fontSize = `${Math.min(24, 14 + textLength * 0.05)}px`;
+      const minSize = 14;
+      const maxSize = 24;
+      const increment = 0.05;
+      let newSize = minSize + textLength * increment;
+      if (newSize > maxSize) newSize = maxSize;
+      textArea.style.fontSize = newSize + 'px';
     }
 
+    /*
+      Update the custom button label with user-supplied size
+    */
     function updateCustomButtonLabel() {
-      const customInput = document.getElementById('customLength');
+      const inputVal = parseInt(document.getElementById('customLength').value, 10);
       const customButton = document.getElementById('customButton');
-      const num = parseInt(customInput.value, 10);
-      customButton.textContent = !isNaN(num) && num > 0 ? 
-        `Break with Custom (${num}) Size` : 'Break with Custom Size';
+      if (!isNaN(inputVal) && inputVal > 0) {
+        customButton.textContent = `Break with Custom (${inputVal})`;
+      } else {
+        customButton.textContent = 'Break with Custom Size';
+      }
     }
 
-    // Event Listeners
-    document.querySelectorAll('.button-group button[data-length]').forEach(button => {
-      button.addEventListener('click', (ev) => {
-        doChunk(parseInt(ev.target.dataset.length, 10));
+    /* ----- Event Listeners ----- */
+    document.querySelectorAll('.button-group button[data-length]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const len = parseInt(e.target.getAttribute('data-length'), 10);
+        doChunk(len);
       });
     });
 
     document.getElementById('customButton').addEventListener('click', () => {
-      const customLen = parseInt(document.getElementById('customLength').value, 10);
-      if (!isNaN(customLen) && customLen > 0) {
-        doChunk(customLen);
+      const val = parseInt(document.getElementById('customLength').value, 10);
+      if (!isNaN(val) && val > 0) {
+        doChunk(val);
       } else {
         document.getElementById('inputError').textContent =
           'Please enter a valid positive number for custom size.';
       }
     });
 
-    document.getElementById('sourceText').addEventListener('input', updateInputStats);
     document.getElementById('customLength').addEventListener('input', updateCustomButtonLabel);
-    document.getElementById('sentenceToggle').addEventListener('change', (e) => {
-      breakOnSentences = e.target.checked;
-      if (autoRechunk) doChunk(lastChunkMethod.value);
+
+    document.getElementById('sentenceToggle').addEventListener('change', (evt) => {
+      breakOnSentences = evt.target.checked;
+      if (autoRechunk) reChunkWithLastMethod();
     });
+
+    document.getElementById('enumerationToggle').addEventListener('change', (evt) => {
+      enumerateChunks = evt.target.checked;
+      if (autoRechunk) reChunkWithLastMethod();
+    });
+
+    document.getElementById('sourceText').addEventListener('input', updateInputStats);
   </script>
 </body>
 </html>
