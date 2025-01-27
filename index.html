@@ -203,7 +203,6 @@
       font-size: 12px;
       color: #555;
     }
-
     .copyButton {
       background-color: #28a745;
     }
@@ -297,7 +296,7 @@
         <div class="toggle-sentence-break">
           <div class="toggle-options">
             <input type="checkbox" id="sentenceToggle" />
-            <label for="sentenceToggle">Full sentences</label>
+            <label for="sentenceToggle">Break on full sentences</label>
           </div>
           <div class="toggle-options">
             <input type="checkbox" id="enumerationToggle" />
@@ -309,7 +308,7 @@
       <div class="lower-right-pane" id="results"></div>
     </div>
   </div>
-
+  
   <script>
     let copyOrder = 0;
     let autoRechunk = false;
@@ -317,24 +316,16 @@
     let lastChunkMethod = { type: 'length', value: 280 };
     let enumerateChunks = false;
 
-    /*
-      Auto-expand a textarea based on its scrollHeight.
-    */
     function autoExpandTextarea(textarea) {
       textarea.style.height = 'auto';
       textarea.style.height = textarea.scrollHeight + 'px';
     }
 
-    /*
-      Splits text by length, with a "fuzzy" sentence boundary if possible.
-      (Enumeration not considered yet.)
-    */
     function splitTextByLength(rawText, maxLen) {
       const text = rawText.replace(/\s+/g, ' ').trim();
       const chunks = [];
       let startIndex = 0;
       const textLength = text.length;
-      // Additional buffer for clean breaks on punctuation
       const buffer = 20;
 
       while (startIndex < textLength) {
@@ -371,10 +362,6 @@
       return chunks;
     }
 
-    /*
-      Splits text by sentences, then ensures no chunk exceeds maxLen.
-      (Enumeration not considered yet.)
-    */
     function splitTextBySentencesWithMaxLen(rawText, maxLen) {
       const text = rawText.trim();
       const rawSentences = text.match(/[^.!?]+[.!?]+(\s|$)?|[^.!?]+$/g) || [];
@@ -386,7 +373,6 @@
         if (!sentence) continue;
 
         if (sentence.length > maxLen) {
-          // If the sentence itself is too large, chunk it by length
           if (currentChunk) {
             allChunks.push(currentChunk.trim());
             currentChunk = '';
@@ -404,7 +390,6 @@
             }
           }
         } else {
-          // If the sentence fits into maxLen, try to append or push new chunk
           if (!currentChunk) {
             currentChunk = sentence;
           } else if (currentChunk.length + 1 + sentence.length <= maxLen) {
@@ -420,39 +405,23 @@
       return allChunks;
     }
 
-    /*
-      Get chunks ignoring fraction first (just normal length or sentence break).
-    */
     function getChunksWithoutFraction(txt, maxLen) {
       return breakOnSentences
         ? splitTextBySentencesWithMaxLen(txt, maxLen)
         : splitTextByLength(txt, maxLen);
     }
 
-    /*
-      Once we know how many chunks we have, we figure out how many
-      characters the fraction "(i/total)" would take.
-      For instance:
-        - if total < 10, it’s "(1/9)" -> 5 chars max
-        - if total = 12, it’s "(1/12)" -> 6 chars
-        - if total = 120, it’s "(1/120)" -> 7 chars
-      We then re-chunk the text using (maxLen - fractionLen) as the limit,
-      repeating until stable if the total changes.
-    */
     function finalizeChunksWithFraction(txt, maxLen, rawChunks) {
       let totalChunks = rawChunks.length;
       let finalChunks = rawChunks;
 
-      // Re-chunk until stable
       while (true) {
-        const fractionLen = calcFractionLen(totalChunks); // e.g. 5, 6, or 7...
+        const fractionLen = calcFractionLen(totalChunks);
         const newMax = maxLen - fractionLen;
         if (newMax < 1) {
-          // Pathological case: Not enough room even for fraction! Force some fallback:
           return ['[Cannot fit fraction within this max length]'];
         }
 
-        // Re-chunk ignoring fraction, but now with reduced length
         const newChunks = breakOnSentences
           ? splitTextBySentencesWithMaxLen(txt, newMax)
           : splitTextByLength(txt, newMax);
@@ -466,43 +435,18 @@
         }
       }
 
-      // Now that totalChunks is stable, actually append the fraction to each chunk
       return finalChunks.map((chunk, idx) => {
-        // 1-based chunk index
         const i = idx + 1;
         const fraction = ` (${i}/${totalChunks})`;
         return chunk + fraction;
       });
     }
 
-    /*
-      Approx. how many chars does "(i/total)" have?
-      We assume i is at most the digit-length of total.
-    */
     function calcFractionLen(total) {
       const digits = String(total).length;
-      // parentheses + slash + possible space
-      // Example: (1/12) => length 6
-      // If total has 'd' digits, fraction has d+3 or d+4 chars.
-      // e.g. total=12 => digits=2 => "(n/12)" => 1 ( "(" ) + 2 ( "12" ) + 1 ( slash ) + 1 ( ")" ) + possibly 1 space
-      // We'll do: 3 + digits => plus 1 if you want a space before "("
-      // But from your request, there's a space before "(" => " (" => that's 1 more.
-      // So total = 1(space) + 1("(") + digits(for i, assume same digits length as total) + 1("/") + digits(for total) + 1(")")
-      // => 1 + 1 + 2*digits + 1 => 3 + 2*digits
-      // For single-digit total => 3 + 2*1=5 => e.g. " (1/9)"
-      // For double-digit total => 3 + 2*2=7 => e.g. " (1/99)"
-      // However, if i < 10 but total=99 => that might be " (1/99)" => 6 chars or 7?
-      // For simplicity, assume worst-case for i => same digit count as total
       return 3 + 2 * digits;
     }
 
-    /*
-      Main to-chunk flow: 
-      1) We chunk ignoring fraction to get a baseline set.
-      2) We finalize with fraction if enumeration is toggled on,
-         repeating chunking until stable.
-      3) We display the final array.
-    */
     function doChunk(maxLen) {
       const sourceText = document.getElementById('sourceText').value;
       const resultsDiv = document.getElementById('results');
@@ -513,7 +457,6 @@
       copyOrder = 0;
       autoRechunk = true;
 
-      // Update last chunk method based on toggles
       lastChunkMethod = breakOnSentences
         ? { type: 'sentenceHybrid', value: maxLen }
         : { type: 'length', value: maxLen };
@@ -523,10 +466,7 @@
         return;
       }
 
-      // Step 1: Basic chunk ignoring fraction
       const baseChunks = getChunksWithoutFraction(sourceText, maxLen);
-
-      // Step 2: If enumerating, embed fraction in chunk length.
       let finalChunks;
       if (!enumerateChunks) {
         finalChunks = baseChunks;
@@ -534,14 +474,9 @@
         finalChunks = finalizeChunksWithFraction(sourceText, maxLen, baseChunks);
       }
 
-      // Step 3: Display
       displayChunks(finalChunks);
     }
 
-    /*
-      Inserts the chunked text into the DOM. 
-      Now each chunk may already have e.g. " (i/total)" appended if enumeration is on.
-    */
     function displayChunks(chunks) {
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = '';
@@ -554,21 +489,16 @@
         const container = document.createElement('div');
         container.className = 'chunkContainer';
 
-        // The text area includes the fraction if enumeration was toggled
         const textArea = document.createElement('textarea');
         textArea.readOnly = true;
         textArea.value = chunk;
-
-        // Auto-expand based on content
         autoExpandTextarea(textArea);
 
-        // Build stats info (counting the fraction too, if present)
         const stats = calculateStats(chunk);
         const statsDiv = document.createElement('div');
         statsDiv.className = 'stats';
         statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
 
-        // Copy button
         const copyButton = document.createElement('button');
         copyButton.className = 'copyButton';
         copyButton.textContent = 'Copy';
@@ -583,15 +513,12 @@
       });
 
       resultsDiv.appendChild(threadWrapper);
-      // Re-check sizing if container resizes
+
       new ResizeObserver(() => {
         threadWrapper.querySelectorAll('textarea').forEach(autoExpandTextarea);
       }).observe(resultsDiv);
     }
 
-    /*
-      Copies text to clipboard, updates UI state.
-    */
     function handleCopy(container, text, copyBtn) {
       navigator.clipboard.writeText(text).then(() => {
         copyBtn.textContent = 'Copied!';
@@ -609,27 +536,17 @@
       }).catch(console.error);
     }
 
-    /*
-      Redo chunking with last method if autoRechunk is on.
-    */
     function reChunkWithLastMethod() {
       if (!autoRechunk) return;
-
       const sourceText = document.getElementById('sourceText').value.trim();
       if (!sourceText) {
         document.getElementById('results').innerHTML = '';
         return;
       }
-
-      const { type, value } = lastChunkMethod;
-
-      // re-run doChunk to ensure fraction-length logic is repeated properly
+      const { value } = lastChunkMethod;
       doChunk(value);
     }
 
-    /*
-      Basic text stats, counting everything present in chunk (including fraction).
-    */
     function calculateStats(txt) {
       return {
         characters: txt.length,
@@ -638,9 +555,6 @@
       };
     }
 
-    /*
-      Called on each input change to update stats and possibly re-chunk
-    */
     function updateInputStats() {
       const src = document.getElementById('sourceText').value;
       const stats = calculateStats(src);
@@ -650,9 +564,6 @@
       reChunkWithLastMethod();
     }
 
-    /*
-      Dynamically adjust the source textarea’s font size based on length
-    */
     function adjustFontSize() {
       const textArea = document.getElementById('sourceText');
       const textLength = textArea.value.length;
@@ -664,9 +575,6 @@
       textArea.style.fontSize = newSize + 'px';
     }
 
-    /*
-      Update the custom button label with user-supplied size
-    */
     function updateCustomButtonLabel() {
       const inputVal = parseInt(document.getElementById('customLength').value, 10);
       const customButton = document.getElementById('customButton');
@@ -677,7 +585,6 @@
       }
     }
 
-    /* ----- Event Listeners ----- */
     document.querySelectorAll('.button-group button[data-length]').forEach(btn => {
       btn.addEventListener('click', e => {
         const len = parseInt(e.target.getAttribute('data-length'), 10);
@@ -696,18 +603,60 @@
     });
 
     document.getElementById('customLength').addEventListener('input', updateCustomButtonLabel);
-
-    document.getElementById('sentenceToggle').addEventListener('change', (evt) => {
+    document.getElementById('sentenceToggle').addEventListener('change', evt => {
       breakOnSentences = evt.target.checked;
       if (autoRechunk) reChunkWithLastMethod();
     });
 
-    document.getElementById('enumerationToggle').addEventListener('change', (evt) => {
+    document.getElementById('enumerationToggle').addEventListener('change', evt => {
       enumerateChunks = evt.target.checked;
       if (autoRechunk) reChunkWithLastMethod();
     });
 
     document.getElementById('sourceText').addEventListener('input', updateInputStats);
+  </script>
+
+  <!-- ========================= -->
+  <!-- Formspree "formbutton" JS -->
+  <!-- ========================= -->
+  <script src="https://formspree.io/js/formbutton-v1.min.js" defer></script>
+  <script>
+    /*
+      This code places a floating Formspree button at the bottom-right corner.
+      Replace the "action" URL with your own if needed.
+    */
+    window.formbutton = window.formbutton || function () {
+      (formbutton.q = formbutton.q || []).push(arguments)
+    };
+    
+    formbutton("create", {
+      action: "https://formspree.io/f/manqedkk", 
+      title: "Feedback",
+      fields: [
+        { 
+          type: "email", 
+          label: "Email:", 
+          name: "email",
+          required: true,
+          placeholder: "your@email.com"
+        },
+        {
+          type: "textarea",
+          label: "Message:",
+          name: "message",
+          placeholder: "What can be improved?",
+        },
+        { type: "submit" }      
+      ],
+      styles: {
+        title: {
+          backgroundColor: "#007BFF"
+        },
+        button: {
+          backgroundColor: "#007BFF"
+        }
+      }
+    });
   </script>
 </body>
 </html>
