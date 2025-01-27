@@ -1,31 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="Threader lets you break long text into bite-sized threads for social media. Perfect for splitting text into manageable chunks for Threads, Bluesky, X, or any short-form platform." />
-  <meta name="keywords" content="text chunker, thread splitter, social media text, sentence chunking, Twitter threads, Bluesky posts, content tool, copywriting tool" />
+  <meta name="description"
+    content="Threader lets you break long text into bite-sized threads for social media. Perfect for splitting text into manageable chunks for Threads, Bluesky, X, or any short-form platform." />
+  <meta name="keywords"
+    content="text chunker, thread splitter, social media text, sentence chunking, Twitter threads, Bluesky posts, content tool, copywriting tool" />
   <title>Social Threader</title>
+
   <style>
-    /* 1) Global Reset */
+    /* 1) Global reset & layout for sticky footer */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-    html, body {
-      height: 100%;
+
+    /* Make the page occupy at least 100% of viewport height, 
+         arrange it as a column: content + footer at bottom */
+    html,
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
       font-family: Arial, sans-serif;
       background-color: #fff;
       color: #000;
     }
 
-    /* 2) Main Layout */
+    /* Let .container grow to take all remaining space above footer */
     .container {
+      flex: 1;
       display: flex;
-      height: 100vh;
-      width: 100vw;
+      width: 100%;
     }
+
+    /* 2) Utility Classes */
+    .mb-20 {
+      margin-bottom: 20px;
+    }
+
+    /* 3) Left and Right Pane Layout */
     .left-pane {
       flex: 2;
       padding: 20px;
@@ -33,6 +50,7 @@
       display: flex;
       flex-direction: column;
     }
+
     .right-pane {
       flex: 1;
       display: flex;
@@ -40,10 +58,11 @@
       padding: 20px;
     }
 
-    /* 3) Left Pane */
+    /* 4) Left Pane */
     .left-pane h2 {
       margin-bottom: 10px;
     }
+
     .left-pane textarea {
       flex: 1;
       width: 100%;
@@ -56,18 +75,20 @@
       color: #212529;
       transition: font-size 0.2s ease;
     }
+
     .left-pane .inputStats {
       margin-top: 10px;
       font-size: 12px;
       color: #555;
     }
+
     .left-pane .error {
       color: red;
       font-size: 12px;
       margin-top: 5px;
     }
 
-    /* 4) Right Pane & Controls */
+    /* 5) Right Pane & Controls */
     .upper-right-pane {
       flex: 1;
       display: flex;
@@ -76,6 +97,7 @@
       margin-bottom: 20px;
       align-items: center;
     }
+
     .button-group,
     .custom-control {
       width: 90%;
@@ -84,8 +106,9 @@
       flex-direction: column;
       gap: 10px;
     }
+
     button {
-      background-color: #007BFF;
+      background-color: #007bff;
       color: #fff;
       padding: 10px;
       font-size: 14px;
@@ -95,21 +118,26 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
+
     button:hover {
       background-color: #0056b3;
     }
+
     .button-group button {
       width: 100%;
     }
+
     .custom-control {
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
     }
+
     .custom-control button {
       margin-right: 10px;
       flex: 1;
     }
+
     .custom-control input {
       width: 80px;
       height: 40px;
@@ -129,29 +157,33 @@
       margin-top: 5px;
       justify-content: space-between;
     }
+
     .toggle-sentence-break .toggle-options {
       display: flex;
       gap: 12px;
       align-items: center;
     }
+
     .toggle-sentence-break label {
       font-size: 14px;
       user-select: none;
     }
 
-    /* 5) Output Pane */
+    /* 6) Output Pane */
     .lower-right-pane {
       flex: 4;
       overflow-y: auto;
       padding-top: 10px;
       position: relative;
     }
+
     .threadWrapper {
       position: relative;
       margin-bottom: 20px;
     }
+
     .threadWrapper::before {
-      content: '';
+      content: "";
       position: absolute;
       top: 0;
       left: 20px;
@@ -159,6 +191,7 @@
       height: 100%;
       background-color: #ccc;
     }
+
     .chunkContainer {
       position: relative;
       display: flex;
@@ -166,18 +199,20 @@
       margin-bottom: 40px;
       padding-left: 40px;
     }
+
     .chunkContainer::before {
-      content: '';
+      content: "";
       position: absolute;
       top: 0;
       left: 11px;
       width: 18px;
       height: 18px;
       background-color: #fff;
-      border: 2px solid #007BFF;
+      border: 2px solid #007bff;
       border-radius: 50%;
       z-index: 1;
     }
+
     .chunkContainer textarea {
       width: 100%;
       resize: none;
@@ -193,26 +228,32 @@
       min-height: 40px;
       overflow-y: hidden;
     }
+
     .chunkInfo {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 10px;
     }
+
     .chunkInfo .stats {
       font-size: 12px;
       color: #555;
     }
+
     .copyButton {
       background-color: #28a745;
     }
+
     .copyButton:hover {
       background-color: #218838;
     }
+
     .copyButton.success {
       background-color: #28a745;
       cursor: default;
     }
+
     .chunkContainer.copied::before {
       content: attr(data-copied-order);
       background-color: #28a745;
@@ -223,54 +264,71 @@
       font-weight: bold;
     }
 
-    /* 6) Responsive Layout */
+    /* 7) Responsive Layout */
     @media (max-width: 800px) {
       .container {
         flex-direction: column;
-        height: auto;
-        overflow-y: auto;
       }
+
       .left-pane {
         border-right: none;
         border-bottom: 1px solid #ccc;
         padding-bottom: 20px;
-        order: 0; 
+        order: 0;
       }
+
       .right-pane {
         width: 100%;
         height: auto;
       }
+
       .upper-right-pane {
         order: 1;
         width: 100%;
       }
+
       .lower-right-pane {
         order: 2;
         width: 100%;
         overflow-y: auto;
       }
+
       .threadWrapper::before {
         left: 15px;
       }
+
       .chunkContainer {
         padding-left: 35px;
       }
+
       .chunkContainer::before {
         left: 6px;
       }
     }
+
+    /* 8) Footer Styling */
+    footer {
+      text-align: center;
+      padding: 20px;
+      border-top: 1px solid #ccc;
+    }
   </style>
 </head>
+
 <body>
+  <!-- Container: stretches to fill space above footer -->
   <div class="container">
     <!-- Left pane -->
     <div class="left-pane">
       <h2>Social Threader</h2>
-      <p style="margin-bottom: 20px;">
-        With Social Threader, you can split your text into smaller chunks ideal 
-        for Twitter/X, Bluesky, Threads, Mastodon, or any platform that limits character count.</p>
-      <p style="margin-bottom: 20px;">
-        Easily create threads, track word counts, and copy each chunk with a single click.
+      <p class="mb-20">
+        With Social Threader, you can split your text into smaller chunks
+        ideal for Twitter/X, Bluesky, Threads, Mastodon, or any platform that
+        limits character count.
+      </p>
+      <p class="mb-20">
+        Easily create threads, track word counts, and copy each chunk with a
+        single click.
       </p>
       <textarea id="sourceText" spellcheck="true" placeholder="Enter text here..." rows="10"></textarea>
       <div id="inputStats" class="inputStats"></div>
@@ -309,21 +367,29 @@
       <div class="lower-right-pane" id="results"></div>
     </div>
   </div>
-  
+
+  <!-- Footer: always at bottom thanks to flexbox layout -->
+  <footer>
+    <p>
+      This project is <strong>open source</strong>! View the code on
+      <a href="https://github.com/MarkoPoloResearchLab/social_threader" target="_blank">GitHub</a>.
+    </p>
+  </footer>
+
   <script>
     let copyOrder = 0;
     let autoRechunk = false;
     let breakOnSentences = false;
-    let lastChunkMethod = { type: 'length', value: 280 };
+    let lastChunkMethod = { type: "length", value: 280 };
     let enumerateChunks = false;
 
     function autoExpandTextarea(textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
+      textarea.style.height = "auto";
+      textarea.style.height = textarea.scrollHeight + "px";
     }
 
     function splitTextByLength(rawText, maxLen) {
-      const text = rawText.replace(/\s+/g, ' ').trim();
+      const text = rawText.replace(/\s+/g, " ").trim();
       const chunks = [];
       let startIndex = 0;
       const textLength = text.length;
@@ -339,8 +405,10 @@
 
         let boundary = -1;
         for (let i = lowerBound; i < maxLen && i < slice.length; i++) {
-          if ((slice[i] === '.' || slice[i] === '!' || slice[i] === '?') &&
-              (i + 1 === slice.length || slice[i + 1] === ' ')) {
+          if (
+            (slice[i] === "." || slice[i] === "!" || slice[i] === "?") &&
+            (i + 1 === slice.length || slice[i + 1] === " ")
+          ) {
             boundary = i + 1;
           }
         }
@@ -349,14 +417,16 @@
         if (boundary !== -1) {
           breakIndex = boundary;
         } else {
-          const wordBoundary = slice.lastIndexOf(' ', maxLen);
+          const wordBoundary = slice.lastIndexOf(" ", maxLen);
           if (wordBoundary !== -1 && wordBoundary >= maxLen * 0.7) {
             breakIndex = wordBoundary;
           } else {
             breakIndex = maxLen;
           }
         }
-        chunks.push(text.substring(startIndex, startIndex + breakIndex).trim());
+        chunks.push(
+          text.substring(startIndex, startIndex + breakIndex).trim()
+        );
         startIndex += breakIndex;
       }
 
@@ -367,34 +437,39 @@
       const text = rawText.trim();
       const rawSentences = text.match(/[^.!?]+[.!?]+(\s|$)?|[^.!?]+$/g) || [];
       const allChunks = [];
-      let currentChunk = '';
+      let currentChunk = "";
 
       for (let sentence of rawSentences) {
         sentence = sentence.trim();
         if (!sentence) continue;
 
         if (sentence.length > maxLen) {
+          // If the sentence is too large, chunk it by length
           if (currentChunk) {
             allChunks.push(currentChunk.trim());
-            currentChunk = '';
+            currentChunk = "";
           }
           const parts = splitTextByLength(sentence, maxLen);
           for (const part of parts) {
-            if (currentChunk && (currentChunk.length + 1 + part.length > maxLen)) {
+            if (
+              currentChunk &&
+              currentChunk.length + 1 + part.length > maxLen
+            ) {
               allChunks.push(currentChunk.trim());
-              currentChunk = '';
+              currentChunk = "";
             }
-            currentChunk = currentChunk ? currentChunk + ' ' + part : part;
+            currentChunk = currentChunk ? currentChunk + " " + part : part;
             if (currentChunk.length >= maxLen) {
               allChunks.push(currentChunk.trim());
-              currentChunk = '';
+              currentChunk = "";
             }
           }
         } else {
+          // Append sentence to current chunk if it fits, otherwise start a new chunk
           if (!currentChunk) {
             currentChunk = sentence;
           } else if (currentChunk.length + 1 + sentence.length <= maxLen) {
-            currentChunk += ' ' + sentence;
+            currentChunk += " " + sentence;
           } else {
             allChunks.push(currentChunk.trim());
             currentChunk = sentence;
@@ -412,6 +487,8 @@
         : splitTextByLength(txt, maxLen);
     }
 
+    // Once we have raw chunks, re-check how many chunks we have, 
+    // then subtract fraction length from maxLen if enumeration is on.
     function finalizeChunksWithFraction(txt, maxLen, rawChunks) {
       let totalChunks = rawChunks.length;
       let finalChunks = rawChunks;
@@ -420,7 +497,7 @@
         const fractionLen = calcFractionLen(totalChunks);
         const newMax = maxLen - fractionLen;
         if (newMax < 1) {
-          return ['[Cannot fit fraction within this max length]'];
+          return ["[Cannot fit fraction within this max length]"];
         }
 
         const newChunks = breakOnSentences
@@ -445,25 +522,26 @@
 
     function calcFractionLen(total) {
       const digits = String(total).length;
+      // " (" + i + "/" + total + ")" => 3 + 2 * digits
       return 3 + 2 * digits;
     }
 
     function doChunk(maxLen) {
-      const sourceText = document.getElementById('sourceText').value;
-      const resultsDiv = document.getElementById('results');
-      const inputError = document.getElementById('inputError');
+      const sourceText = document.getElementById("sourceText").value;
+      const resultsDiv = document.getElementById("results");
+      const inputError = document.getElementById("inputError");
 
-      resultsDiv.innerHTML = '';
-      inputError.innerHTML = '';
+      resultsDiv.innerHTML = "";
+      inputError.innerHTML = "";
       copyOrder = 0;
       autoRechunk = true;
 
       lastChunkMethod = breakOnSentences
-        ? { type: 'sentenceHybrid', value: maxLen }
-        : { type: 'length', value: maxLen };
+        ? { type: "sentenceHybrid", value: maxLen }
+        : { type: "length", value: maxLen };
 
       if (!sourceText.trim()) {
-        inputError.textContent = 'Please enter some text to split.';
+        inputError.textContent = "Please enter some text to split.";
         return;
       }
 
@@ -472,41 +550,47 @@
       if (!enumerateChunks) {
         finalChunks = baseChunks;
       } else {
-        finalChunks = finalizeChunksWithFraction(sourceText, maxLen, baseChunks);
+        finalChunks = finalizeChunksWithFraction(
+          sourceText,
+          maxLen,
+          baseChunks
+        );
       }
 
       displayChunks(finalChunks);
     }
 
     function displayChunks(chunks) {
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = '';
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
       if (!chunks.length) return;
 
-      const threadWrapper = document.createElement('div');
-      threadWrapper.className = 'threadWrapper';
+      const threadWrapper = document.createElement("div");
+      threadWrapper.className = "threadWrapper";
 
-      chunks.forEach(chunk => {
-        const container = document.createElement('div');
-        container.className = 'chunkContainer';
+      chunks.forEach((chunk) => {
+        const container = document.createElement("div");
+        container.className = "chunkContainer";
 
-        const textArea = document.createElement('textarea');
+        const textArea = document.createElement("textarea");
         textArea.readOnly = true;
         textArea.value = chunk;
         autoExpandTextarea(textArea);
 
         const stats = calculateStats(chunk);
-        const statsDiv = document.createElement('div');
-        statsDiv.className = 'stats';
+        const statsDiv = document.createElement("div");
+        statsDiv.className = "stats";
         statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
 
-        const copyButton = document.createElement('button');
-        copyButton.className = 'copyButton';
-        copyButton.textContent = 'Copy';
-        copyButton.addEventListener('click', () => handleCopy(container, textArea.value, copyButton));
+        const copyButton = document.createElement("button");
+        copyButton.className = "copyButton";
+        copyButton.textContent = "Copy";
+        copyButton.addEventListener("click", () =>
+          handleCopy(container, textArea.value, copyButton)
+        );
 
-        const infoRow = document.createElement('div');
-        infoRow.className = 'chunkInfo';
+        const infoRow = document.createElement("div");
+        infoRow.className = "chunkInfo";
         infoRow.append(statsDiv, copyButton);
 
         container.append(textArea, infoRow);
@@ -515,33 +599,37 @@
 
       resultsDiv.appendChild(threadWrapper);
 
+      // Auto-resize after DOM insertion
       new ResizeObserver(() => {
-        threadWrapper.querySelectorAll('textarea').forEach(autoExpandTextarea);
+        threadWrapper.querySelectorAll("textarea").forEach(autoExpandTextarea);
       }).observe(resultsDiv);
     }
 
     function handleCopy(container, text, copyBtn) {
-      navigator.clipboard.writeText(text).then(() => {
-        copyBtn.textContent = 'Copied!';
-        copyBtn.classList.add('success');
-        copyBtn.disabled = true;
-        copyOrder++;
-        container.setAttribute('data-copied-order', copyOrder);
-        container.classList.add('copied');
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          copyBtn.textContent = "Copied!";
+          copyBtn.classList.add("success");
+          copyBtn.disabled = true;
+          copyOrder++;
+          container.setAttribute("data-copied-order", copyOrder);
+          container.classList.add("copied");
 
-        setTimeout(() => {
-          copyBtn.textContent = 'Copy';
-          copyBtn.classList.remove('success');
-          copyBtn.disabled = false;
-        }, 2000);
-      }).catch(console.error);
+          setTimeout(() => {
+            copyBtn.textContent = "Copy";
+            copyBtn.classList.remove("success");
+            copyBtn.disabled = false;
+          }, 2000);
+        })
+        .catch(console.error);
     }
 
     function reChunkWithLastMethod() {
       if (!autoRechunk) return;
-      const sourceText = document.getElementById('sourceText').value.trim();
+      const sourceText = document.getElementById("sourceText").value.trim();
       if (!sourceText) {
-        document.getElementById('results').innerHTML = '';
+        document.getElementById("results").innerHTML = "";
         return;
       }
       const { value } = lastChunkMethod;
@@ -552,94 +640,92 @@
       return {
         characters: txt.length,
         words: (txt.match(/\b\w+\b/g) || []).length,
-        sentences: (txt.match(/[^.!?]+[.!?]+/g) || []).length
+        sentences: (txt.match(/[^.!?]+[.!?]+/g) || []).length,
       };
     }
 
     function updateInputStats() {
-      const src = document.getElementById('sourceText').value;
+      const src = document.getElementById("sourceText").value;
       const stats = calculateStats(src);
-      document.getElementById('inputStats').textContent =
+      document.getElementById("inputStats").textContent =
         `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
       adjustFontSize();
       reChunkWithLastMethod();
     }
 
     function adjustFontSize() {
-      const textArea = document.getElementById('sourceText');
+      const textArea = document.getElementById("sourceText");
       const textLength = textArea.value.length;
       const minSize = 14;
       const maxSize = 24;
       const increment = 0.05;
       let newSize = minSize + textLength * increment;
       if (newSize > maxSize) newSize = maxSize;
-      textArea.style.fontSize = newSize + 'px';
+      textArea.style.fontSize = newSize + "px";
     }
 
     function updateCustomButtonLabel() {
-      const inputVal = parseInt(document.getElementById('customLength').value, 10);
-      const customButton = document.getElementById('customButton');
+      const inputVal = parseInt(document.getElementById("customLength").value, 10);
+      const customButton = document.getElementById("customButton");
       if (!isNaN(inputVal) && inputVal > 0) {
         customButton.textContent = `Break with Custom (${inputVal})`;
       } else {
-        customButton.textContent = 'Break with Custom Size';
+        customButton.textContent = "Break with Custom Size";
       }
     }
 
-    document.querySelectorAll('.button-group button[data-length]').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const len = parseInt(e.target.getAttribute('data-length'), 10);
+    // Event listeners
+    document.querySelectorAll(".button-group button[data-length]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const len = parseInt(e.target.getAttribute("data-length"), 10);
         doChunk(len);
       });
     });
 
-    document.getElementById('customButton').addEventListener('click', () => {
-      const val = parseInt(document.getElementById('customLength').value, 10);
+    document.getElementById("customButton").addEventListener("click", () => {
+      const val = parseInt(document.getElementById("customLength").value, 10);
       if (!isNaN(val) && val > 0) {
         doChunk(val);
       } else {
-        document.getElementById('inputError').textContent =
-          'Please enter a valid positive number for custom size.';
+        document.getElementById("inputError").textContent =
+          "Please enter a valid positive number for custom size.";
       }
     });
 
-    document.getElementById('customLength').addEventListener('input', updateCustomButtonLabel);
-    document.getElementById('sentenceToggle').addEventListener('change', evt => {
+    document.getElementById("customLength").addEventListener("input", updateCustomButtonLabel);
+
+    document.getElementById("sentenceToggle").addEventListener("change", (evt) => {
       breakOnSentences = evt.target.checked;
       if (autoRechunk) reChunkWithLastMethod();
     });
 
-    document.getElementById('enumerationToggle').addEventListener('change', evt => {
+    document.getElementById("enumerationToggle").addEventListener("change", (evt) => {
       enumerateChunks = evt.target.checked;
       if (autoRechunk) reChunkWithLastMethod();
     });
 
-    document.getElementById('sourceText').addEventListener('input', updateInputStats);
+    document.getElementById("sourceText").addEventListener("input", updateInputStats);
   </script>
 
-  <!-- ========================= -->
   <!-- Formspree "formbutton" JS -->
-  <!-- ========================= -->
   <script src="https://formspree.io/js/formbutton-v1.min.js" defer></script>
   <script>
-    /*
-      This code places a floating Formspree button at the bottom-right corner.
-      Replace the "action" URL with your own if needed.
-    */
-    window.formbutton = window.formbutton || function () {
-      (formbutton.q = formbutton.q || []).push(arguments)
-    };
-    
+    window.formbutton =
+      window.formbutton ||
+      function () {
+        (formbutton.q = formbutton.q || []).push(arguments);
+      };
+
     formbutton("create", {
-      action: "https://formspree.io/f/manqedkk", 
+      action: "https://formspree.io/f/manqedkk",
       title: "Feedback",
       fields: [
-        { 
-          type: "email", 
-          label: "Email:", 
+        {
+          type: "email",
+          label: "Email:",
           name: "email",
           required: true,
-          placeholder: "your@email.com"
+          placeholder: "you@example.com",
         },
         {
           type: "textarea",
@@ -647,17 +733,18 @@
           name: "message",
           placeholder: "What can be improved?",
         },
-        { type: "submit" }      
+        { type: "submit" },
       ],
       styles: {
         title: {
-          backgroundColor: "#007BFF"
+          backgroundColor: "#007BFF",
         },
         button: {
-          backgroundColor: "#007BFF"
-        }
-      }
+          backgroundColor: "#007BFF",
+        },
+      },
     });
   </script>
 </body>
+
 </html>
