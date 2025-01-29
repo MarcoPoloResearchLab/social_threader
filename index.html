@@ -188,7 +188,7 @@
             position: relative;
             display: flex;
             flex-direction: column;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             padding-left: 40px;
         }
 
@@ -219,13 +219,15 @@
             word-wrap: break-word;
             min-height: 40px;
             overflow-y: hidden;
+            transition: height 0.1s ease-out;
+            overflow: hidden;
         }
 
         .chunkInfo {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
         .stats {
@@ -303,6 +305,22 @@
             text-align: center;
             padding: 20px;
             border-top: 1px solid #ccc;
+        }
+
+        /* Add this to your existing button styles */
+        button.active {
+            background-color: #004085;
+            border: 2px solid #002752;
+            font-weight: bold;
+            box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Special handling for copy button - don't show pressed state */
+        .copyButton.active {
+            background-color: #28a745;
+            border: none;
+            box-shadow: none;
+            font-weight: normal;
         }
     </style>
 </head>
@@ -556,7 +574,14 @@
                 const textArea = document.createElement("textarea");
                 textArea.readOnly = true;
                 textArea.value = chunk;
-                autoExpandTextarea(textArea);
+
+                // Create observer for this specific textarea
+                const resizeObserver = new ResizeObserver(() => {
+                    autoExpandTextarea(textArea);
+                });
+
+                // Observe the textarea
+                resizeObserver.observe(textArea);
 
                 const stats = calculateStats(chunk);
                 const statsDiv = document.createElement("div");
@@ -576,14 +601,12 @@
 
                 container.append(textArea, infoRow);
                 threadWrapper.appendChild(container);
+
+                // Initial size adjustment
+                autoExpandTextarea(textArea);
             });
 
             resultsDiv.appendChild(threadWrapper);
-
-            // auto-resize after DOM insertion
-            new ResizeObserver(() => {
-                threadWrapper.querySelectorAll("textarea").forEach(autoExpandTextarea);
-            }).observe(resultsDiv);
         }
 
         function handleCopy(container, text, copyBtn) {
@@ -605,7 +628,8 @@
 
         function autoExpandTextarea(textarea) {
             textarea.style.height = "auto";
-            textarea.style.height = textarea.scrollHeight + "px";
+            // Add a small buffer (2px) to prevent scrollbar flicker
+            textarea.style.height = (textarea.scrollHeight + 2) + 'px';
         }
 
         function calculateStats(chunk) {
@@ -664,7 +688,14 @@
             document.getElementById("inputStats").textContent =
                 `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
             adjustFontSize();
-            reChunkWithLastMethod();
+
+            // Debounce the rechunking to prevent too frequent updates
+            if (window.rechunkTimeout) {
+                clearTimeout(window.rechunkTimeout);
+            }
+            window.rechunkTimeout = setTimeout(() => {
+                reChunkWithLastMethod();
+            }, 100); // 100ms delay
         }
 
         function adjustFontSize() {
@@ -693,6 +724,11 @@
             // Pre-set chunk size buttons
             document.querySelectorAll(".button-group button[data-length]").forEach((btn) => {
                 btn.addEventListener("click", (e) => {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.button-group button, #customButton').forEach(b =>
+                        b.classList.remove('active'));
+                    // Add active class to clicked button
+                    e.target.classList.add('active');
                     const len = parseInt(e.target.getAttribute("data-length"), 10);
                     doChunk(len);
                 });
@@ -701,6 +737,11 @@
             document.getElementById("customButton").addEventListener("click", () => {
                 const val = parseInt(document.getElementById("customLength").value, 10);
                 if (!isNaN(val) && val > 0) {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.button-group button, #customButton').forEach(b =>
+                        b.classList.remove('active'));
+                    // Add active class to custom button
+                    document.getElementById("customButton").classList.add('active');
                     doChunk(val);
                 } else {
                     document.getElementById("inputError").textContent =
