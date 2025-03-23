@@ -13,10 +13,8 @@
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="description"
-        content="Threader lets you break long text into manageable chunks for social media. Perfect for splitting text while preserving punctuation as part of the preceding word." />
-    <meta name="keywords"
-        content="text chunker, thread splitter, social media text, sentence chunking, Twitter threads, Bluesky posts, content tool, copywriting tool" />
+    <meta name="description" content="Threader lets you break long text into manageable chunks for social media. Perfect for splitting text while preserving punctuation as part of the preceding word." />
+    <meta name="keywords" content="text chunker, thread splitter, social media text, sentence chunking, Twitter threads, Bluesky posts, content tool, copywriting tool" />
     <title>Social Threader</title>
     <style>
         /* 1) Global reset & layout for sticky footer */
@@ -316,7 +314,7 @@
             border-top: 1px solid #ccc;
         }
 
-        /* Add this to your existing button styles */
+        /* Active button state – uses the same border width to avoid layout shifts */
         button.active {
             background-color: #004085;
             border-color: #002752;
@@ -367,7 +365,7 @@
                 <button id="customButton">Break with Custom Size</button>
                 <input type="number" id="customLength" placeholder="Size" min="1" value="128" />
             </div>
-            <!-- Sentence-break + enumeration toggles -->
+            <!-- Toggles for sentence, enumeration, and paragraph breaks -->
             <div class="toggle-sentence-break">
                 <div class="toggle-options">
                     <input type="checkbox" id="sentenceToggle" />
@@ -376,6 +374,10 @@
                 <div class="toggle-options">
                     <input type="checkbox" id="enumerationToggle" />
                     <label for="enumerationToggle">Enumerate posts</label>
+                </div>
+                <div class="toggle-options">
+                    <input type="checkbox" id="paragraphToggle" />
+                    <label for="paragraphToggle">Break on paragraphs</label>
                 </div>
             </div>
         </div>
@@ -400,6 +402,7 @@
     let autoRechunk = false;
     let breakOnSentences = false;
     let enumerateChunks = false;
+    let breakOnParagraphs = false;
     let lastChunkMethod = { type: "length", value: 280 };
 
     function splitIntoWordsPreservingPunctuation(textString) {
@@ -445,10 +448,7 @@
      *********************************************************************/
     function isSentenceEnd(word) {
         let strippedWord = word;
-        while (
-            strippedWord.length > 0 &&
-            '")]}'.includes(strippedWord[strippedWord.length - 1])
-            ) {
+        while (strippedWord.length > 0 && '")]}'.includes(strippedWord[strippedWord.length - 1])) {
             strippedWord = strippedWord.slice(0, -1);
         }
         return /[.!?]$/.test(strippedWord);
@@ -462,9 +462,9 @@
         const sentencesArray = [];
         let currentSentence = [];
 
-        for (const word of wordsArray) {
-            currentSentence.push(word);
-            if (isSentenceEnd(word)) {
+        for (const singleWord of wordsArray) {
+            currentSentence.push(singleWord);
+            if (isSentenceEnd(singleWord)) {
                 sentencesArray.push(currentSentence.join(' '));
                 currentSentence = [];
             }
@@ -514,12 +514,26 @@
     /*********************************************************************
      * 5) MAIN getChunks FUNCTION
      *
-     *  - Split into words with all trailing punctuation attached.
+     *  - If breakOnParagraphs is enabled, split input by newline and process each paragraph separately.
+     *  - Otherwise, split into words with all trailing punctuation attached.
      *  - Convert them to “sentences” if breakOnSentences is ON.
      *  - Each sentence might exceed maximumLength, so we sub-chunk it with chunkByLength.
      *  - Accumulate final array, then optionally enumerate.
      *********************************************************************/
-    function getChunks(rawText, maximumLength, useSentenceBreak, useEnumeration) {
+    function getChunks(rawText, maximumLength, useSentenceBreak, useEnumeration, useParagraphBreak) {
+        if (useParagraphBreak) {
+            const paragraphsArray = rawText.split(/\r?\n+/);
+            let allChunks = [];
+            paragraphsArray.forEach(function(paragraph) {
+                let trimmedParagraph = paragraph.trim();
+                if (trimmedParagraph.length === 0) return;
+                // Process paragraph without further paragraph breaking to avoid recursion
+                let chunksForParagraph = getChunks(trimmedParagraph, maximumLength, useSentenceBreak, useEnumeration, false);
+                allChunks.push(...chunksForParagraph);
+            });
+            return allChunks;
+        }
+
         const wordsArray = splitIntoWordsPreservingPunctuation(rawText);
         if (!wordsArray.length) return [];
 
@@ -570,7 +584,7 @@
         const threadWrapper = document.createElement("div");
         threadWrapper.className = "threadWrapper";
 
-        chunks.forEach((chunk) => {
+        chunks.forEach(function(chunk) {
             const container = document.createElement("div");
             container.className = "chunkContainer";
 
@@ -578,7 +592,7 @@
             textArea.readOnly = true;
             textArea.value = chunk;
 
-            const resizeObserver = new ResizeObserver(() => {
+            const resizeObserver = new ResizeObserver(function() {
                 autoExpandTextarea(textArea);
             });
             resizeObserver.observe(textArea);
@@ -591,9 +605,9 @@
             const copyButton = document.createElement("button");
             copyButton.className = "copyButton";
             copyButton.textContent = "Copy";
-            copyButton.addEventListener("click", () =>
-                handleCopy(container, textArea.value, copyButton)
-            );
+            copyButton.addEventListener("click", function() {
+                handleCopy(container, textArea.value, copyButton);
+            });
 
             const infoRow = document.createElement("div");
             infoRow.className = "chunkInfo";
@@ -610,7 +624,7 @@
     }
 
     function handleCopy(container, text, copyButtonElement) {
-        navigator.clipboard.writeText(text).then(() => {
+        navigator.clipboard.writeText(text).then(function() {
             copyButtonElement.textContent = "Copied!";
             copyButtonElement.classList.add("success");
             copyButtonElement.disabled = true;
@@ -618,7 +632,7 @@
             container.setAttribute("data-copied-order", copyOrder);
             container.classList.add("copied");
 
-            setTimeout(() => {
+            setTimeout(function() {
                 copyButtonElement.textContent = "Copy";
                 copyButtonElement.classList.remove("success");
                 copyButtonElement.disabled = false;
@@ -661,12 +675,7 @@
             return;
         }
 
-        const finalChunks = getChunks(
-            sourceText,
-            maximumLength,
-            breakOnSentences,
-            enumerateChunks
-        );
+        const finalChunks = getChunks(sourceText, maximumLength, breakOnSentences, enumerateChunks, breakOnParagraphs);
         displayChunks(finalChunks);
     }
 
@@ -692,7 +701,7 @@
         if (window.rechunkTimeout) {
             clearTimeout(window.rechunkTimeout);
         }
-        window.rechunkTimeout = setTimeout(() => {
+        window.rechunkTimeout = setTimeout(function() {
             reChunkWithLastMethod();
         }, 100);
     }
@@ -719,22 +728,28 @@
     }
 
     // Initialize
-    document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll(".button-group button[data-length]").forEach((buttonElement) => {
-            buttonElement.addEventListener("click", (event) => {
-                document.querySelectorAll('.button-group button, #customButton').forEach(el =>
-                    el.classList.remove('active'));
+    document.addEventListener("DOMContentLoaded", function() {
+        // Set default custom length to 128 and update label
+        document.getElementById("customLength").value = 128;
+        updateCustomButtonLabel();
+
+        document.querySelectorAll(".button-group button[data-length]").forEach(function(buttonElement) {
+            buttonElement.addEventListener("click", function(event) {
+                document.querySelectorAll('.button-group button, #customButton').forEach(function(el) {
+                    el.classList.remove('active');
+                });
                 event.target.classList.add('active');
                 const lengthValue = parseInt(event.target.getAttribute("data-length"), 10);
                 doChunk(lengthValue);
             });
         });
 
-        document.getElementById("customButton").addEventListener("click", () => {
+        document.getElementById("customButton").addEventListener("click", function() {
             const customLengthValue = parseInt(document.getElementById("customLength").value, 10);
             if (!isNaN(customLengthValue) && customLengthValue > 0) {
-                document.querySelectorAll('.button-group button, #customButton').forEach(el =>
-                    el.classList.remove('active'));
+                document.querySelectorAll('.button-group button, #customButton').forEach(function(el) {
+                    el.classList.remove('active');
+                });
                 document.getElementById("customButton").classList.add('active');
                 doChunk(customLengthValue);
             } else {
@@ -745,13 +760,18 @@
 
         document.getElementById("customLength").addEventListener("input", updateCustomButtonLabel);
 
-        document.getElementById("sentenceToggle").addEventListener("change", (event) => {
+        document.getElementById("sentenceToggle").addEventListener("change", function(event) {
             breakOnSentences = event.target.checked;
             if (autoRechunk) reChunkWithLastMethod();
         });
 
-        document.getElementById("enumerationToggle").addEventListener("change", (event) => {
+        document.getElementById("enumerationToggle").addEventListener("change", function(event) {
             enumerateChunks = event.target.checked;
+            if (autoRechunk) reChunkWithLastMethod();
+        });
+
+        document.getElementById("paragraphToggle").addEventListener("change", function(event) {
+            breakOnParagraphs = event.target.checked;
             if (autoRechunk) reChunkWithLastMethod();
         });
 
