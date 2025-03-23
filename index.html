@@ -404,6 +404,7 @@
     let enumerateChunks = false;
     let breakOnParagraphs = false;
     let lastChunkMethod = { type: "length", value: 280 };
+    let customReflowTimeout = null;
 
     function splitIntoWordsPreservingPunctuation(textString) {
         // First, normalize spaces
@@ -724,6 +725,16 @@
             customButtonElement.textContent = `Break with Custom (${inputValue})`;
         } else {
             customButtonElement.textContent = "Break with Custom Size";
+        }
+        if (customButtonElement.classList.contains('active')) {
+            if (customReflowTimeout) {
+                clearTimeout(customReflowTimeout);
+            }
+            customReflowTimeout = setTimeout(function() {
+                if (!isNaN(inputValue) && inputValue > 0) {
+                    doChunk(inputValue);
+                }
+            }, 1000);
         }
     }
 
