@@ -91,12 +91,19 @@
 
         /* Right pane & controls */
         .upper-right-pane {
-            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin-bottom: 20px;
             align-items: center;
+        }
+
+        /* Now let the lower-right-pane flex to fill remaining space */
+        .lower-right-pane {
+            flex: 1;
+            overflow-y: auto;
+            padding-top: 10px;
+            position: relative;
         }
 
         .button-group,
@@ -108,16 +115,17 @@
             gap: 10px;
         }
 
+        /* Reserve 2px border to avoid shifting when active */
         button {
             background-color: #007bff;
             color: #fff;
             padding: 10px;
             font-size: 14px;
-            border: none;
+            border: 2px solid transparent;
             border-radius: 4px;
             height: 40px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         button:hover {
@@ -171,13 +179,6 @@
         }
 
         /* Output pane */
-        .lower-right-pane {
-            flex: 4;
-            overflow-y: auto;
-            padding-top: 10px;
-            position: relative;
-        }
-
         .threadWrapper {
             position: relative;
             margin-bottom: 20px;
@@ -229,7 +230,6 @@
             min-height: 40px;
             overflow-y: hidden;
             transition: height 0.1s ease-out;
-            overflow: hidden;
         }
 
         .chunkInfo {
@@ -319,7 +319,7 @@
         /* Add this to your existing button styles */
         button.active {
             background-color: #004085;
-            border: 2px solid #002752;
+            border-color: #002752;
             font-weight: bold;
             box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2);
         }
@@ -335,465 +335,450 @@
 </head>
 
 <body>
-    <div class="container">
-        <!-- LEFT PANE -->
-        <div class="left-pane">
-            <h2>Social Threader</h2>
-            <p class="mb-20">
-                With Social Threader, you can split your text into smaller chunks
-                ideal for Twitter/X, Bluesky, Threads, Mastodon, or any platform that
-                limits character count.
-            </p>
-            <p class="mb-20">
-                Easily create threads, track word counts, and copy each chunk with a
-                single click.
-            </p>
-            <textarea id="sourceText" spellcheck="true" placeholder="Enter text here..." rows="10"></textarea>
-            <div id="inputStats" class="inputStats"></div>
-            <div id="inputError" class="error"></div>
-        </div>
-
-        <!-- RIGHT PANE -->
-        <div class="right-pane">
-            <div class="upper-right-pane">
-                <!-- Preset chunk sizes -->
-                <div class="button-group">
-                    <button data-length="500">Break into Threads/Mastodon (500)</button>
-                    <button data-length="300">Break into Bluesky (300)</button>
-                    <button data-length="280">Break into Twitter/X (280)</button>
-                </div>
-                <!-- Custom chunk size -->
-                <div class="custom-control">
-                    <button id="customButton">Break with Custom Size</button>
-                    <input type="number" id="customLength" placeholder="Size" min="1" />
-                </div>
-                <!-- Sentence-break + enumeration toggles -->
-                <div class="toggle-sentence-break">
-                    <div class="toggle-options">
-                        <input type="checkbox" id="sentenceToggle" />
-                        <label for="sentenceToggle">Break on full sentences</label>
-                    </div>
-                    <div class="toggle-options">
-                        <input type="checkbox" id="enumerationToggle" />
-                        <label for="enumerationToggle">Enumerate posts</label>
-                    </div>
-                </div>
-            </div>
-            <!-- Results Pane -->
-            <div class="lower-right-pane" id="results"></div>
-        </div>
+<div class="container">
+    <!-- LEFT PANE -->
+    <div class="left-pane">
+        <h2>Social Threader</h2>
+        <p class="mb-20">
+            With Social Threader, you can split your text into smaller chunks
+            ideal for Twitter/X, Bluesky, Threads, Mastodon, or any platform that
+            limits character count.
+        </p>
+        <p class="mb-20">
+            Easily create threads, track word counts, and copy each chunk with a
+            single click.
+        </p>
+        <textarea id="sourceText" spellcheck="true" placeholder="Enter text here..." rows="10"></textarea>
+        <div id="inputStats" class="inputStats"></div>
+        <div id="inputError" class="error"></div>
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <p>
-            This project is <strong>open source</strong>! View the code on
-            <a href="https://github.com/MarkoPoloResearchLab/social_threader" target="_blank">GitHub</a>.
-        </p>
-    </footer>
+    <!-- RIGHT PANE -->
+    <div class="right-pane">
+        <div class="upper-right-pane">
+            <!-- Preset chunk sizes -->
+            <div class="button-group">
+                <button data-length="500">Break into Threads/Mastodon (500)</button>
+                <button data-length="300">Break into Bluesky (300)</button>
+                <button data-length="280">Break into Twitter/X (280)</button>
+            </div>
+            <!-- Custom chunk size -->
+            <div class="custom-control">
+                <button id="customButton">Break with Custom Size</button>
+                <input type="number" id="customLength" placeholder="Size" min="1" />
+            </div>
+            <!-- Sentence-break + enumeration toggles -->
+            <div class="toggle-sentence-break">
+                <div class="toggle-options">
+                    <input type="checkbox" id="sentenceToggle" />
+                    <label for="sentenceToggle">Break on full sentences</label>
+                </div>
+                <div class="toggle-options">
+                    <input type="checkbox" id="enumerationToggle" />
+                    <label for="enumerationToggle">Enumerate posts</label>
+                </div>
+            </div>
+        </div>
+        <!-- Results Pane -->
+        <div class="lower-right-pane" id="results"></div>
+    </div>
+</div>
 
-    <script>
-        /*********************************************************************
-         * GLOBAL STATE
-         *********************************************************************/
-        let copyOrder = 0;
-        let autoRechunk = false;
-        let breakOnSentences = false;
-        let enumerateChunks = false;
-        let lastChunkMethod = { type: "length", value: 280 };
+<!-- Footer -->
+<footer>
+    <p>
+        This project is <strong>open source</strong>! View the code on
+        <a href="https://github.com/MarkoPoloResearchLab/social_threader" target="_blank">GitHub</a>.
+    </p>
+</footer>
 
-        function splitIntoWordsPreservingPunctuation(str) {
-            // First, normalize spaces
-            const normalized = str.replace(/\s+/g, ' ').trim();
-            if (!normalized) return [];
+<script>
+    /*********************************************************************
+     * GLOBAL STATE
+     *********************************************************************/
+    let copyOrder = 0;
+    let autoRechunk = false;
+    let breakOnSentences = false;
+    let enumerateChunks = false;
+    let lastChunkMethod = { type: "length", value: 280 };
 
-            const words = [];
-            let currentWord = '';
-            let inQuote = false;
+    function splitIntoWordsPreservingPunctuation(textString) {
+        // First, normalize spaces
+        const normalizedText = textString.replace(/\s+/g, ' ').trim();
+        if (!normalizedText) return [];
 
-            for (let i = 0; i < normalized.length; i++) {
-                const char = normalized[i];
+        const wordsArray = [];
+        let currentWord = '';
+        let inQuote = false;
 
-                if (char === ' ' && !inQuote) {
-                    if (currentWord) {
-                        words.push(currentWord);
-                        currentWord = '';
-                    }
-                    continue;
+        for (let index = 0; index < normalizedText.length; index++) {
+            const character = normalizedText[index];
+
+            if (character === ' ' && !inQuote) {
+                if (currentWord) {
+                    wordsArray.push(currentWord);
+                    currentWord = '';
                 }
-
-                if (char === '"') {
-                    inQuote = !inQuote;
-                }
-
-                currentWord += char;
+                continue;
             }
 
-            if (currentWord) {
-                words.push(currentWord);
+            if (character === '"') {
+                inQuote = !inQuote;
             }
 
-            return words;
+            currentWord += character;
         }
 
-        /*********************************************************************
-         * 2) DETECT SENTENCE BOUNDARIES
-         *
-         * A “sentence” ends when a word’s trailing punctuation includes . ! or ?.
-         * That same word *includes* that punctuation, so it’s considered
-         * the last word of that sentence.
-         *********************************************************************/
-        function isSentenceEnd(word) {
-            // Remove trailing quotes, parentheses, etc.
-            let stripped = word;
-            while (stripped.length > 0 && '")]}'.includes(stripped[stripped.length - 1])) {
-                stripped = stripped.slice(0, -1);
-            }
-            // Check if what remains ends with . ! or ?
-            return /[.!?]$/.test(stripped);
+        if (currentWord) {
+            wordsArray.push(currentWord);
         }
 
-        function buildSentenceArray(words, useSentenceBreak) {
-            if (!useSentenceBreak) {
-                return [words.join(' ')];
-            }
+        return wordsArray;
+    }
 
-            const sentences = [];
-            let currentSentence = [];
+    /*********************************************************************
+     * 2) DETECT SENTENCE BOUNDARIES
+     *
+     * A “sentence” ends when a word’s trailing punctuation includes . ! or ?.
+     * That same word *includes* that punctuation, so it’s considered
+     * the last word of that sentence.
+     *********************************************************************/
+    function isSentenceEnd(word) {
+        let strippedWord = word;
+        while (
+            strippedWord.length > 0 &&
+            '")]}'.includes(strippedWord[strippedWord.length - 1])
+            ) {
+            strippedWord = strippedWord.slice(0, -1);
+        }
+        return /[.!?]$/.test(strippedWord);
+    }
 
-            for (const word of words) {
-                currentSentence.push(word);
-                if (isSentenceEnd(word)) {
-                    sentences.push(currentSentence.join(' '));
-                    currentSentence = [];
-                }
-            }
-
-            if (currentSentence.length > 0) {
-                sentences.push(currentSentence.join(' '));
-            }
-
-            return sentences;
+    function buildSentenceArray(wordsArray, useSentenceBreak) {
+        if (!useSentenceBreak) {
+            return [wordsArray.join(' ')];
         }
 
-        /*********************************************************************
-         * 4) CHUNK BY LENGTH
-         *
-         * Takes a single string up to maxLen. We attempt to break at
-         * a “space” or punctuation boundary near maxLen. If a single “word”
-         * is bigger than maxLen, it is forcibly chunked anyway.
-         *********************************************************************/
-        function chunkByLength(str, maxLen) {
-            const result = [];
-            let text = str.replace(/\s+/g, " ").trim();
-            while (text.length > 0) {
-                if (text.length <= maxLen) {
-                    result.push(text);
+        const sentencesArray = [];
+        let currentSentence = [];
+
+        for (const word of wordsArray) {
+            currentSentence.push(word);
+            if (isSentenceEnd(word)) {
+                sentencesArray.push(currentSentence.join(' '));
+                currentSentence = [];
+            }
+        }
+
+        if (currentSentence.length > 0) {
+            sentencesArray.push(currentSentence.join(' '));
+        }
+
+        return sentencesArray;
+    }
+
+    /*********************************************************************
+     * 4) CHUNK BY LENGTH
+     *
+     * Takes a single string up to maximumLength. We attempt to break at
+     * a “space” or punctuation boundary near maximumLength. If a single “word”
+     * is bigger than maximumLength, it is forcibly chunked anyway.
+     *********************************************************************/
+    function chunkByLength(textString, maximumLength) {
+        const resultChunks = [];
+        let text = textString.replace(/\s+/g, " ").trim();
+        while (text.length > 0) {
+            if (text.length <= maximumLength) {
+                resultChunks.push(text);
+                break;
+            }
+            let breakIndex = -1;
+            for (let index = maximumLength; index >= 0; index--) {
+                if (index > text.length) continue;
+                if (text.charAt(index) === " " || /[.,!?;]/.test(text.charAt(index))) {
+                    breakIndex = index;
                     break;
                 }
-                // find a break near maxLen
-                let breakIndex = -1;
-                for (let i = maxLen; i >= 0; i--) {
-                    if (i > text.length) continue;
-                    // prefer splitting on space or punctuation
-                    if (text.charAt(i) === " " || /[.,!?;]/.test(text.charAt(i))) {
-                        breakIndex = i;
-                        break;
-                    }
-                }
-                if (breakIndex > 0) {
-                    result.push(text.slice(0, breakIndex).trim());
-                    text = text.slice(breakIndex).trim();
-                } else {
-                    // no good break => forcibly chunk
-                    result.push(text.slice(0, maxLen));
-                    text = text.slice(maxLen).trim();
-                }
             }
-            return result;
+            if (breakIndex > 0) {
+                resultChunks.push(text.slice(0, breakIndex).trim());
+                text = text.slice(breakIndex).trim();
+            } else {
+                resultChunks.push(text.slice(0, maximumLength));
+                text = text.slice(maximumLength).trim();
+            }
+        }
+        return resultChunks;
+    }
+
+    /*********************************************************************
+     * 5) MAIN getChunks FUNCTION
+     *
+     *  - Split into words with all trailing punctuation attached.
+     *  - Convert them to “sentences” if breakOnSentences is ON.
+     *  - Each sentence might exceed maximumLength, so we sub-chunk it with chunkByLength.
+     *  - Accumulate final array, then optionally enumerate.
+     *********************************************************************/
+    function getChunks(rawText, maximumLength, useSentenceBreak, useEnumeration) {
+        const wordsArray = splitIntoWordsPreservingPunctuation(rawText);
+        if (!wordsArray.length) return [];
+
+        const sentencesArray = buildSentenceArray(wordsArray, useSentenceBreak);
+        const chunks = [];
+        let currentChunk = '';
+
+        for (const sentence of sentencesArray) {
+            if (sentence.length > maximumLength) {
+                if (currentChunk) {
+                    chunks.push(currentChunk);
+                    currentChunk = '';
+                }
+                const subChunks = chunkByLength(sentence, maximumLength);
+                chunks.push(...subChunks);
+                continue;
+            }
+
+            const potentialChunk = currentChunk
+                ? currentChunk + ' ' + sentence
+                : sentence;
+
+            if (potentialChunk.length <= maximumLength) {
+                currentChunk = potentialChunk;
+            } else {
+                if (currentChunk) chunks.push(currentChunk);
+                currentChunk = sentence;
+            }
         }
 
-        /*********************************************************************
-         * 5) MAIN getChunks FUNCTION
-         *
-         *  - Split into words with all trailing punctuation attached.
-         *  - Convert them to “sentences” if breakOnSentences is ON.
-         *  - Each sentence might exceed maxLen, so we sub-chunk it with chunkByLength.
-         *  - Accumulate final array, then optionally enumerate.
-         *********************************************************************/
-        function getChunks(rawText, maxLen, useSentenceBreak, useEnumeration) {
-            const words = splitIntoWordsPreservingPunctuation(rawText);
-            if (!words.length) return [];
-
-            const sentences = buildSentenceArray(words, useSentenceBreak);
-            const chunks = [];
-            let currentChunk = '';
-
-            for (const sentence of sentences) {
-                // If single sentence exceeds maxLen, force split it
-                if (sentence.length > maxLen) {
-                    // Flush current chunk if any
-                    if (currentChunk) {
-                        chunks.push(currentChunk);
-                        currentChunk = '';
-                    }
-                    // Split long sentence
-                    const subChunks = chunkByLength(sentence, maxLen);
-                    chunks.push(...subChunks);
-                    continue;
-                }
-
-                // Try to add sentence to current chunk
-                const potentialChunk = currentChunk
-                    ? currentChunk + ' ' + sentence
-                    : sentence;
-
-                if (potentialChunk.length <= maxLen) {
-                    currentChunk = potentialChunk;
-                } else {
-                    // Flush current and start new with this sentence
-                    if (currentChunk) chunks.push(currentChunk);
-                    currentChunk = sentence;
-                }
-            }
-
-            // Don't forget last chunk
-            if (currentChunk) {
-                chunks.push(currentChunk);
-            }
-
-            return useEnumeration ? chunks.map((c, i) => `${c} (${i + 1}/${chunks.length})`) : chunks;
+        if (currentChunk) {
+            chunks.push(currentChunk);
         }
 
-        /*********************************************************************
-         * DISPLAY + COPY + STATS + AUTORESIZE
-         *********************************************************************/
-        function displayChunks(chunks) {
-            const resultsDiv = document.getElementById("results");
-            resultsDiv.innerHTML = "";
-            if (!chunks.length) return;
+        return useEnumeration
+            ? chunks.map((chunkText, index) => `${chunkText} (${index + 1}/${chunks.length})`)
+            : chunks;
+    }
 
-            const threadWrapper = document.createElement("div");
-            threadWrapper.className = "threadWrapper";
+    /*********************************************************************
+     * DISPLAY + COPY + STATS + AUTORESIZE
+     *********************************************************************/
+    function displayChunks(chunks) {
+        const resultsDiv = document.getElementById("results");
+        resultsDiv.innerHTML = "";
+        if (!chunks.length) return;
 
-            chunks.forEach((chunk) => {
-                const container = document.createElement("div");
-                container.className = "chunkContainer";
+        const threadWrapper = document.createElement("div");
+        threadWrapper.className = "threadWrapper";
 
-                const textArea = document.createElement("textarea");
-                textArea.readOnly = true;
-                textArea.value = chunk;
+        chunks.forEach((chunk) => {
+            const container = document.createElement("div");
+            container.className = "chunkContainer";
 
-                // Create observer for this specific textarea
-                const resizeObserver = new ResizeObserver(() => {
-                    autoExpandTextarea(textArea);
-                });
+            const textArea = document.createElement("textarea");
+            textArea.readOnly = true;
+            textArea.value = chunk;
 
-                // Observe the textarea
-                resizeObserver.observe(textArea);
-
-                const stats = calculateStats(chunk);
-                const statsDiv = document.createElement("div");
-                statsDiv.className = "stats";
-                statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
-
-                const copyButton = document.createElement("button");
-                copyButton.className = "copyButton";
-                copyButton.textContent = "Copy";
-                copyButton.addEventListener("click", () =>
-                    handleCopy(container, textArea.value, copyButton)
-                );
-
-                const infoRow = document.createElement("div");
-                infoRow.className = "chunkInfo";
-                infoRow.append(statsDiv, copyButton);
-
-                container.append(textArea, infoRow);
-                threadWrapper.appendChild(container);
-
-                // Initial size adjustment
+            const resizeObserver = new ResizeObserver(() => {
                 autoExpandTextarea(textArea);
             });
+            resizeObserver.observe(textArea);
 
-            resultsDiv.appendChild(threadWrapper);
-        }
+            const stats = calculateStats(chunk);
+            const statsDiv = document.createElement("div");
+            statsDiv.className = "stats";
+            statsDiv.textContent = `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
 
-        function handleCopy(container, text, copyBtn) {
-            navigator.clipboard.writeText(text).then(() => {
-                copyBtn.textContent = "Copied!";
-                copyBtn.classList.add("success");
-                copyBtn.disabled = true;
-                copyOrder++;
-                container.setAttribute("data-copied-order", copyOrder);
-                container.classList.add("copied");
-
-                setTimeout(() => {
-                    copyBtn.textContent = "Copy";
-                    copyBtn.classList.remove("success");
-                    copyBtn.disabled = false;
-                }, 2000);
-            }).catch(console.error);
-        }
-
-        function autoExpandTextarea(textarea) {
-            textarea.style.height = "auto";
-            // Add a small buffer (2px) to prevent scrollbar flicker
-            textarea.style.height = (textarea.scrollHeight + 2) + 'px';
-        }
-
-        function calculateStats(chunk) {
-            return {
-                characters: chunk.length,
-                words: (chunk.match(/\b\w+\b/g) || []).length,
-                sentences: (chunk.match(/[.!?]+(\s|$)/g) || []).length,
-            };
-        }
-
-        /*********************************************************************
-         * WORKFLOW
-         *********************************************************************/
-        function doChunk(maxLen) {
-            const sourceText = document.getElementById("sourceText").value;
-            const resultsDiv = document.getElementById("results");
-            const inputError = document.getElementById("inputError");
-
-            resultsDiv.innerHTML = "";
-            inputError.innerHTML = "";
-            copyOrder = 0;
-            autoRechunk = true;
-
-            lastChunkMethod = breakOnSentences
-                ? { type: "sentence", value: maxLen }
-                : { type: "length", value: maxLen };
-
-            if (!sourceText.trim()) {
-                inputError.textContent = "Please enter some text to split.";
-                return;
-            }
-
-            const finalChunks = getChunks(
-                sourceText,
-                maxLen,
-                breakOnSentences,
-                enumerateChunks
+            const copyButton = document.createElement("button");
+            copyButton.className = "copyButton";
+            copyButton.textContent = "Copy";
+            copyButton.addEventListener("click", () =>
+                handleCopy(container, textArea.value, copyButton)
             );
-            displayChunks(finalChunks);
-        }
 
-        function reChunkWithLastMethod() {
-            if (!autoRechunk) return;
-            const sourceText = document.getElementById("sourceText").value;
-            if (!sourceText.trim()) {
-                document.getElementById("results").innerHTML = "";
-                return;
-            }
-            const { value } = lastChunkMethod;
-            doChunk(value);
-        }
+            const infoRow = document.createElement("div");
+            infoRow.className = "chunkInfo";
+            infoRow.append(statsDiv, copyButton);
 
-        function updateInputStats() {
-            const src = document.getElementById("sourceText").value;
-            const stats = calculateStats(src);
-            document.getElementById("inputStats").textContent =
-                `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
-            adjustFontSize();
+            container.append(textArea, infoRow);
+            threadWrapper.appendChild(container);
 
-            // Debounce the rechunking to prevent too frequent updates
-            if (window.rechunkTimeout) {
-                clearTimeout(window.rechunkTimeout);
-            }
-            window.rechunkTimeout = setTimeout(() => {
-                reChunkWithLastMethod();
-            }, 100); // 100ms delay
-        }
-
-        function adjustFontSize() {
-            const textArea = document.getElementById("sourceText");
-            const textLength = textArea.value.length;
-            const minSize = 14;
-            const maxSize = 24;
-            const increment = 0.05;
-            let newSize = minSize + textLength * increment;
-            if (newSize > maxSize) newSize = maxSize;
-            textArea.style.fontSize = newSize + "px";
-        }
-
-        function updateCustomButtonLabel() {
-            const inputVal = parseInt(document.getElementById("customLength").value, 10);
-            const customButton = document.getElementById("customButton");
-            if (!isNaN(inputVal) && inputVal > 0) {
-                customButton.textContent = `Break with Custom (${inputVal})`;
-            } else {
-                customButton.textContent = "Break with Custom Size";
-            }
-        }
-
-        // Initialize
-        document.addEventListener("DOMContentLoaded", () => {
-            // Pre-set chunk size buttons
-            document.querySelectorAll(".button-group button[data-length]").forEach((btn) => {
-                btn.addEventListener("click", (e) => {
-                    // Remove active class from all buttons
-                    document.querySelectorAll('.button-group button, #customButton').forEach(b =>
-                        b.classList.remove('active'));
-                    // Add active class to clicked button
-                    e.target.classList.add('active');
-                    const len = parseInt(e.target.getAttribute("data-length"), 10);
-                    doChunk(len);
-                });
-            });
-            // Custom chunk size
-            document.getElementById("customButton").addEventListener("click", () => {
-                const val = parseInt(document.getElementById("customLength").value, 10);
-                if (!isNaN(val) && val > 0) {
-                    // Remove active class from all buttons
-                    document.querySelectorAll('.button-group button, #customButton').forEach(b =>
-                        b.classList.remove('active'));
-                    // Add active class to custom button
-                    document.getElementById("customButton").classList.add('active');
-                    doChunk(val);
-                } else {
-                    document.getElementById("inputError").textContent =
-                        "Please enter a valid positive number for custom size.";
-                }
-            });
-            document.getElementById("customLength").addEventListener("input", updateCustomButtonLabel);
-
-            // Sentence-break & enumeration toggles
-            document.getElementById("sentenceToggle").addEventListener("change", (evt) => {
-                breakOnSentences = evt.target.checked;
-                if (autoRechunk) reChunkWithLastMethod();
-            });
-            document.getElementById("enumerationToggle").addEventListener("change", (evt) => {
-                enumerateChunks = evt.target.checked;
-                if (autoRechunk) reChunkWithLastMethod();
-            });
-
-            // Source text changes => update stats & maybe re-chunk
-            document.getElementById("sourceText").addEventListener("input", updateInputStats);
+            // Initial size adjustment
+            autoExpandTextarea(textArea);
         });
-    </script>
 
-    <!-- Optional: Formspree for feedback -->
-    <script src="https://formspree.io/js/formbutton-v1.min.js" defer></script>
-    <script>
-        window.formbutton = window.formbutton || function () {
-            (formbutton.q = formbutton.q || []).push(arguments);
+        resultsDiv.appendChild(threadWrapper);
+    }
+
+    function handleCopy(container, text, copyButtonElement) {
+        navigator.clipboard.writeText(text).then(() => {
+            copyButtonElement.textContent = "Copied!";
+            copyButtonElement.classList.add("success");
+            copyButtonElement.disabled = true;
+            copyOrder++;
+            container.setAttribute("data-copied-order", copyOrder);
+            container.classList.add("copied");
+
+            setTimeout(() => {
+                copyButtonElement.textContent = "Copy";
+                copyButtonElement.classList.remove("success");
+                copyButtonElement.disabled = false;
+            }, 2000);
+        }).catch(console.error);
+    }
+
+    function autoExpandTextarea(textAreaElement) {
+        textAreaElement.style.height = "auto";
+        textAreaElement.style.height = (textAreaElement.scrollHeight + 2) + 'px';
+    }
+
+    function calculateStats(chunkText) {
+        return {
+            characters: chunkText.length,
+            words: (chunkText.match(/\b\w+\b/g) || []).length,
+            sentences: (chunkText.match(/[.!?]+(\s|$)/g) || []).length,
         };
-        formbutton("create", {
-            action: "https://formspree.io/f/manqedkk",
-            title: "Feedback",
-            fields: [
-                { type: "email", label: "Email:", name: "email", required: true, placeholder: "you@example.com" },
-                { type: "textarea", label: "Message:", name: "message", placeholder: "What can be improved?" },
-                { type: "submit" },
-            ],
-            styles: {
-                title: { backgroundColor: "#007BFF" },
-                button: { backgroundColor: "#007BFF" },
-            },
+    }
+
+    /*********************************************************************
+     * WORKFLOW
+     *********************************************************************/
+    function doChunk(maximumLength) {
+        const sourceText = document.getElementById("sourceText").value;
+        const resultsDiv = document.getElementById("results");
+        const inputError = document.getElementById("inputError");
+
+        resultsDiv.innerHTML = "";
+        inputError.innerHTML = "";
+        copyOrder = 0;
+        autoRechunk = true;
+
+        lastChunkMethod = breakOnSentences
+            ? { type: "sentence", value: maximumLength }
+            : { type: "length", value: maximumLength };
+
+        if (!sourceText.trim()) {
+            inputError.textContent = "Please enter some text to split.";
+            return;
+        }
+
+        const finalChunks = getChunks(
+            sourceText,
+            maximumLength,
+            breakOnSentences,
+            enumerateChunks
+        );
+        displayChunks(finalChunks);
+    }
+
+    function reChunkWithLastMethod() {
+        if (!autoRechunk) return;
+        const sourceText = document.getElementById("sourceText").value;
+        if (!sourceText.trim()) {
+            document.getElementById("results").innerHTML = "";
+            return;
+        }
+        const { value } = lastChunkMethod;
+        doChunk(value);
+    }
+
+    function updateInputStats() {
+        const sourceTextContent = document.getElementById("sourceText").value;
+        const stats = calculateStats(sourceTextContent);
+        document.getElementById("inputStats").textContent =
+            `Characters: ${stats.characters} | Words: ${stats.words} | Sentences: ${stats.sentences}`;
+        adjustFontSize();
+
+        // Debounce the rechunking to prevent too frequent updates
+        if (window.rechunkTimeout) {
+            clearTimeout(window.rechunkTimeout);
+        }
+        window.rechunkTimeout = setTimeout(() => {
+            reChunkWithLastMethod();
+        }, 100);
+    }
+
+    function adjustFontSize() {
+        const sourceTextElement = document.getElementById("sourceText");
+        const textLength = sourceTextElement.value.length;
+        const minimumFontSize = 14;
+        const maximumFontSize = 24;
+        const incrementValue = 0.05;
+        let newFontSize = minimumFontSize + textLength * incrementValue;
+        if (newFontSize > maximumFontSize) newFontSize = maximumFontSize;
+        sourceTextElement.style.fontSize = newFontSize + "px";
+    }
+
+    function updateCustomButtonLabel() {
+        const inputValue = parseInt(document.getElementById("customLength").value, 10);
+        const customButtonElement = document.getElementById("customButton");
+        if (!isNaN(inputValue) && inputValue > 0) {
+            customButtonElement.textContent = `Break with Custom (${inputValue})`;
+        } else {
+            customButtonElement.textContent = "Break with Custom Size";
+        }
+    }
+
+    // Initialize
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".button-group button[data-length]").forEach((buttonElement) => {
+            buttonElement.addEventListener("click", (event) => {
+                document.querySelectorAll('.button-group button, #customButton').forEach(el =>
+                    el.classList.remove('active'));
+                event.target.classList.add('active');
+                const lengthValue = parseInt(event.target.getAttribute("data-length"), 10);
+                doChunk(lengthValue);
+            });
         });
-    </script>
+
+        document.getElementById("customButton").addEventListener("click", () => {
+            const customLengthValue = parseInt(document.getElementById("customLength").value, 10);
+            if (!isNaN(customLengthValue) && customLengthValue > 0) {
+                document.querySelectorAll('.button-group button, #customButton').forEach(el =>
+                    el.classList.remove('active'));
+                document.getElementById("customButton").classList.add('active');
+                doChunk(customLengthValue);
+            } else {
+                document.getElementById("inputError").textContent =
+                    "Please enter a valid positive number for custom size.";
+            }
+        });
+
+        document.getElementById("customLength").addEventListener("input", updateCustomButtonLabel);
+
+        document.getElementById("sentenceToggle").addEventListener("change", (event) => {
+            breakOnSentences = event.target.checked;
+            if (autoRechunk) reChunkWithLastMethod();
+        });
+
+        document.getElementById("enumerationToggle").addEventListener("change", (event) => {
+            enumerateChunks = event.target.checked;
+            if (autoRechunk) reChunkWithLastMethod();
+        });
+
+        document.getElementById("sourceText").addEventListener("input", updateInputStats);
+    });
+</script>
+
+<!-- Optional: Formspree for feedback -->
+<script src="https://formspree.io/js/formbutton-v1.min.js" defer></script>
+<script>
+    window.formbutton = window.formbutton || function () {
+        (formbutton.q = formbutton.q || []).push(arguments);
+    };
+    formbutton("create", {
+        action: "https://formspree.io/f/manqedkk",
+        title: "Feedback",
+        fields: [
+            { type: "email", label: "Email:", name: "email", required: true, placeholder: "you@example.com" },
+            { type: "textarea", label: "Message:", name: "message", placeholder: "What can be improved?" },
+            { type: "submit" },
+        ],
+        styles: {
+            title: { backgroundColor: "#007BFF" },
+            button: { backgroundColor: "#007BFF" },
+        },
+    });
+</script>
 </body>
 
 </html>
