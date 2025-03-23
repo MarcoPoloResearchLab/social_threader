@@ -356,28 +356,28 @@
         <div class="upper-right-pane">
             <!-- Preset chunk sizes -->
             <div class="button-group">
-                <button data-length="500">Break into Threads/Mastodon (500)</button>
-                <button data-length="300">Break into Bluesky (300)</button>
-                <button data-length="280">Break into Twitter/X (280)</button>
+                <button data-length="500">Threads/Mastodon (500)</button>
+                <button data-length="300">Bluesky (300)</button>
+                <button data-length="280">Twitter/X (280)</button>
             </div>
             <!-- Custom chunk size -->
             <div class="custom-control">
-                <button id="customButton">Break with Custom Size</button>
+                <button id="customButton">Custom Size</button>
                 <input type="number" id="customLength" placeholder="Size" min="1" value="128" />
             </div>
             <!-- Toggles for sentence, enumeration, and paragraph breaks -->
             <div class="toggle-sentence-break">
                 <div class="toggle-options">
+                    <input type="checkbox" id="paragraphToggle" />
+                    <label for="paragraphToggle">Paragraphs</label>
+                </div>
+                <div class="toggle-options">
                     <input type="checkbox" id="sentenceToggle" />
-                    <label for="sentenceToggle">Break on full sentences</label>
+                    <label for="sentenceToggle">Sentences</label>
                 </div>
                 <div class="toggle-options">
                     <input type="checkbox" id="enumerationToggle" />
-                    <label for="enumerationToggle">Enumerate posts</label>
-                </div>
-                <div class="toggle-options">
-                    <input type="checkbox" id="paragraphToggle" />
-                    <label for="paragraphToggle">Break on paragraphs</label>
+                    <label for="enumerationToggle">Enumerate</label>
                 </div>
             </div>
         </div>
@@ -722,9 +722,9 @@
         const inputValue = parseInt(document.getElementById("customLength").value, 10);
         const customButtonElement = document.getElementById("customButton");
         if (!isNaN(inputValue) && inputValue > 0) {
-            customButtonElement.textContent = `Break with Custom (${inputValue})`;
+            customButtonElement.textContent = `Custom (${inputValue})`;
         } else {
-            customButtonElement.textContent = "Break with Custom Size";
+            customButtonElement.textContent = "Custom Size";
         }
         if (customButtonElement.classList.contains('active')) {
             if (customReflowTimeout) {
