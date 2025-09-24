@@ -369,17 +369,31 @@ export async function runIntegrationTests(runTest) {
                         "chunk should include the pasted image preview"
                     );
 
-                    const copyButton = /** @type {HTMLButtonElement} */ (
-                        elements.resultsElement.querySelector(".copyButton")
+                    const chunkContainers = Array.from(
+                        elements.resultsElement.querySelectorAll(".chunkContainer")
                     );
-                    copyButton.click();
+                    const textContainer = chunkContainers.find((container) =>
+                        !container.classList.contains("imageChunk")
+                    );
+                    const imageContainer = chunkContainers.find((container) =>
+                        container.classList.contains("imageChunk")
+                    );
+
+                    if (!textContainer || !imageContainer) {
+                        throw new Error("Expected both text and image chunks to be rendered");
+                    }
+
+                    const textCopyButton = /** @type {HTMLButtonElement} */ (
+                        textContainer.querySelector(".copyButton")
+                    );
+                    textCopyButton.click();
                     await Promise.resolve();
 
                     assertEqual(clipboardWriteCalls.length, 1, "clipboard write should be invoked once");
-                    const clipboardItems = clipboardWriteCalls[0];
+                    let clipboardItems = clipboardWriteCalls[0];
                     assertEqual(Array.isArray(clipboardItems), true, "clipboard payload should be an array");
                     assertEqual(clipboardItems.length, 1, "clipboard payload should contain a single item");
-                    const clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
+                    let clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
                     assertEqual(
                         Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
                         true,
@@ -390,8 +404,34 @@ export async function runIntegrationTests(runTest) {
                         true,
                         "text clipboard item should contain HTML"
                     );
-                    const htmlBlob = clipboardItem.items["text/html"];
-                    const htmlContent = await htmlBlob.text();
+                    let htmlBlob = clipboardItem.items["text/html"];
+                    let htmlContent = await htmlBlob.text();
+                    assertEqual(/<img/i.test(htmlContent), false, "text chunk HTML should not inline the image");
+
+                    clipboardWriteCalls.length = 0;
+
+                    const imageCopyButton = /** @type {HTMLButtonElement} */ (
+                        imageContainer.querySelector(".copyButton")
+                    );
+                    imageCopyButton.click();
+                    await Promise.resolve();
+
+                    assertEqual(clipboardWriteCalls.length, 1, "image chunk copy should trigger clipboard write");
+                    clipboardItems = clipboardWriteCalls[0];
+                    assertEqual(clipboardItems.length, 1, "clipboard payload should contain a single item");
+                    clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
+                    assertEqual(
+                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
+                        true,
+                        "image clipboard item should include plain text"
+                    );
+                    assertEqual(
+                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/html"),
+                        true,
+                        "image clipboard item should include HTML"
+                    );
+                    htmlBlob = clipboardItem.items["text/html"];
+                    htmlContent = await htmlBlob.text();
                     assertEqual(/<img/i.test(htmlContent), true, "copied HTML should include the pasted image");
                 } finally {
                     window.FileReader = originalFileReader;

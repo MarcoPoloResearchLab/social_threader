@@ -53,18 +53,13 @@ export class ChunkListView {
                 const containerElement = document.createElement("div");
                 containerElement.className = "chunkContainer";
 
+                if (chunkContent.variant === "image") {
+                    containerElement.classList.add("imageChunk");
+                }
+
                 const contentElement = document.createElement("div");
                 contentElement.className = "chunkContent";
                 contentElement.innerHTML = chunkContent.htmlContent;
-
-                const statistics = this.chunkingService.calculateStatistics(chunkContent.plainText);
-                const statsElement = document.createElement("div");
-                statsElement.className = "stats";
-                statsElement.textContent = templateHelpers.interpolate(TEXT_CONTENT.STATS_TEMPLATE, {
-                    characters: statistics.characters,
-                    words: statistics.words,
-                    sentences: statistics.sentences
-                });
 
                 const copyButtonElement = document.createElement("button");
                 copyButtonElement.className = "copyButton";
@@ -79,7 +74,26 @@ export class ChunkListView {
 
                 const infoRow = document.createElement("div");
                 infoRow.className = "chunkInfo";
-                infoRow.append(statsElement, copyButtonElement);
+
+                if (chunkContent.variant !== "image") {
+                    const statisticsSource =
+                        typeof chunkContent.statisticsText === "string"
+                            ? chunkContent.statisticsText
+                            : chunkContent.plainText;
+                    const statistics = this.chunkingService.calculateStatistics(statisticsSource);
+                    const statsElement = document.createElement("div");
+                    statsElement.className = "stats";
+                    statsElement.textContent = templateHelpers.interpolate(TEXT_CONTENT.STATS_TEMPLATE, {
+                        characters: statistics.characters,
+                        words: statistics.words,
+                        sentences: statistics.sentences
+                    });
+                    infoRow.append(statsElement);
+                } else {
+                    infoRow.classList.add("imageOnly");
+                }
+
+                infoRow.append(copyButtonElement);
 
                 containerElement.appendChild(contentElement);
                 containerElement.appendChild(infoRow);

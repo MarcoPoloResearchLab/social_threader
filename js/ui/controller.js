@@ -226,8 +226,12 @@ export class ThreaderController {
         };
 
         if (supportsClipboardItems) {
+            const clipboardHtml =
+                typeof chunkContent.clipboardHtml === "string"
+                    ? chunkContent.clipboardHtml
+                    : chunkContent.htmlContent;
             const htmlFragment = templateHelpers.interpolate(HTML_TEMPLATES.CLIPBOARD_WRAPPER, {
-                CONTENT: chunkContent.htmlContent
+                CONTENT: clipboardHtml
             });
 
             const clipboardItems = [

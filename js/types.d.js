@@ -48,9 +48,16 @@
  */
 
 /**
+ * @typedef {"text" | "image"} ChunkVariant
+ */
+
+/**
  * @typedef {Object} ChunkContent
+ * @property {ChunkVariant} variant Kind of chunk being rendered.
  * @property {string} plainText Plain text representation of the chunk suitable for copying as text.
- * @property {string} htmlContent HTML markup containing text and inline images for rendering and HTML clipboard copy.
+ * @property {string} htmlContent HTML markup used when rendering the chunk in the UI.
+ * @property {string} [clipboardHtml] Optional HTML fragment used when copying the chunk to the clipboard.
+ * @property {string} [statisticsText] Optional text used when calculating statistics for the chunk.
  */
 
 /**

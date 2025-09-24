@@ -13,21 +13,33 @@ import { assertEqual } from "./assert.js";
  * @returns {Promise<void>}
  */
 export async function runRichTextTests(runTest) {
-    await runTest("buildChunkContent converts placeholders to HTML", () => {
+    await runTest("buildChunkContent separates text and image segments", () => {
         const token = richTextHelpers.createPlaceholderToken(0);
         const imageRecord = {
             placeholderToken: token,
             dataUrl: "data:image/png;base64,ZmFrZQ==",
             altText: TEXT_CONTENT.PASTED_IMAGE_ALT
         };
-        const chunk = richTextHelpers.buildChunkContent(`Alpha ${token} omega`, [imageRecord]);
+        const segments = richTextHelpers.buildChunkContent(`Alpha ${token} omega`, [imageRecord]);
+        const textSegment = segments.find((segment) => segment.variant === "text");
+        const imageSegment = segments.find((segment) => segment.variant === "image");
+
+        if (!textSegment || !imageSegment) {
+            throw new Error("Both text and image segments should be produced");
+        }
+
         assertEqual(
-            chunk.plainText.includes(TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER),
+            textSegment.plainText.includes(TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER),
             true,
             "plain text should include the configured image placeholder"
         );
-        assertEqual(/<img/.test(chunk.htmlContent), true, "HTML content should include an image element");
-        assertEqual(chunk.htmlContent.includes(imageRecord.dataUrl), true, "HTML should embed the image data URL");
+        assertEqual(/<img/.test(textSegment.htmlContent), false, "Text HTML should not inline the image element");
+        assertEqual(/<img/.test(imageSegment.htmlContent), true, "Image HTML should render the image element");
+        assertEqual(
+            imageSegment.htmlContent.includes(imageRecord.dataUrl),
+            true,
+            "Image segment should embed the image data URL"
+        );
     });
 
     await runTest("extractPlainText removes placeholder tokens", () => {

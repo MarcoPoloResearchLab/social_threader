@@ -56,18 +56,20 @@ function createImageLookup(imageRecords) {
 }
 
 /**
- * Generates rich chunk content from placeholder-based text.
+ * Translates placeholder-based text into renderable chunks and aggregate text forms.
  * @param {string} placeholderText Text containing placeholder tokens representing images.
  * @param {import("../types.d.js").RichTextImage[]} imageRecords Image metadata ordered as encountered in the editor.
- * @returns {import("../types.d.js").ChunkContent} Chunk representation containing both text and HTML markup.
+ * @returns {{ plainText: string; textWithoutImages: string; imageChunks: import("../types.d.js").ChunkContent[] }}
  */
-function buildChunkContent(placeholderText, imageRecords) {
+function translatePlaceholderText(placeholderText, imageRecords) {
     const placeholderPattern = createPlaceholderPattern();
     const imageLookup = createImageLookup(imageRecords);
 
-    let plainTextResult = "";
-    const htmlSegments = [];
     let lastIndex = 0;
+    let plainTextResult = "";
+    let textWithoutImages = "";
+    /** @type {import("../types.d.js").ChunkContent[]} */
+    const imageChunks = [];
 
     while (true) {
         const placeholderMatch = placeholderPattern.exec(placeholderText);
@@ -78,19 +80,24 @@ function buildChunkContent(placeholderText, imageRecords) {
         const textBeforeMatch = placeholderText.slice(lastIndex, placeholderMatch.index);
         if (textBeforeMatch.length > 0) {
             plainTextResult += textBeforeMatch;
-            htmlSegments.push(convertTextSegmentToHtml(textBeforeMatch));
+            textWithoutImages += textBeforeMatch;
         }
 
         const placeholderToken = placeholderMatch[0];
         const imageRecord = imageLookup.get(placeholderToken);
         if (imageRecord) {
             const altText = imageRecord.altText || TEXT_CONTENT.PASTED_IMAGE_ALT;
-            plainTextResult += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
             const sanitizedAlt = templateHelpers.escapeHtml(altText);
-            htmlSegments.push(`<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`);
+            imageChunks.push({
+                variant: "image",
+                plainText: TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER,
+                htmlContent: `<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`,
+                clipboardHtml: `<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`
+            });
+            plainTextResult += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
         } else {
             plainTextResult += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
-            htmlSegments.push(convertTextSegmentToHtml(TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER));
+            textWithoutImages += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
         }
 
         lastIndex = placeholderPattern.lastIndex;
@@ -99,13 +106,40 @@ function buildChunkContent(placeholderText, imageRecords) {
     const trailingText = placeholderText.slice(lastIndex);
     if (trailingText.length > 0) {
         plainTextResult += trailingText;
-        htmlSegments.push(convertTextSegmentToHtml(trailingText));
+        textWithoutImages += trailingText;
     }
 
     return {
         plainText: plainTextResult,
-        htmlContent: htmlSegments.join("")
+        textWithoutImages,
+        imageChunks
     };
+}
+
+/**
+ * Generates rich chunk content from placeholder-based text.
+ * @param {string} placeholderText Text containing placeholder tokens representing images.
+ * @param {import("../types.d.js").RichTextImage[]} imageRecords Image metadata ordered as encountered in the editor.
+ * @returns {import("../types.d.js").ChunkContent[]} Renderable chunk representations.
+ */
+function buildChunkContent(placeholderText, imageRecords) {
+    const translation = translatePlaceholderText(placeholderText, imageRecords);
+
+    /** @type {import("../types.d.js").ChunkContent[]} */
+    const chunkSegments = [];
+
+    if (translation.textWithoutImages.length > 0) {
+        chunkSegments.push({
+            variant: "text",
+            plainText: translation.plainText,
+            htmlContent: convertTextSegmentToHtml(translation.textWithoutImages),
+            clipboardHtml: convertTextSegmentToHtml(translation.plainText),
+            statisticsText: translation.textWithoutImages
+        });
+    }
+
+    chunkSegments.push(...translation.imageChunks);
+    return chunkSegments;
 }
 
 /**
@@ -115,7 +149,12 @@ function buildChunkContent(placeholderText, imageRecords) {
  * @returns {import("../types.d.js").ChunkContent[]} Chunk representations with text and HTML content.
  */
 function buildChunkContents(placeholderChunks, imageRecords) {
-    return placeholderChunks.map((chunk) => buildChunkContent(chunk, imageRecords));
+    /** @type {import("../types.d.js").ChunkContent[]} */
+    const renderableChunks = [];
+    placeholderChunks.forEach((chunk) => {
+        renderableChunks.push(...buildChunkContent(chunk, imageRecords));
+    });
+    return renderableChunks;
 }
 
 /**
@@ -125,7 +164,7 @@ function buildChunkContents(placeholderChunks, imageRecords) {
  * @returns {string} Plain text with placeholder tokens substituted for text placeholders.
  */
 function extractPlainText(placeholderText, imageRecords) {
-    return buildChunkContent(placeholderText, imageRecords).plainText;
+    return translatePlaceholderText(placeholderText, imageRecords).plainText;
 }
 
 /**
