@@ -15,6 +15,7 @@
     <script type="module">
         import { createTestRunner } from "./runner.js";
         import { runChunkingTests } from "./chunking.test.js";
+        import { runRichTextTests } from "./richText.test.js";
         import { runIntegrationTests } from "./integration.test.js";
 
         const outputElement = /** @type {HTMLElement} */ (document.getElementById("test-output"));
@@ -23,6 +24,7 @@
         (async () => {
             try {
                 await runChunkingTests(runTest);
+                await runRichTextTests(runTest);
                 await runIntegrationTests(runTest);
             } catch (error) {
                 const errorMessage = document.createElement("p");

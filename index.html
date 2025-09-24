@@ -45,7 +45,15 @@
             <h2 id="appTitle"></h2>
             <p class="mb-20" id="primaryDescription"></p>
             <p class="mb-20" id="secondaryDescription"></p>
-            <textarea id="sourceText" spellcheck="true" rows="10" aria-describedby="inputStats inputError"></textarea>
+            <div
+                id="sourceText"
+                class="richTextInput"
+                contenteditable="true"
+                spellcheck="true"
+                role="textbox"
+                aria-multiline="true"
+                aria-describedby="inputStats inputError"
+            ></div>
             <div id="inputStats" class="inputStats" aria-live="polite"></div>
             <div id="inputError" class="error" role="alert"></div>
         </div>
