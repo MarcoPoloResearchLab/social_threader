@@ -458,6 +458,86 @@ export async function runIntegrationTests(runTest) {
                     cleanup();
                 }
             }
+        },
+        {
+            name: "image-only paste renders image chunks without requiring text",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                const originalFileReader = window.FileReader;
+
+                try {
+                    class FileReaderStub {
+                        constructor() {
+                            /** @type {((this: FileReaderStub, ev: Event) => void) | null} */
+                            this.onload = null;
+                            /** @type {string | null} */
+                            this.result = null;
+                        }
+
+                        /**
+                         * @param {Blob} blob
+                         * @returns {void}
+                         */
+                        readAsDataURL(blob) {
+                            this.result = `data:${blob.type};base64,ZmFrZQ==`;
+                            if (typeof this.onload === "function") {
+                                this.onload.call(this, new Event("load"));
+                            }
+                        }
+                    }
+                    // @ts-ignore
+                    window.FileReader = FileReaderStub;
+
+                    const imageBlob = new Blob(["fake"], { type: "image/png" });
+                    const pasteEvent = new Event("paste");
+                    Object.defineProperty(pasteEvent, "clipboardData", {
+                        value: {
+                            items: [
+                                {
+                                    kind: "file",
+                                    type: "image/png",
+                                    getAsFile() {
+                                        return imageBlob;
+                                    }
+                                }
+                            ]
+                        }
+                    });
+                    elements.editorElement.dispatchEvent(pasteEvent);
+                    await new Promise((resolve) => setTimeout(resolve, 150));
+                    elements.presetTwitter.click();
+                    await waitForAnimationFrame();
+
+                    const chunkContainers = Array.from(
+                        elements.resultsElement.querySelectorAll(".chunkContainer")
+                    );
+                    assertEqual(
+                        chunkContainers.length,
+                        1,
+                        "image-only paste should render a single chunk for the pasted image"
+                    );
+                    const imageContainer = chunkContainers[0];
+                    assertEqual(
+                        imageContainer.classList.contains("imageChunk"),
+                        true,
+                        "image-only paste should mark the rendered chunk as an image"
+                    );
+                    const renderedImage = imageContainer.querySelector("img");
+                    assertEqual(
+                        renderedImage instanceof HTMLImageElement,
+                        true,
+                        "image-only paste should render an image preview"
+                    );
+                    assertEqual(
+                        elements.errorElement.textContent,
+                        "",
+                        "image-only paste should not trigger the missing text error"
+                    );
+                } finally {
+                    window.FileReader = originalFileReader;
+                    cleanup();
+                }
+            }
         }
     ];
 

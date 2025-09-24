@@ -162,7 +162,7 @@ export class ThreaderController {
                 window.clearTimeout(this.rechunkTimeoutId);
             }
             this.rechunkTimeoutId = window.setTimeout(() => {
-                if (documentSnapshot.plainText.trim().length === 0) {
+                if (!this.hasRenderableContent(documentSnapshot)) {
                     this.chunkListView.clear();
                     this.inputPanel.clearError();
                     this.state.copySequenceNumber = 0;
@@ -196,7 +196,7 @@ export class ThreaderController {
         this.currentDocumentSnapshot = documentSnapshot;
         this.state.copySequenceNumber = 0;
         this.autoRechunkEnabled = true;
-        if (documentSnapshot.plainText.trim().length === 0) {
+        if (!this.hasRenderableContent(documentSnapshot)) {
             this.chunkListView.clear();
             if (showErrorOnEmpty) {
                 this.inputPanel.showError(TEXT_CONTENT.ERROR_NO_TEXT);
@@ -218,6 +218,15 @@ export class ThreaderController {
         this.chunkListView.renderChunks(chunkContents, (context) => {
             this.handleCopyRequest(context.chunk, context.containerElement, context.buttonElement);
         });
+    }
+
+    /**
+     * Determines whether the provided snapshot contains content worth rendering.
+     * @param {import("../types.d.js").RichTextDocument} documentSnapshot Snapshot captured from the editor.
+     * @returns {boolean}
+     */
+    hasRenderableContent(documentSnapshot) {
+        return documentSnapshot.plainText.trim().length > 0 || documentSnapshot.images.length > 0;
     }
 
     /**

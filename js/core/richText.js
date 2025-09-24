@@ -56,10 +56,10 @@ function createImageLookup(imageRecords) {
 }
 
 /**
- * Translates placeholder-based text into renderable chunks and aggregate text forms.
+ * Translates placeholder-based text into text segments and matched image records.
  * @param {string} placeholderText Text containing placeholder tokens representing images.
  * @param {import("../types.d.js").RichTextImage[]} imageRecords Image metadata ordered as encountered in the editor.
- * @returns {{ plainText: string; textWithoutImages: string; imageChunks: import("../types.d.js").ChunkContent[] }}
+ * @returns {{ plainText: string; textWithoutImages: string; matchedImages: import("../types.d.js").RichTextImage[] }}
  */
 function translatePlaceholderText(placeholderText, imageRecords) {
     const placeholderPattern = createPlaceholderPattern();
@@ -67,9 +67,9 @@ function translatePlaceholderText(placeholderText, imageRecords) {
 
     let lastIndex = 0;
     let plainTextResult = "";
-    let textWithoutImages = "";
-    /** @type {import("../types.d.js").ChunkContent[]} */
-    const imageChunks = [];
+    const textSegments = [];
+    /** @type {import("../types.d.js").RichTextImage[]} */
+    const matchedImages = [];
 
     while (true) {
         const placeholderMatch = placeholderPattern.exec(placeholderText);
@@ -80,24 +80,16 @@ function translatePlaceholderText(placeholderText, imageRecords) {
         const textBeforeMatch = placeholderText.slice(lastIndex, placeholderMatch.index);
         if (textBeforeMatch.length > 0) {
             plainTextResult += textBeforeMatch;
-            textWithoutImages += textBeforeMatch;
+            textSegments.push(textBeforeMatch);
         }
 
         const placeholderToken = placeholderMatch[0];
         const imageRecord = imageLookup.get(placeholderToken);
         if (imageRecord) {
-            const altText = imageRecord.altText || TEXT_CONTENT.PASTED_IMAGE_ALT;
-            const sanitizedAlt = templateHelpers.escapeHtml(altText);
-            imageChunks.push({
-                variant: "image",
-                plainText: "",
-                htmlContent: `<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`,
-                clipboardHtml: `<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`,
-                imageDataUrl: imageRecord.dataUrl
-            });
+            matchedImages.push(imageRecord);
         } else {
             plainTextResult += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
-            textWithoutImages += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
+            textSegments.push(TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER);
         }
 
         lastIndex = placeholderPattern.lastIndex;
@@ -106,13 +98,47 @@ function translatePlaceholderText(placeholderText, imageRecords) {
     const trailingText = placeholderText.slice(lastIndex);
     if (trailingText.length > 0) {
         plainTextResult += trailingText;
-        textWithoutImages += trailingText;
+        textSegments.push(trailingText);
     }
 
     return {
         plainText: plainTextResult,
-        textWithoutImages,
-        imageChunks
+        textWithoutImages: textSegments.join(""),
+        matchedImages
+    };
+}
+
+/**
+ * Creates a text chunk representation from the provided segment string.
+ * @param {string} textSegment Segment of text without inline image placeholders.
+ * @returns {import("../types.d.js").ChunkContent}
+ */
+function createTextChunk(textSegment) {
+    const htmlContent = convertTextSegmentToHtml(textSegment);
+    return {
+        variant: "text",
+        plainText: textSegment,
+        htmlContent,
+        clipboardHtml: htmlContent,
+        statisticsText: textSegment
+    };
+}
+
+/**
+ * Creates an image chunk representation for the supplied image record.
+ * @param {import("../types.d.js").RichTextImage} imageRecord Image metadata captured from the editor.
+ * @returns {import("../types.d.js").ChunkContent}
+ */
+function createImageChunk(imageRecord) {
+    const altText = imageRecord.altText || TEXT_CONTENT.PASTED_IMAGE_ALT;
+    const sanitizedAlt = templateHelpers.escapeHtml(altText);
+    const htmlMarkup = `<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`;
+    return {
+        variant: "image",
+        plainText: "",
+        htmlContent: htmlMarkup,
+        clipboardHtml: htmlMarkup,
+        imageDataUrl: imageRecord.dataUrl
     };
 }
 
@@ -129,16 +155,12 @@ function buildChunkContent(placeholderText, imageRecords) {
     const chunkSegments = [];
 
     if (translation.textWithoutImages.length > 0) {
-        chunkSegments.push({
-            variant: "text",
-            plainText: translation.textWithoutImages,
-            htmlContent: convertTextSegmentToHtml(translation.textWithoutImages),
-            clipboardHtml: convertTextSegmentToHtml(translation.textWithoutImages),
-            statisticsText: translation.textWithoutImages
-        });
+        chunkSegments.push(createTextChunk(translation.textWithoutImages));
     }
 
-    chunkSegments.push(...translation.imageChunks);
+    translation.matchedImages.forEach((imageRecord) => {
+        chunkSegments.push(createImageChunk(imageRecord));
+    });
     return chunkSegments;
 }
 

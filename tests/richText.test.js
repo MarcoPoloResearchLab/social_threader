@@ -42,6 +42,18 @@ export async function runRichTextTests(runTest) {
         );
     });
 
+    await runTest("buildChunkContent returns only image segments for image-only chunks", () => {
+        const token = richTextHelpers.createPlaceholderToken(0);
+        const imageRecord = {
+            placeholderToken: token,
+            dataUrl: "data:image/png;base64,ZmFrZQ==",
+            altText: TEXT_CONTENT.PASTED_IMAGE_ALT
+        };
+        const segments = richTextHelpers.buildChunkContent(token, [imageRecord]);
+        assertEqual(segments.length, 1, "image-only chunks should produce a single segment");
+        assertEqual(segments[0].variant, "image", "image-only chunks should render an image segment");
+    });
+
     await runTest("extractPlainText removes placeholder tokens", () => {
         const firstToken = richTextHelpers.createPlaceholderToken(0);
         const secondToken = richTextHelpers.createPlaceholderToken(1);
