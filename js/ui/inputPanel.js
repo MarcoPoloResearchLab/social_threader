@@ -108,7 +108,7 @@ function emitSyntheticInputEvent(targetElement) {
 }
 
 /**
- * Parses HTML clipboard content and returns nodes with all image elements removed.
+ * Parses HTML clipboard content and returns sanitized text nodes safe for insertion.
  * @param {string} htmlContent HTML string extracted from the clipboard.
  * @returns {Node[]} Ordered collection of nodes safe to insert into the editor.
  */
@@ -116,36 +116,31 @@ function extractNonImageClipboardNodes(htmlContent) {
     const parser = new DOMParser();
     const parsedDocument = parser.parseFromString(htmlContent, "text/html");
     const sanitizedNodes = [];
+    const bodyElement = parsedDocument.body;
 
-    parsedDocument.body.childNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-            const originalElement = /** @type {HTMLElement} */ (node);
-            if (originalElement.tagName === "IMG") {
-                return;
-            }
+    if (!bodyElement) {
+        return sanitizedNodes;
+    }
 
-            const clonedElement = /** @type {HTMLElement} */ (originalElement.cloneNode(true));
-            const nestedImages = Array.from(clonedElement.querySelectorAll("img"));
-            nestedImages.forEach((image) => {
-                image.remove();
-            });
+    const imageElements = Array.from(bodyElement.querySelectorAll("img"));
+    imageElements.forEach((imageElement) => {
+        imageElement.remove();
+    });
 
-            if (clonedElement.tagName === "BR") {
-                sanitizedNodes.push(clonedElement);
-                return;
-            }
+    const sanitizedText = (bodyElement.innerText || "")
+        .replace(/\u00A0/g, " ")
+        .replace(/\r\n/g, "\n")
+        .replace(/^\n+/, "");
 
-            if (clonedElement.childNodes.length === 0 && (clonedElement.textContent || "").trim() === "") {
-                return;
-            }
+    if (sanitizedText.length === 0) {
+        return sanitizedNodes;
+    }
 
-            sanitizedNodes.push(clonedElement);
-            return;
-        }
-
-        if (node.nodeType === Node.TEXT_NODE) {
-            const textContent = node.textContent || "";
-            sanitizedNodes.push(document.createTextNode(textContent));
+    const textLines = sanitizedText.split("\n");
+    textLines.forEach((line, index) => {
+        sanitizedNodes.push(document.createTextNode(line));
+        if (index < textLines.length - 1) {
+            sanitizedNodes.push(document.createElement("br"));
         }
     });
 
@@ -207,7 +202,7 @@ export class InputPanel {
         const normalizedPlaceholderText = clonedEditor.innerText
             .replace(/\u00A0/g, " ")
             .replace(/\r\n/g, "\n");
-        const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trimEnd();
+        const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
         const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
 
         return {
