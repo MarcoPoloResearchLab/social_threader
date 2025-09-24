@@ -108,6 +108,51 @@ function emitSyntheticInputEvent(targetElement) {
 }
 
 /**
+ * Parses HTML clipboard content and returns nodes with all image elements removed.
+ * @param {string} htmlContent HTML string extracted from the clipboard.
+ * @returns {Node[]} Ordered collection of nodes safe to insert into the editor.
+ */
+function extractNonImageClipboardNodes(htmlContent) {
+    const parser = new DOMParser();
+    const parsedDocument = parser.parseFromString(htmlContent, "text/html");
+    const sanitizedNodes = [];
+
+    parsedDocument.body.childNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            const originalElement = /** @type {HTMLElement} */ (node);
+            if (originalElement.tagName === "IMG") {
+                return;
+            }
+
+            const clonedElement = /** @type {HTMLElement} */ (originalElement.cloneNode(true));
+            const nestedImages = Array.from(clonedElement.querySelectorAll("img"));
+            nestedImages.forEach((image) => {
+                image.remove();
+            });
+
+            if (clonedElement.tagName === "BR") {
+                sanitizedNodes.push(clonedElement);
+                return;
+            }
+
+            if (clonedElement.childNodes.length === 0 && (clonedElement.textContent || "").trim() === "") {
+                return;
+            }
+
+            sanitizedNodes.push(clonedElement);
+            return;
+        }
+
+        if (node.nodeType === Node.TEXT_NODE) {
+            const textContent = node.textContent || "";
+            sanitizedNodes.push(document.createTextNode(textContent));
+        }
+    });
+
+    return sanitizedNodes;
+}
+
+/**
  * Manages the user input editor, statistics display, and error feedback.
  */
 export class InputPanel {
@@ -247,21 +292,55 @@ export class InputPanel {
                 return;
             }
 
+            const htmlContent = clipboardData.getData("text/html");
+            const plainTextContent = clipboardData.getData("text/plain");
             pasteEvent.preventDefault();
+
+            /** @type {Array<() => Promise<void>>} */
+            const insertionSteps = [];
+
+            if (htmlContent) {
+                const htmlNodes = extractNonImageClipboardNodes(htmlContent);
+                if (htmlNodes.length > 0) {
+                    insertionSteps.push(() => {
+                        htmlNodes.forEach((node) => {
+                            insertNodeAtCaret(this.editorElement, node);
+                        });
+                        return Promise.resolve();
+                    });
+                }
+            }
+
+            if (insertionSteps.length === 0 && plainTextContent) {
+                insertionSteps.push(() => {
+                    insertNodeAtCaret(this.editorElement, document.createTextNode(plainTextContent));
+                    return Promise.resolve();
+                });
+            }
+
             imageItems.forEach((item) => {
                 const file = item.getAsFile();
                 if (!file) {
                     return;
                 }
-                readFileAsDataUrl(file)
-                    .then((dataUrl) => {
-                        const imageElement = createEditorImageElement(dataUrl);
-                        insertNodeAtCaret(this.editorElement, imageElement);
-                        emitSyntheticInputEvent(this.editorElement);
-                    })
-                    .catch(() => {
-                        // Silently ignore failures; text content is preserved.
-                    });
+                insertionSteps.push(() =>
+                    readFileAsDataUrl(file)
+                        .then((dataUrl) => {
+                            const imageElement = createEditorImageElement(dataUrl);
+                            insertNodeAtCaret(this.editorElement, imageElement);
+                        })
+                        .catch(() => {
+                            // Silently ignore failures; text content is preserved when available.
+                        })
+                );
+            });
+
+            let sequence = Promise.resolve();
+            insertionSteps.forEach((step) => {
+                sequence = sequence.then(() => step());
+            });
+            sequence.finally(() => {
+                emitSyntheticInputEvent(this.editorElement);
             });
         });
 
