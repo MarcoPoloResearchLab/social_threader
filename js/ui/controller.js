@@ -217,6 +217,19 @@ export class ThreaderController {
             this.chunkListView.markChunkAsCopied(containerElement, buttonElement, this.state.copySequenceNumber);
         };
 
+        const attemptTextCopy = () => {
+            if (typeof clipboardInterface.writeText === "function") {
+                clipboardInterface.writeText(chunkText)
+                    .then(markSuccess)
+                    .catch((error) => {
+                        this.loggingHelpers.reportCopyFailure(error);
+                    });
+                return;
+            }
+
+            this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_UNAVAILABLE));
+        };
+
         if (imageSupported) {
             const sanitizedHtmlContent = templateHelpers
                 .escapeHtml(chunkText)
@@ -237,18 +250,12 @@ export class ThreaderController {
 
             clipboardInterface.write(clipboardItems).then(markSuccess).catch((error) => {
                 this.loggingHelpers.reportCopyFailure(error);
+                attemptTextCopy();
             });
             return;
         }
 
-        if (typeof clipboardInterface.writeText === "function") {
-            clipboardInterface.writeText(chunkText).then(markSuccess).catch((error) => {
-                this.loggingHelpers.reportCopyFailure(error);
-            });
-            return;
-        }
-
-        this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_UNAVAILABLE));
+        attemptTextCopy();
     }
 
     /**
