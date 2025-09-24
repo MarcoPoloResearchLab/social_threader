@@ -30,8 +30,8 @@ export async function runRichTextTests(runTest) {
 
         assertEqual(
             textSegment.plainText.includes(TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER),
-            true,
-            "plain text should include the configured image placeholder"
+            false,
+            "plain text should exclude the configured image placeholder"
         );
         assertEqual(/<img/.test(textSegment.htmlContent), false, "Text HTML should not inline the image element");
         assertEqual(/<img/.test(imageSegment.htmlContent), true, "Image HTML should render the image element");
@@ -51,7 +51,6 @@ export async function runRichTextTests(runTest) {
         ];
         const placeholderText = `${firstToken}\n${secondToken}`;
         const plainText = richTextHelpers.extractPlainText(placeholderText, imageRecords);
-        const expectedText = `${TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER}\n${TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER}`;
-        assertEqual(plainText, expectedText, "plain text should replace each placeholder token");
+        assertEqual(plainText, "\n", "plain text should omit placeholder tokens while preserving separators");
     });
 }

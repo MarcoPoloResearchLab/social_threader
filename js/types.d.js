@@ -57,6 +57,7 @@
  * @property {string} plainText Plain text representation of the chunk suitable for copying as text.
  * @property {string} htmlContent HTML markup used when rendering the chunk in the UI.
  * @property {string} [clipboardHtml] Optional HTML fragment used when copying the chunk to the clipboard.
+ * @property {string} [imageDataUrl] Optional data URL used when copying image chunks to the clipboard.
  * @property {string} [statisticsText] Optional text used when calculating statistics for the chunk.
  */
 

@@ -13,6 +13,37 @@ const INPUT_RECHUNK_DELAY_MS = 100;
 const CUSTOM_RECHUNK_DELAY_MS = 1000;
 
 /**
+ * Converts a data URL into a Blob that can be written to the clipboard.
+ * @param {string | undefined} dataUrl Encoded data URL captured from the editor.
+ * @returns {{ blob: Blob; mimeType: string } | null} Blob payload when parsing succeeds, otherwise null.
+ */
+function createBlobFromDataUrl(dataUrl) {
+    if (typeof dataUrl !== "string" || dataUrl.length === 0) {
+        return null;
+    }
+
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) {
+        return null;
+    }
+
+    const [, mimeType, base64Data] = match;
+    try {
+        const binaryString = window.atob(base64Data);
+        const buffer = new Uint8Array(binaryString.length);
+        for (let index = 0; index < binaryString.length; index += 1) {
+            buffer[index] = binaryString.charCodeAt(index);
+        }
+        return {
+            blob: new Blob([buffer], { type: mimeType }),
+            mimeType
+        };
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
  * Central controller that orchestrates the chunking workflow and UI updates.
  */
 export class ThreaderController {
@@ -234,12 +265,20 @@ export class ThreaderController {
                 CONTENT: clipboardHtml
             });
 
-            const clipboardItems = [
-                new clipboardItemConstructor({
-                    "text/plain": new Blob([chunkContent.plainText], { type: "text/plain" }),
-                    "text/html": new Blob([htmlFragment], { type: "text/html" })
-                })
-            ];
+            /** @type {Record<string, Blob>} */
+            const clipboardPayload = {
+                "text/plain": new Blob([chunkContent.plainText], { type: "text/plain" }),
+                "text/html": new Blob([htmlFragment], { type: "text/html" })
+            };
+
+            if (chunkContent.variant === "image") {
+                const imagePayload = createBlobFromDataUrl(chunkContent.imageDataUrl);
+                if (imagePayload) {
+                    clipboardPayload[imagePayload.mimeType] = imagePayload.blob;
+                }
+            }
+
+            const clipboardItems = [new clipboardItemConstructor(clipboardPayload)];
 
             clipboardInterface.write(clipboardItems).then(markSuccess).catch((error) => {
                 this.loggingHelpers.reportCopyFailure(error);

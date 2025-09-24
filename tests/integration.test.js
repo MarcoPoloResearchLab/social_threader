@@ -404,6 +404,13 @@ export async function runIntegrationTests(runTest) {
                         true,
                         "text clipboard item should contain HTML"
                     );
+                    let plainTextBlob = clipboardItem.items["text/plain"];
+                    let plainTextContent = await plainTextBlob.text();
+                    assertEqual(
+                        plainTextContent.includes(TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER),
+                        false,
+                        "text chunk plain text should not inject an image placeholder"
+                    );
                     let htmlBlob = clipboardItem.items["text/html"];
                     let htmlContent = await htmlBlob.text();
                     assertEqual(/<img/i.test(htmlContent), false, "text chunk HTML should not inline the image");
@@ -430,6 +437,18 @@ export async function runIntegrationTests(runTest) {
                         true,
                         "image clipboard item should include HTML"
                     );
+                    plainTextBlob = clipboardItem.items["text/plain"];
+                    plainTextContent = await plainTextBlob.text();
+                    assertEqual(plainTextContent.length, 0, "image clipboard plain text should be empty");
+                    assertEqual(
+                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "image/png"),
+                        true,
+                        "image clipboard item should embed the PNG payload"
+                    );
+                    const pastedImageBlob = clipboardItem.items["image/png"];
+                    const pastedImageBuffer = await pastedImageBlob.arrayBuffer();
+                    const decodedImage = new TextDecoder().decode(new Uint8Array(pastedImageBuffer));
+                    assertEqual(decodedImage, "fake", "image clipboard blob should match the original data");
                     htmlBlob = clipboardItem.items["text/html"];
                     htmlContent = await htmlBlob.text();
                     assertEqual(/<img/i.test(htmlContent), true, "copied HTML should include the pasted image");

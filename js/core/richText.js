@@ -90,11 +90,11 @@ function translatePlaceholderText(placeholderText, imageRecords) {
             const sanitizedAlt = templateHelpers.escapeHtml(altText);
             imageChunks.push({
                 variant: "image",
-                plainText: TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER,
+                plainText: "",
                 htmlContent: `<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`,
-                clipboardHtml: `<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`
+                clipboardHtml: `<img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false">`,
+                imageDataUrl: imageRecord.dataUrl
             });
-            plainTextResult += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
         } else {
             plainTextResult += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
             textWithoutImages += TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER;
@@ -131,9 +131,9 @@ function buildChunkContent(placeholderText, imageRecords) {
     if (translation.textWithoutImages.length > 0) {
         chunkSegments.push({
             variant: "text",
-            plainText: translation.plainText,
+            plainText: translation.textWithoutImages,
             htmlContent: convertTextSegmentToHtml(translation.textWithoutImages),
-            clipboardHtml: convertTextSegmentToHtml(translation.plainText),
+            clipboardHtml: convertTextSegmentToHtml(translation.textWithoutImages),
             statisticsText: translation.textWithoutImages
         });
     }
