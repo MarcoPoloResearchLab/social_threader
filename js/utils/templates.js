@@ -16,6 +16,21 @@ function interpolate(templateString, replacements) {
     }, templateString);
 }
 
+/**
+ * Escapes HTML-special characters to prevent markup injection.
+ * @param {string} untrustedString Raw string that may contain HTML characters.
+ * @returns {string} Sanitized string safe for HTML insertion.
+ */
+function escapeHtml(untrustedString) {
+    return untrustedString
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 export const templateHelpers = Object.freeze({
-    interpolate
+    interpolate,
+    escapeHtml
 });
