@@ -50,19 +50,23 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 
 ## Technical Details
 
-### Core Functions
+### Architecture
 
-- `splitIntoWordsPreservingPunctuation()`: Maintains punctuation with words
-- `isSentenceEnd()`: Detects sentence boundaries
-- `buildSentenceArray()`: Constructs sentences from words
-- `getChunks()`: Main chunking algorithm
-- `chunkByLength()`: Handles overflow text
+- ES-module entry point at `js/app.js` orchestrates initialization.
+- Core text processing lives in `js/core/chunking.js` with `// @ts-check` and JSDoc annotations.
+- DOM-facing view models reside in `js/ui/`, coordinated by `ThreaderController`.
+- Constants, presets, and user copy live in `js/constants.js` to avoid magic strings.
 
 ### Browser Support
 
 - Modern browsers (Chrome, Firefox, Safari, Edge)
 - Responsive design for mobile devices
-- No external dependencies required
+- No build tooling required; open `index.html` directly
+
+### Testing
+
+- Table-driven unit and integration tests run in-browser via `tests/index.html`.
+- `tests/assert.js` and `tests/runner.js` provide a lightweight harness for manual execution.
 
 ## Local Installation
 
