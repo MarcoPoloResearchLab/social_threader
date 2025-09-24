@@ -43,7 +43,7 @@ body {
 }
 
 /* Left pane styles */
-.left-pane textarea {
+.left-pane .richTextInput {
     flex: 1;
     width: 100%;
     padding: 10px;
@@ -54,6 +54,28 @@ body {
     background-color: #f9f9f9;
     color: #212529;
     transition: font-size 0.2s ease;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 200px;
+}
+
+.left-pane .richTextInput:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+.left-pane .richTextInput[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: #777;
+    pointer-events: none;
+}
+
+.left-pane .richTextInput img {
+    max-width: 100%;
+    height: auto;
+    display: inline-block;
 }
 
 .inputStats {
@@ -194,9 +216,8 @@ button:hover {
     z-index: 1;
 }
 
-.chunkContainer textarea {
+.chunkContainer .chunkContent {
     width: 100%;
-    resize: none;
     font-family: Arial, sans-serif;
     font-size: 14px;
     padding: 10px;
@@ -207,15 +228,13 @@ button:hover {
     white-space: pre-wrap;
     word-wrap: break-word;
     min-height: 40px;
-    overflow-y: hidden;
-    transition: height 0.1s ease-out;
 }
 
-.chunkImage {
-    margin-top: 10px;
+.chunkContainer .chunkContent img {
+    display: block;
     max-width: 100%;
-    border-radius: 4px;
-    align-self: flex-start;
+    height: auto;
+    margin-top: 10px;
 }
 
 .chunkInfo {

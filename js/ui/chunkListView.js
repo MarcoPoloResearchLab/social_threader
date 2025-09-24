@@ -7,16 +7,6 @@ import { TEXT_CONTENT } from "../constants.js";
 import { templateHelpers } from "../utils/templates.js";
 
 /**
- * Automatically resizes a textarea to fit its content.
- * @param {HTMLTextAreaElement} textAreaElement Textarea that should expand vertically.
- * @returns {void}
- */
-function autoExpandTextarea(textAreaElement) {
-    textAreaElement.style.height = "auto";
-    textAreaElement.style.height = `${textAreaElement.scrollHeight + 2}px`;
-}
-
-/**
  * View responsible for rendering thread chunks.
  */
 export class ChunkListView {
@@ -43,13 +33,12 @@ export class ChunkListView {
     }
 
     /**
-     * Renders the provided chunk texts.
-     * @param {string[]} chunks Ordered list of chunk strings.
-     * @param {(context: { chunkText: string; containerElement: HTMLDivElement; buttonElement: HTMLButtonElement }) => void} onCopyRequest Handler invoked when the user clicks the copy button.
-     * @param {import("../types.d.js").PastedImageData | null} imageResource Shared image data to render with each chunk.
+     * Renders the provided chunk contents.
+     * @param {import("../types.d.js").ChunkContent[]} chunks Ordered list of chunk content objects.
+     * @param {(context: { chunk: import("../types.d.js").ChunkContent; containerElement: HTMLDivElement; buttonElement: HTMLButtonElement }) => void} onCopyRequest Handler invoked when the user clicks the copy button.
      * @returns {void}
      */
-    renderChunks(chunks, onCopyRequest, imageResource = null) {
+    renderChunks(chunks, onCopyRequest) {
         this.clear();
         if (chunks.length === 0) {
             return;
@@ -60,22 +49,15 @@ export class ChunkListView {
             const threadWrapper = document.createElement("div");
             threadWrapper.className = "threadWrapper";
 
-            chunks.forEach((chunkText) => {
+            chunks.forEach((chunkContent) => {
                 const containerElement = document.createElement("div");
                 containerElement.className = "chunkContainer";
 
-                const textAreaElement = document.createElement("textarea");
-                textAreaElement.readOnly = true;
-                textAreaElement.value = chunkText;
+                const contentElement = document.createElement("div");
+                contentElement.className = "chunkContent";
+                contentElement.innerHTML = chunkContent.htmlContent;
 
-                const resizeObserver = new ResizeObserver(() => {
-                    autoExpandTextarea(textAreaElement);
-                });
-                resizeObserver.observe(textAreaElement);
-
-                autoExpandTextarea(textAreaElement);
-
-                const statistics = this.chunkingService.calculateStatistics(chunkText);
+                const statistics = this.chunkingService.calculateStatistics(chunkContent.plainText);
                 const statsElement = document.createElement("div");
                 statsElement.className = "stats";
                 statsElement.textContent = templateHelpers.interpolate(TEXT_CONTENT.STATS_TEMPLATE, {
@@ -89,7 +71,7 @@ export class ChunkListView {
                 copyButtonElement.textContent = TEXT_CONTENT.COPY_BUTTON_LABEL;
                 copyButtonElement.addEventListener("click", () => {
                     onCopyRequest({
-                        chunkText,
+                        chunk: chunkContent,
                         containerElement,
                         buttonElement: copyButtonElement
                     });
@@ -99,14 +81,7 @@ export class ChunkListView {
                 infoRow.className = "chunkInfo";
                 infoRow.append(statsElement, copyButtonElement);
 
-                containerElement.appendChild(textAreaElement);
-                if (imageResource !== null) {
-                    const imageElement = document.createElement("img");
-                    imageElement.className = "chunkImage";
-                    imageElement.alt = TEXT_CONTENT.CHUNK_IMAGE_ALT;
-                    imageElement.src = imageResource.objectUrl;
-                    containerElement.appendChild(imageElement);
-                }
+                containerElement.appendChild(contentElement);
                 containerElement.appendChild(infoRow);
                 threadWrapper.appendChild(containerElement);
             });

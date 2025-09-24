@@ -8,13 +8,14 @@ export const TEXT_CONTENT = Object.freeze({
     APP_TITLE: "Social Threader",
     PRIMARY_DESCRIPTION: "With Social Threader, you can split your text into smaller chunks ideal for Twitter/X, Bluesky, Threads, Mastodon, or any platform that limits character count.",
     SECONDARY_DESCRIPTION: "Easily create threads, track word counts, and copy each chunk with a single click.",
-    TEXTAREA_PLACEHOLDER: "Enter text here...",
+    EDITOR_PLACEHOLDER: "Enter text here...",
     FOOTER_HTML: "This project is <strong>open source</strong>! View the code on <a href=\"https://github.com/MarkoPoloResearchLab/social_threader\" target=\"_blank\">GitHub</a>.",
     CUSTOM_BUTTON_DEFAULT: "Custom Size",
     CUSTOM_BUTTON_TEMPLATE: "Custom ({VALUE})",
     COPY_BUTTON_LABEL: "Copy",
     COPY_BUTTON_SUCCESS_LABEL: "Copied!",
-    CHUNK_IMAGE_ALT: "Pasted image preview for this chunk.",
+    PASTED_IMAGE_ALT: "Pasted image",
+    IMAGE_PLAIN_TEXT_PLACEHOLDER: "[Image]",
     ERROR_NO_TEXT: "Please enter some text to split.",
     ERROR_INVALID_CUSTOM: "Please enter a valid positive number for custom size.",
     STATS_TEMPLATE: "Characters: {characters} | Words: {words} | Sentences: {sentences}",
@@ -32,7 +33,9 @@ export const TEXT_CONTENT = Object.freeze({
 /** @type {Readonly<Record<string, string>>} */
 export const LOG_MESSAGES = Object.freeze({
     COPY_FAILURE: "Failed to copy chunk to clipboard",
-    CLIPBOARD_UNAVAILABLE: "Clipboard API is not available"
+    CLIPBOARD_UNAVAILABLE: "Clipboard API is not available",
+    IMAGE_READ_FAILURE: "Unable to read file as data URL",
+    IMAGE_READ_ERROR: "Failed to read file"
 });
 
 /** @type {Readonly<Record<string, string>>} */
@@ -104,5 +107,11 @@ export const STYLE_VALUES = Object.freeze({
 
 /** @type {Readonly<Record<string, string>>} */
 export const HTML_TEMPLATES = Object.freeze({
-    CLIPBOARD_PARAGRAPH: "<p>{CONTENT}</p>"
+    CLIPBOARD_WRAPPER: "<div>{CONTENT}</div>"
+});
+
+/** @type {Readonly<Record<string, string>>} */
+export const PLACEHOLDER_TOKENS = Object.freeze({
+    IMAGE_PREFIX: "[[IMAGE:",
+    IMAGE_SUFFIX: "]]"
 });

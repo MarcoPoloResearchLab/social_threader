@@ -96,7 +96,7 @@ function setupControllerFixture() {
         <h2 id="appTitle"></h2>
         <p id="primaryDescription"></p>
         <p id="secondaryDescription"></p>
-        <textarea id="sourceText"></textarea>
+        <div id="sourceText" class="richTextInput" contenteditable="true"></div>
         <div id="inputStats"></div>
         <div id="inputError"></div>
         <div id="results"></div>
@@ -119,7 +119,7 @@ function setupControllerFixture() {
         titleElement: /** @type {HTMLElement} */ (fixture.querySelector("#appTitle")),
         primaryDescription: /** @type {HTMLElement} */ (fixture.querySelector("#primaryDescription")),
         secondaryDescription: /** @type {HTMLElement} */ (fixture.querySelector("#secondaryDescription")),
-        textArea: /** @type {HTMLTextAreaElement} */ (fixture.querySelector("#sourceText")),
+        editorElement: /** @type {HTMLDivElement} */ (fixture.querySelector("#sourceText")),
         statsElement: /** @type {HTMLElement} */ (fixture.querySelector("#inputStats")),
         errorElement: /** @type {HTMLElement} */ (fixture.querySelector("#inputError")),
         resultsElement: /** @type {HTMLElement} */ (fixture.querySelector("#results")),
@@ -137,7 +137,7 @@ function setupControllerFixture() {
         enumerationLabel: /** @type {HTMLLabelElement} */ (fixture.querySelector("#enumerationToggleLabel"))
     };
 
-    const inputPanel = new InputPanel(elements.textArea, elements.statsElement, elements.errorElement);
+    const inputPanel = new InputPanel(elements.editorElement, elements.statsElement, elements.errorElement);
     const chunkListView = new ChunkListView(elements.resultsElement, chunkingService);
     const formControls = new FormControls(
         {
@@ -221,8 +221,8 @@ export async function runIntegrationTests(runTest) {
                 const { elements, cleanup } = setupControllerFixture();
                 try {
                     const sampleText = Array.from({ length: 12 }, () => "The quick brown fox jumps over the lazy dog.").join(" ");
-                    elements.textArea.value = sampleText;
-                    elements.textArea.dispatchEvent(new Event("input"));
+                    elements.editorElement.textContent = sampleText;
+                    elements.editorElement.dispatchEvent(new Event("input"));
                     elements.presetTwitter.click();
                     await waitForAnimationFrame();
                     const expectedChunks = chunkingService.getChunks(sampleText, {
@@ -244,21 +244,27 @@ export async function runIntegrationTests(runTest) {
                 const { elements, cleanup } = setupControllerFixture();
                 try {
                     const sampleText = "Alpha bravo charlie delta echo foxtrot golf";
-                    elements.textArea.value = sampleText;
-                    elements.textArea.dispatchEvent(new Event("input"));
+                    elements.editorElement.textContent = sampleText;
+                    elements.editorElement.dispatchEvent(new Event("input"));
                     elements.presetBluesky.click();
                     await waitForAnimationFrame();
                     elements.enumerationToggle.checked = true;
                     elements.enumerationToggle.dispatchEvent(new Event("change"));
                     await waitForAnimationFrame();
-                    const textareaElement = /** @type {HTMLTextAreaElement} */ (elements.resultsElement.querySelector("textarea"));
+                    const contentElement = /** @type {HTMLDivElement} */ (
+                        elements.resultsElement.querySelector(".chunkContent")
+                    );
                     const enumeratedChunks = chunkingService.getChunks(sampleText, {
                         maximumLength: DEFAULT_LENGTHS.BLUESKY,
                         breakOnSentences: false,
                         enumerate: true,
                         breakOnParagraphs: false
                     });
-                    assertEqual(textareaElement.value, enumeratedChunks[0], "first chunk should include enumeration metadata");
+                    assertEqual(
+                        contentElement.textContent,
+                        enumeratedChunks[0],
+                        "first chunk should include enumeration metadata"
+                    );
                 } finally {
                     cleanup();
                 }
@@ -270,8 +276,8 @@ export async function runIntegrationTests(runTest) {
                 const { elements, cleanup } = setupControllerFixture();
                 try {
                     const sampleText = "One two three four five six seven eight nine ten eleven twelve.";
-                    elements.textArea.value = sampleText;
-                    elements.textArea.dispatchEvent(new Event("input"));
+                    elements.editorElement.textContent = sampleText;
+                    elements.editorElement.dispatchEvent(new Event("input"));
                     elements.customButton.click();
                     await waitForAnimationFrame();
                     elements.customLength.value = "60";
@@ -305,12 +311,37 @@ export async function runIntegrationTests(runTest) {
                     return Promise.resolve();
                 };
 
+                const originalFileReader = window.FileReader;
+
                 try {
                     const sampleText = "Sample text for clipboard.";
-                    elements.textArea.value = sampleText;
-                    elements.textArea.dispatchEvent(new Event("input"));
+                    elements.editorElement.textContent = sampleText;
+                    elements.editorElement.dispatchEvent(new Event("input"));
                     elements.presetTwitter.click();
                     await waitForAnimationFrame();
+
+                    class FileReaderStub {
+                        constructor() {
+                            /** @type {((this: FileReaderStub, ev: Event) => void) | null} */
+                            this.onload = null;
+                            /** @type {((this: FileReaderStub, ev: ProgressEvent<FileReader>) => void) | null} */
+                            this.onerror = null;
+                            this.result = null;
+                        }
+
+                        /**
+                         * @param {Blob} blob
+                         * @returns {void}
+                         */
+                        readAsDataURL(blob) {
+                            this.result = `data:${blob.type};base64,ZmFrZQ==`;
+                            if (typeof this.onload === "function") {
+                                this.onload.call(this, new Event("load"));
+                            }
+                        }
+                    }
+                    // @ts-ignore
+                    window.FileReader = FileReaderStub;
 
                     const imageBlob = new Blob(["fake"], { type: "image/png" });
                     const pasteEvent = new Event("paste");
@@ -327,10 +358,11 @@ export async function runIntegrationTests(runTest) {
                             ]
                         }
                     });
-                    elements.textArea.dispatchEvent(pasteEvent);
+                    elements.editorElement.dispatchEvent(pasteEvent);
+                    await new Promise((resolve) => setTimeout(resolve, 150));
                     await waitForAnimationFrame();
 
-                    const renderedImage = elements.resultsElement.querySelector(".chunkImage");
+                    const renderedImage = elements.resultsElement.querySelector(".chunkContent img");
                     assertEqual(
                         renderedImage instanceof HTMLImageElement,
                         true,
@@ -346,28 +378,23 @@ export async function runIntegrationTests(runTest) {
                     assertEqual(clipboardWriteCalls.length, 1, "clipboard write should be invoked once");
                     const clipboardItems = clipboardWriteCalls[0];
                     assertEqual(Array.isArray(clipboardItems), true, "clipboard payload should be an array");
-                    const textClipboardItem = /** @type {{ items: Record<string, Blob> }} */ (
-                        clipboardItems[0]
-                    );
-                    const imageClipboardItem = /** @type {{ items: Record<string, Blob> }} */ (
-                        clipboardItems[1]
-                    );
+                    assertEqual(clipboardItems.length, 1, "clipboard payload should contain a single item");
+                    const clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
                     assertEqual(
-                        Object.prototype.hasOwnProperty.call(textClipboardItem.items, "text/plain"),
+                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
                         true,
                         "text clipboard item should contain plain text"
                     );
                     assertEqual(
-                        Object.prototype.hasOwnProperty.call(textClipboardItem.items, "text/html"),
+                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/html"),
                         true,
                         "text clipboard item should contain HTML"
                     );
-                    assertEqual(
-                        imageClipboardItem.items["image/png"],
-                        imageBlob,
-                        "image clipboard item should reuse the pasted blob"
-                    );
+                    const htmlBlob = clipboardItem.items["text/html"];
+                    const htmlContent = await htmlBlob.text();
+                    assertEqual(/<img/i.test(htmlContent), true, "copied HTML should include the pasted image");
                 } finally {
+                    window.FileReader = originalFileReader;
                     navigator.clipboard.write = originalClipboardWrite;
                     cleanup();
                 }
