@@ -29,6 +29,7 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
   - Custom chunk size support
   - Dynamic font sizing
   - Auto-expanding text areas
+  - Inline image support with clipboard-friendly copying
 
 ## Usage
 
@@ -47,6 +48,12 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
    - Each chunk shows character count and other stats
    - Use "Copy" buttons to easily copy individual chunks
    - Visual indicators show copied chunks in order
+
+### Working with Images
+
+- Paste or drag images directly into the editor; each image becomes its own chunk alongside surrounding text.
+- Copied image chunks include the PNG data, HTML markup, and accessible alt text so screenshots can be reposted without manual downloads.
+- When the browser cannot perform a rich clipboard write, the app falls back to copying plain text so text-only chunks continue to work on restrictive browsers.
 
 ## Technical Details
 
