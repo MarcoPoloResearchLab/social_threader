@@ -40,6 +40,12 @@
  */
 
 /**
+ * @typedef {Object} PastedImageData
+ * @property {Blob} blob Raw image data pasted by the user.
+ * @property {string} objectUrl Object URL used for rendering previews.
+ */
+
+/**
  * @typedef {(chunkText: string, chunkIndex: number, totalChunks: number) => string} EnumerationFormatter
  */
 

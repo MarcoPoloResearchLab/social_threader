@@ -3,7 +3,7 @@
  * @fileoverview Coordinates the UI views with the chunking service.
  */
 
-import { TEXT_CONTENT, DEFAULT_LENGTHS, TOGGLE_IDENTIFIERS, LOG_MESSAGES } from "../constants.js";
+import { TEXT_CONTENT, DEFAULT_LENGTHS, TOGGLE_IDENTIFIERS, LOG_MESSAGES, HTML_TEMPLATES } from "../constants.js";
 import { templateHelpers } from "../utils/templates.js";
 
 /** @type {number} */
@@ -38,6 +38,9 @@ export class ThreaderController {
             breakOnParagraphs: false,
             copySequenceNumber: 0
         };
+
+        /** @type {import("../types.d.js").PastedImageData | null} */
+        this.pastedImageData = null;
 
         this.autoRechunkEnabled = false;
         this.rechunkTimeoutId = null;
@@ -135,6 +138,10 @@ export class ThreaderController {
                 this.rechunkWithCurrentState(false);
             }, INPUT_RECHUNK_DELAY_MS);
         });
+
+        this.inputPanel.onImagePaste((imageBlob) => {
+            this.handleImagePaste(imageBlob);
+        });
     }
 
     /**
@@ -179,7 +186,7 @@ export class ThreaderController {
         const chunks = this.chunkingService.getChunks(sourceText, chunkOptions);
         this.chunkListView.renderChunks(chunks, (context) => {
             this.handleCopyRequest(context.chunkText, context.containerElement, context.buttonElement);
-        });
+        }, this.pastedImageData);
     }
 
     /**
@@ -190,16 +197,80 @@ export class ThreaderController {
      * @returns {void}
      */
     handleCopyRequest(chunkText, containerElement, buttonElement) {
-        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        const clipboardInterface = navigator.clipboard;
+        if (!clipboardInterface) {
             this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_UNAVAILABLE));
             return;
         }
 
-        navigator.clipboard.writeText(chunkText).then(() => {
+        const clipboardItemConstructor = window.ClipboardItem;
+        const supportsClipboardItems = typeof clipboardInterface.write === "function" && typeof clipboardItemConstructor === "function";
+        const imageData = this.pastedImageData;
+        const imageSupported = supportsClipboardItems
+            && imageData !== null
+            && (typeof clipboardItemConstructor.supports !== "function"
+                || clipboardItemConstructor.supports(imageData.blob.type));
+
+        /** @returns {void} */
+        const markSuccess = () => {
             this.state.copySequenceNumber += 1;
             this.chunkListView.markChunkAsCopied(containerElement, buttonElement, this.state.copySequenceNumber);
-        }).catch((error) => {
-            this.loggingHelpers.reportCopyFailure(error);
-        });
+        };
+
+        if (imageSupported) {
+            const sanitizedHtmlContent = templateHelpers
+                .escapeHtml(chunkText)
+                .replace(/\r?\n/g, "<br>");
+            const htmlFragment = templateHelpers.interpolate(HTML_TEMPLATES.CLIPBOARD_PARAGRAPH, {
+                CONTENT: sanitizedHtmlContent
+            });
+
+            const clipboardItems = [
+                new clipboardItemConstructor({
+                    "text/plain": new Blob([chunkText], { type: "text/plain" }),
+                    "text/html": new Blob([htmlFragment], { type: "text/html" })
+                }),
+                new clipboardItemConstructor({
+                    [imageData.blob.type]: imageData.blob
+                })
+            ];
+
+            clipboardInterface.write(clipboardItems).then(markSuccess).catch((error) => {
+                this.loggingHelpers.reportCopyFailure(error);
+            });
+            return;
+        }
+
+        if (typeof clipboardInterface.writeText === "function") {
+            clipboardInterface.writeText(chunkText).then(markSuccess).catch((error) => {
+                this.loggingHelpers.reportCopyFailure(error);
+            });
+            return;
+        }
+
+        this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_UNAVAILABLE));
+    }
+
+    /**
+     * Handles pasted image blobs from the input panel.
+     * @param {Blob} imageBlob Raw image pasted from the clipboard.
+     * @returns {void}
+     */
+    handleImagePaste(imageBlob) {
+        if (this.pastedImageData !== null) {
+            URL.revokeObjectURL(this.pastedImageData.objectUrl);
+        }
+        const objectUrl = URL.createObjectURL(imageBlob);
+        this.pastedImageData = { blob: imageBlob, objectUrl };
+
+        if (!this.autoRechunkEnabled) {
+            return;
+        }
+
+        if (this.inputPanel.getValue().trim().length === 0) {
+            return;
+        }
+
+        this.rechunkWithCurrentState(false);
     }
 }

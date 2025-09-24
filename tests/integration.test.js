@@ -43,14 +43,38 @@ if (!("ResizeObserver" in window)) {
 
 if (!navigator.clipboard) {
     Object.defineProperty(navigator, "clipboard", {
-        value: {
-            writeText: () => Promise.resolve()
-        },
+        value: {},
         configurable: true
     });
-} else if (typeof navigator.clipboard.writeText !== "function") {
+}
+
+if (typeof navigator.clipboard.writeText !== "function") {
     navigator.clipboard.writeText = () => Promise.resolve();
 }
+
+if (typeof navigator.clipboard.write !== "function") {
+    navigator.clipboard.write = () => Promise.resolve();
+}
+
+class ClipboardItemStub {
+    /**
+     * @param {Record<string, Blob>} itemData
+     */
+    constructor(itemData) {
+        this.items = itemData;
+    }
+
+    /** @returns {boolean} */
+    static supports() {
+        return true;
+    }
+}
+
+Object.defineProperty(window, "ClipboardItem", {
+    value: ClipboardItemStub,
+    configurable: true,
+    writable: true
+});
 
 /**
  * @returns {Promise<void>}
@@ -265,6 +289,86 @@ export async function runIntegrationTests(runTest) {
                     const renderedChunks = elements.resultsElement.querySelectorAll(".chunkContainer");
                     assertEqual(renderedChunks.length, expectedChunks.length, "custom chunk count should match service output");
                 } finally {
+                    cleanup();
+                }
+            }
+        },
+        {
+            name: "pasted image is rendered with chunks and copied alongside text",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                const originalClipboardWrite = navigator.clipboard.write;
+                /** @type {unknown[][]} */
+                const clipboardWriteCalls = [];
+                navigator.clipboard.write = (items) => {
+                    clipboardWriteCalls.push(items);
+                    return Promise.resolve();
+                };
+
+                try {
+                    const sampleText = "Sample text for clipboard.";
+                    elements.textArea.value = sampleText;
+                    elements.textArea.dispatchEvent(new Event("input"));
+                    elements.presetTwitter.click();
+                    await waitForAnimationFrame();
+
+                    const imageBlob = new Blob(["fake"], { type: "image/png" });
+                    const pasteEvent = new Event("paste");
+                    Object.defineProperty(pasteEvent, "clipboardData", {
+                        value: {
+                            items: [
+                                {
+                                    kind: "file",
+                                    type: "image/png",
+                                    getAsFile() {
+                                        return imageBlob;
+                                    }
+                                }
+                            ]
+                        }
+                    });
+                    elements.textArea.dispatchEvent(pasteEvent);
+                    await waitForAnimationFrame();
+
+                    const renderedImage = elements.resultsElement.querySelector(".chunkImage");
+                    assertEqual(
+                        renderedImage instanceof HTMLImageElement,
+                        true,
+                        "chunk should include the pasted image preview"
+                    );
+
+                    const copyButton = /** @type {HTMLButtonElement} */ (
+                        elements.resultsElement.querySelector(".copyButton")
+                    );
+                    copyButton.click();
+                    await Promise.resolve();
+
+                    assertEqual(clipboardWriteCalls.length, 1, "clipboard write should be invoked once");
+                    const clipboardItems = clipboardWriteCalls[0];
+                    assertEqual(Array.isArray(clipboardItems), true, "clipboard payload should be an array");
+                    const textClipboardItem = /** @type {{ items: Record<string, Blob> }} */ (
+                        clipboardItems[0]
+                    );
+                    const imageClipboardItem = /** @type {{ items: Record<string, Blob> }} */ (
+                        clipboardItems[1]
+                    );
+                    assertEqual(
+                        Object.prototype.hasOwnProperty.call(textClipboardItem.items, "text/plain"),
+                        true,
+                        "text clipboard item should contain plain text"
+                    );
+                    assertEqual(
+                        Object.prototype.hasOwnProperty.call(textClipboardItem.items, "text/html"),
+                        true,
+                        "text clipboard item should contain HTML"
+                    );
+                    assertEqual(
+                        imageClipboardItem.items["image/png"],
+                        imageBlob,
+                        "image clipboard item should reuse the pasted blob"
+                    );
+                } finally {
+                    navigator.clipboard.write = originalClipboardWrite;
                     cleanup();
                 }
             }

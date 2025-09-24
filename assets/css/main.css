@@ -211,6 +211,13 @@ button:hover {
     transition: height 0.1s ease-out;
 }
 
+.chunkImage {
+    margin-top: 10px;
+    max-width: 100%;
+    border-radius: 4px;
+    align-self: flex-start;
+}
+
 .chunkInfo {
     display: flex;
     justify-content: space-between;

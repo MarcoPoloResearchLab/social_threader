@@ -14,6 +14,7 @@ export const TEXT_CONTENT = Object.freeze({
     CUSTOM_BUTTON_TEMPLATE: "Custom ({VALUE})",
     COPY_BUTTON_LABEL: "Copy",
     COPY_BUTTON_SUCCESS_LABEL: "Copied!",
+    CHUNK_IMAGE_ALT: "Pasted image preview for this chunk.",
     ERROR_NO_TEXT: "Please enter some text to split.",
     ERROR_INVALID_CUSTOM: "Please enter a valid positive number for custom size.",
     STATS_TEMPLATE: "Characters: {characters} | Words: {words} | Sentences: {sentences}",
@@ -99,4 +100,9 @@ export const FORM_FIELD_NAMES = Object.freeze({
 /** @type {Readonly<Record<string, string>>} */
 export const STYLE_VALUES = Object.freeze({
     BRAND_COLOR_HEX: "#007BFF"
+});
+
+/** @type {Readonly<Record<string, string>>} */
+export const HTML_TEMPLATES = Object.freeze({
+    CLIPBOARD_PARAGRAPH: "<p>{CONTENT}</p>"
 });

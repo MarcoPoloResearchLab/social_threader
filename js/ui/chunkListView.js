@@ -46,9 +46,10 @@ export class ChunkListView {
      * Renders the provided chunk texts.
      * @param {string[]} chunks Ordered list of chunk strings.
      * @param {(context: { chunkText: string; containerElement: HTMLDivElement; buttonElement: HTMLButtonElement }) => void} onCopyRequest Handler invoked when the user clicks the copy button.
+     * @param {import("../types.d.js").PastedImageData | null} imageResource Shared image data to render with each chunk.
      * @returns {void}
      */
-    renderChunks(chunks, onCopyRequest) {
+    renderChunks(chunks, onCopyRequest, imageResource = null) {
         this.clear();
         if (chunks.length === 0) {
             return;
@@ -98,7 +99,15 @@ export class ChunkListView {
                 infoRow.className = "chunkInfo";
                 infoRow.append(statsElement, copyButtonElement);
 
-                containerElement.append(textAreaElement, infoRow);
+                containerElement.appendChild(textAreaElement);
+                if (imageResource !== null) {
+                    const imageElement = document.createElement("img");
+                    imageElement.className = "chunkImage";
+                    imageElement.alt = TEXT_CONTENT.CHUNK_IMAGE_ALT;
+                    imageElement.src = imageResource.objectUrl;
+                    containerElement.appendChild(imageElement);
+                }
+                containerElement.appendChild(infoRow);
                 threadWrapper.appendChild(containerElement);
             });
 

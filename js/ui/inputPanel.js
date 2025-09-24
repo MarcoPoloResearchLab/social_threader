@@ -63,6 +63,30 @@ export class InputPanel {
     }
 
     /**
+     * Registers a listener that reacts to pasted images within the textarea.
+     * @param {(imageBlob: Blob) => void} callback Invoked when an image file is present on the clipboard.
+     * @returns {void}
+     */
+    onImagePaste(callback) {
+        this.textAreaElement.addEventListener("paste", (pasteEvent) => {
+            const clipboardData = pasteEvent.clipboardData;
+            if (!clipboardData || !clipboardData.items) {
+                return;
+            }
+
+            for (const clipboardItem of clipboardData.items) {
+                if (clipboardItem.kind === "file" && clipboardItem.type.startsWith("image/")) {
+                    const imageFile = clipboardItem.getAsFile();
+                    if (imageFile) {
+                        callback(imageFile);
+                    }
+                    break;
+                }
+            }
+        });
+    }
+
+    /**
      * Updates the statistics summary shown beneath the textarea.
      * @param {import("../types.d.js").ChunkStatistics} statistics Derived statistics for the input text.
      * @returns {void}
