@@ -66,6 +66,10 @@ export class ThreaderController {
      */
     attachEventListeners() {
         this.formControls.onPresetSelected((identifier, length) => {
+            if (this.customLengthTimeoutId !== null) {
+                window.clearTimeout(this.customLengthTimeoutId);
+                this.customLengthTimeoutId = null;
+            }
             this.formControls.setActivePreset(identifier);
             this.state.activeLength = length;
             this.executeChunking(length, true);
@@ -99,6 +103,7 @@ export class ThreaderController {
                 this.customLengthTimeoutId = window.setTimeout(() => {
                     this.state.activeLength = parsedValue;
                     this.executeChunking(parsedValue, true);
+                    this.customLengthTimeoutId = null;
                 }, CUSTOM_RECHUNK_DELAY_MS);
             }
         });

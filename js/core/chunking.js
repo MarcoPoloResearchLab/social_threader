@@ -159,6 +159,80 @@ function enumerateChunk(chunkText, chunkIndex, totalChunks) {
 }
 
 /**
+ * Determines the maximum number of characters consumed by enumeration metadata.
+ * @param {number} totalChunks Total number of chunks produced for the text.
+ * @returns {number} Maximum overhead added by enumeration.
+ */
+function getMaximumEnumerationOverhead(totalChunks) {
+    if (totalChunks <= 0) {
+        return 0;
+    }
+    return enumerateChunk("", totalChunks - 1, totalChunks).length;
+}
+
+/**
+ * Builds non-enumerated chunks using the supplied configuration.
+ * @param {string} rawText Raw text provided by the user.
+ * @param {import("../types.d.js").ThreadingOptions} options Threading configuration flags.
+ * @returns {string[]} Array of base chunks constrained by the maximum length.
+ */
+function buildBaseChunks(rawText, options) {
+    const availableLength = Math.max(1, options.maximumLength);
+
+    if (options.breakOnParagraphs) {
+        /** @type {string[]} */
+        const paragraphChunks = [];
+        const paragraphs = rawText.split(PARAGRAPH_SPLITTER);
+        for (const paragraph of paragraphs) {
+            const trimmedParagraph = paragraph.trim();
+            if (trimmedParagraph.length === 0) {
+                continue;
+            }
+            const nestedOptions = Object.assign({}, options, { breakOnParagraphs: false });
+            paragraphChunks.push(...buildBaseChunks(trimmedParagraph, nestedOptions));
+        }
+        return paragraphChunks;
+    }
+
+    const wordsArray = splitIntoWordsPreservingPunctuation(rawText);
+    if (wordsArray.length === 0) {
+        return [];
+    }
+
+    const sentencesArray = buildSentences(wordsArray, options.breakOnSentences);
+    /** @type {string[]} */
+    const baseChunks = [];
+    let currentChunk = "";
+
+    for (const sentence of sentencesArray) {
+        if (sentence.length > availableLength) {
+            if (currentChunk.length > 0) {
+                baseChunks.push(currentChunk);
+                currentChunk = "";
+            }
+            baseChunks.push(...chunkByLength(sentence, availableLength));
+            continue;
+        }
+
+        const potentialChunk = currentChunk.length > 0 ? `${currentChunk} ${sentence}` : sentence;
+        if (potentialChunk.length <= availableLength) {
+            currentChunk = potentialChunk;
+        } else {
+            if (currentChunk.length > 0) {
+                baseChunks.push(currentChunk);
+            }
+            currentChunk = sentence;
+        }
+    }
+
+    if (currentChunk.length > 0) {
+        baseChunks.push(currentChunk);
+    }
+
+    return baseChunks;
+}
+
+/**
  * Calculates statistics for a given chunk of text.
  * @param {string} chunkText Text to analyze.
  * @returns {import("../types.d.js").ChunkStatistics} Derived statistics.
@@ -178,56 +252,29 @@ function calculateStatistics(chunkText) {
  * @returns {string[]} Ordered list of chunk strings, optionally enumerated.
  */
 function getChunks(rawText, options) {
+    if (!options.enumerate) {
+        return buildBaseChunks(rawText, options);
+    }
+
+    let effectiveMaximumLength = Math.max(1, options.maximumLength);
     /** @type {string[]} */
     let baseChunks = [];
 
-    if (options.breakOnParagraphs) {
-        const paragraphs = rawText.split(PARAGRAPH_SPLITTER);
-        for (const paragraph of paragraphs) {
-            const trimmedParagraph = paragraph.trim();
-            if (trimmedParagraph.length === 0) {
-                continue;
-            }
-            const nestedOptions = Object.assign({}, options, { breakOnParagraphs: false, enumerate: false });
-            baseChunks.push(...getChunks(trimmedParagraph, nestedOptions));
-        }
-    } else {
-        const wordsArray = splitIntoWordsPreservingPunctuation(rawText);
-        if (wordsArray.length === 0) {
+    while (true) {
+        const iterationOptions = Object.assign({}, options, { maximumLength: effectiveMaximumLength });
+        baseChunks = buildBaseChunks(rawText, iterationOptions);
+        if (baseChunks.length === 0) {
             return [];
         }
 
-        const sentencesArray = buildSentences(wordsArray, options.breakOnSentences);
-        let currentChunk = "";
+        const enumerationOverhead = getMaximumEnumerationOverhead(baseChunks.length);
+        const nextEffectiveMaximumLength = Math.max(1, options.maximumLength - enumerationOverhead);
 
-        for (const sentence of sentencesArray) {
-            if (sentence.length > options.maximumLength) {
-                if (currentChunk.length > 0) {
-                    baseChunks.push(currentChunk);
-                    currentChunk = "";
-                }
-                baseChunks.push(...chunkByLength(sentence, options.maximumLength));
-                continue;
-            }
-
-            const potentialChunk = currentChunk.length > 0 ? `${currentChunk} ${sentence}` : sentence;
-            if (potentialChunk.length <= options.maximumLength) {
-                currentChunk = potentialChunk;
-            } else {
-                if (currentChunk.length > 0) {
-                    baseChunks.push(currentChunk);
-                }
-                currentChunk = sentence;
-            }
+        if (nextEffectiveMaximumLength === effectiveMaximumLength) {
+            break;
         }
 
-        if (currentChunk.length > 0) {
-            baseChunks.push(currentChunk);
-        }
-    }
-
-    if (!options.enumerate) {
-        return baseChunks;
+        effectiveMaximumLength = nextEffectiveMaximumLength;
     }
 
     return baseChunks.map((chunkText, index) => enumerateChunk(chunkText, index, baseChunks.length));
