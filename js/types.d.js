@@ -25,12 +25,6 @@
  */
 
 /**
- * @typedef {Object} RenderedChunk
- * @property {string} text Textual content of the chunk.
- * @property {ChunkStatistics} statistics Derived statistics for the chunk.
- */
-
-/**
  * @typedef {Object} ThreadingState
  * @property {number} activeLength Currently selected maximum chunk length.
  * @property {boolean} breakOnSentences Flag capturing the UI state for sentence preservation.
@@ -40,9 +34,31 @@
  */
 
 /**
- * @typedef {Object} PastedImageData
- * @property {Blob} blob Raw image data pasted by the user.
- * @property {string} objectUrl Object URL used for rendering previews.
+ * @typedef {Object} RichTextImage
+ * @property {string} placeholderToken Token used to identify the image position within placeholder text.
+ * @property {string} dataUrl Data URL representation of the pasted image.
+ * @property {string} altText Accessible description associated with the image.
+ */
+
+/**
+ * @typedef {Object} RichTextDocument
+ * @property {string} placeholderText Text content with placeholder tokens substituted for inline images.
+ * @property {string} plainText Plain text representation suitable for statistics and text-only copy operations.
+ * @property {RichTextImage[]} images Ordered list of images contained within the document.
+ */
+
+/**
+ * @typedef {"text" | "image"} ChunkVariant
+ */
+
+/**
+ * @typedef {Object} ChunkContent
+ * @property {ChunkVariant} variant Kind of chunk being rendered.
+ * @property {string} plainText Plain text representation of the chunk suitable for copying as text.
+ * @property {string} htmlContent HTML markup used when rendering the chunk in the UI.
+ * @property {string} [clipboardHtml] Optional HTML fragment used when copying the chunk to the clipboard.
+ * @property {string} [imageDataUrl] Optional data URL used when copying image chunks to the clipboard.
+ * @property {string} [statisticsText] Optional text used when calculating statistics for the chunk.
  */
 
 /**

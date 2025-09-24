@@ -79,7 +79,9 @@ function bootstrap() {
     const titleElement = assertElement(document.getElementById("appTitle"), "appTitle");
     const primaryDescriptionElement = assertElement(document.getElementById("primaryDescription"), "primaryDescription");
     const secondaryDescriptionElement = assertElement(document.getElementById("secondaryDescription"), "secondaryDescription");
-    const textAreaElement = assertElement(document.getElementById("sourceText"), "sourceText");
+    const editorElement = /** @type {HTMLDivElement} */ (
+        assertElement(document.getElementById("sourceText"), "sourceText")
+    );
     const statsElement = assertElement(document.getElementById("inputStats"), "inputStats");
     const errorElement = assertElement(document.getElementById("inputError"), "inputError");
     const resultsElement = assertElement(document.getElementById("results"), "results");
@@ -106,7 +108,7 @@ function bootstrap() {
         [TOGGLE_IDENTIFIERS.ENUMERATION]: assertElement(document.getElementById("enumerationToggleLabel"), "enumerationToggleLabel")
     };
 
-    const inputPanel = new InputPanel(textAreaElement, statsElement, errorElement);
+    const inputPanel = new InputPanel(editorElement, statsElement, errorElement);
     const chunkListView = new ChunkListView(resultsElement, chunkingService);
     const formControls = new FormControls(presetButtons, customButtonElement, customInputElement, toggleInputs, toggleLabels);
 

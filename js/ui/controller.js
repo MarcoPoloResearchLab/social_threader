@@ -5,11 +5,43 @@
 
 import { TEXT_CONTENT, DEFAULT_LENGTHS, TOGGLE_IDENTIFIERS, LOG_MESSAGES, HTML_TEMPLATES } from "../constants.js";
 import { templateHelpers } from "../utils/templates.js";
+import { richTextHelpers } from "../core/richText.js";
 
 /** @type {number} */
 const INPUT_RECHUNK_DELAY_MS = 100;
 /** @type {number} */
 const CUSTOM_RECHUNK_DELAY_MS = 1000;
+
+/**
+ * Converts a data URL into a Blob that can be written to the clipboard.
+ * @param {string | undefined} dataUrl Encoded data URL captured from the editor.
+ * @returns {{ blob: Blob; mimeType: string } | null} Blob payload when parsing succeeds, otherwise null.
+ */
+function createBlobFromDataUrl(dataUrl) {
+    if (typeof dataUrl !== "string" || dataUrl.length === 0) {
+        return null;
+    }
+
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) {
+        return null;
+    }
+
+    const [, mimeType, base64Data] = match;
+    try {
+        const binaryString = window.atob(base64Data);
+        const buffer = new Uint8Array(binaryString.length);
+        for (let index = 0; index < binaryString.length; index += 1) {
+            buffer[index] = binaryString.charCodeAt(index);
+        }
+        return {
+            blob: new Blob([buffer], { type: mimeType }),
+            mimeType
+        };
+    } catch (error) {
+        return null;
+    }
+}
 
 /**
  * Central controller that orchestrates the chunking workflow and UI updates.
@@ -39,8 +71,8 @@ export class ThreaderController {
             copySequenceNumber: 0
         };
 
-        /** @type {import("../types.d.js").PastedImageData | null} */
-        this.pastedImageData = null;
+        /** @type {import("../types.d.js").RichTextDocument | null} */
+        this.currentDocumentSnapshot = null;
 
         this.autoRechunkEnabled = false;
         this.rechunkTimeoutId = null;
@@ -122,14 +154,15 @@ export class ThreaderController {
             this.rechunkWithCurrentState(false);
         });
 
-        this.inputPanel.onInput((value) => {
-            const statistics = this.chunkingService.calculateStatistics(value);
+        this.inputPanel.onInput((documentSnapshot) => {
+            this.currentDocumentSnapshot = documentSnapshot;
+            const statistics = this.chunkingService.calculateStatistics(documentSnapshot.plainText);
             this.inputPanel.updateStatistics(statistics);
             if (this.rechunkTimeoutId !== null) {
                 window.clearTimeout(this.rechunkTimeoutId);
             }
             this.rechunkTimeoutId = window.setTimeout(() => {
-                if (value.trim().length === 0) {
+                if (!this.hasRenderableContent(documentSnapshot)) {
                     this.chunkListView.clear();
                     this.inputPanel.clearError();
                     this.state.copySequenceNumber = 0;
@@ -137,10 +170,6 @@ export class ThreaderController {
                 }
                 this.rechunkWithCurrentState(false);
             }, INPUT_RECHUNK_DELAY_MS);
-        });
-
-        this.inputPanel.onImagePaste((imageBlob) => {
-            this.handleImagePaste(imageBlob);
         });
     }
 
@@ -163,10 +192,11 @@ export class ThreaderController {
      * @returns {void}
      */
     executeChunking(maximumLength, showErrorOnEmpty) {
-        const sourceText = this.inputPanel.getValue();
+        const documentSnapshot = this.currentDocumentSnapshot || this.inputPanel.getDocumentSnapshot();
+        this.currentDocumentSnapshot = documentSnapshot;
         this.state.copySequenceNumber = 0;
         this.autoRechunkEnabled = true;
-        if (sourceText.trim().length === 0) {
+        if (!this.hasRenderableContent(documentSnapshot)) {
             this.chunkListView.clear();
             if (showErrorOnEmpty) {
                 this.inputPanel.showError(TEXT_CONTENT.ERROR_NO_TEXT);
@@ -183,20 +213,30 @@ export class ThreaderController {
             enumerate: this.state.enumerate,
             breakOnParagraphs: this.state.breakOnParagraphs
         };
-        const chunks = this.chunkingService.getChunks(sourceText, chunkOptions);
-        this.chunkListView.renderChunks(chunks, (context) => {
-            this.handleCopyRequest(context.chunkText, context.containerElement, context.buttonElement);
-        }, this.pastedImageData);
+        const placeholderChunks = this.chunkingService.getChunks(documentSnapshot.placeholderText, chunkOptions);
+        const chunkContents = richTextHelpers.buildChunkContents(placeholderChunks, documentSnapshot.images);
+        this.chunkListView.renderChunks(chunkContents, (context) => {
+            this.handleCopyRequest(context.chunk, context.containerElement, context.buttonElement);
+        });
+    }
+
+    /**
+     * Determines whether the provided snapshot contains content worth rendering.
+     * @param {import("../types.d.js").RichTextDocument} documentSnapshot Snapshot captured from the editor.
+     * @returns {boolean}
+     */
+    hasRenderableContent(documentSnapshot) {
+        return documentSnapshot.plainText.trim().length > 0 || documentSnapshot.images.length > 0;
     }
 
     /**
      * Handles copy requests triggered from chunk buttons.
-     * @param {string} chunkText Text to copy to the clipboard.
+     * @param {import("../types.d.js").ChunkContent} chunkContent Chunk to copy to the clipboard.
      * @param {HTMLDivElement} containerElement Container representing the chunk.
      * @param {HTMLButtonElement} buttonElement Button that initiated the copy request.
      * @returns {void}
      */
-    handleCopyRequest(chunkText, containerElement, buttonElement) {
+    handleCopyRequest(chunkContent, containerElement, buttonElement) {
         const clipboardInterface = navigator.clipboard;
         if (!clipboardInterface) {
             this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_UNAVAILABLE));
@@ -205,11 +245,6 @@ export class ThreaderController {
 
         const clipboardItemConstructor = window.ClipboardItem;
         const supportsClipboardItems = typeof clipboardInterface.write === "function" && typeof clipboardItemConstructor === "function";
-        const imageData = this.pastedImageData;
-        const imageSupported = supportsClipboardItems
-            && imageData !== null
-            && (typeof clipboardItemConstructor.supports !== "function"
-                || clipboardItemConstructor.supports(imageData.blob.type));
 
         /** @returns {void} */
         const markSuccess = () => {
@@ -219,7 +254,7 @@ export class ThreaderController {
 
         const attemptTextCopy = () => {
             if (typeof clipboardInterface.writeText === "function") {
-                clipboardInterface.writeText(chunkText)
+                clipboardInterface.writeText(chunkContent.plainText)
                     .then(markSuccess)
                     .catch((error) => {
                         this.loggingHelpers.reportCopyFailure(error);
@@ -230,23 +265,29 @@ export class ThreaderController {
             this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_UNAVAILABLE));
         };
 
-        if (imageSupported) {
-            const sanitizedHtmlContent = templateHelpers
-                .escapeHtml(chunkText)
-                .replace(/\r?\n/g, "<br>");
-            const htmlFragment = templateHelpers.interpolate(HTML_TEMPLATES.CLIPBOARD_PARAGRAPH, {
-                CONTENT: sanitizedHtmlContent
+        if (supportsClipboardItems) {
+            const clipboardHtml =
+                typeof chunkContent.clipboardHtml === "string"
+                    ? chunkContent.clipboardHtml
+                    : chunkContent.htmlContent;
+            const htmlFragment = templateHelpers.interpolate(HTML_TEMPLATES.CLIPBOARD_WRAPPER, {
+                CONTENT: clipboardHtml
             });
 
-            const clipboardItems = [
-                new clipboardItemConstructor({
-                    "text/plain": new Blob([chunkText], { type: "text/plain" }),
-                    "text/html": new Blob([htmlFragment], { type: "text/html" })
-                }),
-                new clipboardItemConstructor({
-                    [imageData.blob.type]: imageData.blob
-                })
-            ];
+            /** @type {Record<string, Blob>} */
+            const clipboardPayload = {
+                "text/plain": new Blob([chunkContent.plainText], { type: "text/plain" }),
+                "text/html": new Blob([htmlFragment], { type: "text/html" })
+            };
+
+            if (chunkContent.variant === "image") {
+                const imagePayload = createBlobFromDataUrl(chunkContent.imageDataUrl);
+                if (imagePayload) {
+                    clipboardPayload[imagePayload.mimeType] = imagePayload.blob;
+                }
+            }
+
+            const clipboardItems = [new clipboardItemConstructor(clipboardPayload)];
 
             clipboardInterface.write(clipboardItems).then(markSuccess).catch((error) => {
                 this.loggingHelpers.reportCopyFailure(error);
@@ -256,28 +297,5 @@ export class ThreaderController {
         }
 
         attemptTextCopy();
-    }
-
-    /**
-     * Handles pasted image blobs from the input panel.
-     * @param {Blob} imageBlob Raw image pasted from the clipboard.
-     * @returns {void}
-     */
-    handleImagePaste(imageBlob) {
-        if (this.pastedImageData !== null) {
-            URL.revokeObjectURL(this.pastedImageData.objectUrl);
-        }
-        const objectUrl = URL.createObjectURL(imageBlob);
-        this.pastedImageData = { blob: imageBlob, objectUrl };
-
-        if (!this.autoRechunkEnabled) {
-            return;
-        }
-
-        if (this.inputPanel.getValue().trim().length === 0) {
-            return;
-        }
-
-        this.rechunkWithCurrentState(false);
     }
 }
