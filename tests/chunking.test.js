@@ -53,9 +53,12 @@ export async function runChunkingTests(runTest) {
                 breakOnParagraphs: false
             },
             expected: [
-                "Alpha bravo (1/3)",
-                "charlie (2/3)",
-                "delta echo. (3/3)"
+                "Alpha (1/6)",
+                "bravo (2/6)",
+                "charli (3/6)",
+                "e (4/6)",
+                "delta (5/6)",
+                "echo. (6/6)"
             ]
         },
         {
@@ -80,6 +83,12 @@ export async function runChunkingTests(runTest) {
         await runTest(testCase.name, () => {
             const actualChunks = chunkingService.getChunks(testCase.input, testCase.options);
             assertDeepEqual(actualChunks, testCase.expected, "chunk output should match expectations");
+            if (testCase.options.enumerate) {
+                const withinLimit = actualChunks.every(
+                    (chunk) => chunk.length <= testCase.options.maximumLength
+                );
+                assertEqual(withinLimit, true, "enumerated chunks should respect the maximum length");
+            }
         });
     }
 

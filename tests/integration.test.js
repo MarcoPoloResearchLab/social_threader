@@ -165,6 +165,33 @@ function setupControllerFixture() {
 export async function runIntegrationTests(runTest) {
     const cases = [
         {
+            name: "does not select a preset on initialization",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                try {
+                    const presetButtons = [
+                        elements.presetThreads,
+                        elements.presetBluesky,
+                        elements.presetTwitter
+                    ];
+                    for (const buttonElement of presetButtons) {
+                        assertEqual(
+                            buttonElement.classList.contains("active"),
+                            false,
+                            "preset buttons should start inactive"
+                        );
+                    }
+                    assertEqual(
+                        elements.customButton.classList.contains("active"),
+                        false,
+                        "custom button should start inactive"
+                    );
+                } finally {
+                    cleanup();
+                }
+            }
+        },
+        {
             name: "preset button chunks the text and renders results",
             async execute() {
                 const { elements, cleanup } = setupControllerFixture();

@@ -77,9 +77,7 @@ export class FormControls {
                 buttonElement.classList.remove("active");
             }
         });
-        if (identifier !== null) {
-            this.customButtonElement.classList.remove("active");
-        }
+        this.customButtonElement.classList.remove("active");
     }
 
     /**

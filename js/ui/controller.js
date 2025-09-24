@@ -3,7 +3,7 @@
  * @fileoverview Coordinates the UI views with the chunking service.
  */
 
-import { TEXT_CONTENT, DEFAULT_LENGTHS, PRESET_IDENTIFIERS, TOGGLE_IDENTIFIERS, LOG_MESSAGES } from "../constants.js";
+import { TEXT_CONTENT, DEFAULT_LENGTHS, TOGGLE_IDENTIFIERS, LOG_MESSAGES } from "../constants.js";
 import { templateHelpers } from "../utils/templates.js";
 
 /** @type {number} */
@@ -56,7 +56,7 @@ export class ThreaderController {
         this.inputPanel.initializeCopy(titleElement, primaryDescriptionElement, secondaryDescriptionElement);
         footerElement.innerHTML = TEXT_CONTENT.FOOTER_HTML;
         this.formControls.initializeCopy();
-        this.formControls.setActivePreset(PRESET_IDENTIFIERS.TWITTER);
+        this.formControls.setActivePreset(null);
         this.attachEventListeners();
     }
 
