@@ -8,6 +8,7 @@
  * @property {number} characters Total number of characters contained in the chunk.
  * @property {number} words Total number of whitespace separated words contained in the chunk.
  * @property {number} sentences Total number of sentence-ending punctuation markers contained in the chunk.
+ * @property {number} paragraphs Total number of paragraphs contained in the chunk.
  */
 
 /**

@@ -18,9 +18,10 @@ export const TEXT_CONTENT = Object.freeze({
     IMAGE_PLAIN_TEXT_PLACEHOLDER: "[Image]",
     ERROR_NO_TEXT: "Please enter some text to split.",
     ERROR_INVALID_CUSTOM: "Please enter a valid positive number for custom size.",
-    STATS_TEMPLATE: "Characters: {characters} | Words: {words} | Sentences: {sentences}",
+    INPUT_STATS_TEMPLATE: "Characters: {characters} | Words: {words} | Sentences: {sentences} | Paragraphs: {paragraphs}",
+    CHUNK_STATS_TEMPLATE: "Characters: {characters} | Words: {words} | Sentences: {sentences}",
     ENUMERATION_TEMPLATE: "{text} ({current}/{total})",
-    INPUT_STATS_EMPTY: "Characters: 0 | Words: 0 | Sentences: 0",
+    INPUT_STATS_EMPTY: "Characters: 0 | Words: 0 | Sentences: 0 | Paragraphs: 0",
     FEEDBACK_TITLE: "Feedback",
     FEEDBACK_EMAIL_LABEL: "Email:",
     FEEDBACK_EMAIL_PLACEHOLDER: "you@example.com",
@@ -49,6 +50,14 @@ export const TOGGLE_LABELS = Object.freeze({
     [TOGGLE_IDENTIFIERS.PARAGRAPH]: "Paragraphs",
     [TOGGLE_IDENTIFIERS.SENTENCE]: "Sentences",
     [TOGGLE_IDENTIFIERS.ENUMERATION]: "Enumerate"
+});
+
+export const ATTRIBUTE_NAMES = Object.freeze({
+    ARIA_DISABLED: "aria-disabled"
+});
+
+export const CLASS_NAMES = Object.freeze({
+    DISABLED: "disabled"
 });
 
 /** @type {Readonly<Record<string, number>>} */

@@ -9,6 +9,7 @@ import { FormControls } from "../js/ui/formControls.js";
 import { ThreaderController } from "../js/ui/controller.js";
 import { chunkingService } from "../js/core/chunking.js";
 import { loggingHelpers } from "../js/utils/logging.js";
+import { templateHelpers } from "../js/utils/templates.js";
 import {
     PRESET_IDENTIFIERS,
     TOGGLE_IDENTIFIERS,
@@ -233,6 +234,52 @@ export async function runIntegrationTests(runTest) {
                     });
                     const renderedChunks = elements.resultsElement.querySelectorAll(".chunkContainer");
                     assertEqual(renderedChunks.length, expectedChunks.length, "rendered chunk count should match service output");
+                } finally {
+                    cleanup();
+                }
+            }
+        },
+        {
+            name: "paragraph toggle availability reflects paragraph count",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                try {
+                    elements.editorElement.textContent = "Single paragraph only.";
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    await waitForAnimationFrame();
+                    assertEqual(elements.paragraphToggle.disabled, true, "paragraph toggle should be disabled for single paragraph");
+
+                    elements.editorElement.textContent = "First paragraph.\n\nSecond paragraph.";
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    await waitForAnimationFrame();
+                    assertEqual(elements.paragraphToggle.disabled, false, "paragraph toggle should enable when multiple paragraphs exist");
+                } finally {
+                    cleanup();
+                }
+            }
+        },
+        {
+            name: "input statistics display paragraph totals",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                try {
+                    elements.editorElement.textContent = "First paragraph.\n\nSecond paragraph.";
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    await waitForAnimationFrame();
+
+                    const statistics = chunkingService.calculateStatistics(elements.editorElement.textContent || "");
+                    const expectedStatsText = templateHelpers.interpolate(TEXT_CONTENT.INPUT_STATS_TEMPLATE, {
+                        characters: statistics.characters,
+                        words: statistics.words,
+                        sentences: statistics.sentences,
+                        paragraphs: statistics.paragraphs
+                    });
+
+                    assertEqual(
+                        elements.statsElement.textContent,
+                        expectedStatsText,
+                        "input statistics should include paragraph counts"
+                    );
                 } finally {
                     cleanup();
                 }

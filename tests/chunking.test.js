@@ -97,5 +97,6 @@ export async function runChunkingTests(runTest) {
         assertEqual(statistics.characters, 28, "character count should match");
         assertEqual(statistics.words, 6, "word count should match");
         assertEqual(statistics.sentences, 2, "sentence count should match");
+        assertEqual(statistics.paragraphs, 1, "paragraph count should match");
     });
 }
