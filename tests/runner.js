@@ -9,6 +9,9 @@
 export function createTestRunner(outputElement) {
     const listElement = document.createElement("ul");
     outputElement.appendChild(listElement);
+    const summaryElement = document.createElement("p");
+    summaryElement.textContent = "Running tests…";
+    outputElement.appendChild(summaryElement);
     let passed = 0;
     let failed = 0;
 
@@ -50,9 +53,7 @@ export function createTestRunner(outputElement) {
          * @returns {void}
          */
         summarize() {
-            const summary = document.createElement("p");
-            summary.textContent = `Passed: ${passed}, Failed: ${failed}`;
-            outputElement.appendChild(summary);
+            summaryElement.textContent = `Passed: ${passed}, Failed: ${failed}`;
         }
     };
 }
