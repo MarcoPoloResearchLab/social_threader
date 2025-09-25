@@ -83,7 +83,7 @@ export class ChunkListView {
                     const statistics = this.chunkingService.calculateStatistics(statisticsSource);
                     const statsElement = document.createElement("div");
                     statsElement.className = "stats";
-                    statsElement.textContent = templateHelpers.interpolate(TEXT_CONTENT.STATS_TEMPLATE, {
+                    statsElement.textContent = templateHelpers.interpolate(TEXT_CONTENT.CHUNK_STATS_TEMPLATE, {
                         characters: statistics.characters,
                         words: statistics.words,
                         sentences: statistics.sentences

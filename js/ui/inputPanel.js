@@ -229,10 +229,11 @@ export class InputPanel {
      * @returns {void}
      */
     updateStatistics(statistics) {
-        this.statsElement.textContent = templateHelpers.interpolate(TEXT_CONTENT.STATS_TEMPLATE, {
+        this.statsElement.textContent = templateHelpers.interpolate(TEXT_CONTENT.INPUT_STATS_TEMPLATE, {
             characters: statistics.characters,
             words: statistics.words,
-            sentences: statistics.sentences
+            sentences: statistics.sentences,
+            paragraphs: statistics.paragraphs
         });
         this.adjustFontSize();
     }
@@ -287,8 +288,10 @@ export class InputPanel {
                 return;
             }
 
-            const htmlContent = clipboardData.getData("text/html");
-            const plainTextContent = clipboardData.getData("text/plain");
+            const clipboardGetData =
+                typeof clipboardData.getData === "function" ? clipboardData.getData.bind(clipboardData) : null;
+            const htmlContent = clipboardGetData ? clipboardGetData("text/html") : "";
+            const plainTextContent = clipboardGetData ? clipboardGetData("text/plain") : "";
             pasteEvent.preventDefault();
 
             /** @type {Array<() => Promise<void>>} */
