@@ -3,7 +3,7 @@
  * @fileoverview Coordinates the UI views with the chunking service.
  */
 
-import { TEXT_CONTENT, DEFAULT_LENGTHS, TOGGLE_IDENTIFIERS, LOG_MESSAGES, HTML_TEMPLATES } from "../constants.js";
+import { TEXT_CONTENT, TOGGLE_IDENTIFIERS, LOG_MESSAGES, HTML_TEMPLATES } from "../constants.js";
 import { templateHelpers } from "../utils/templates.js";
 import { richTextHelpers } from "../core/richText.js";
 
@@ -64,7 +64,7 @@ export class ThreaderController {
 
         /** @type {import("../types.d.js").ThreadingState} */
         this.state = {
-            activeLength: DEFAULT_LENGTHS.TWITTER,
+            activeLength: null,
             breakOnSentences: false,
             enumerate: false,
             breakOnParagraphs: false,
@@ -101,14 +101,24 @@ export class ThreaderController {
      * @returns {void}
      */
     attachEventListeners() {
-        this.formControls.onPresetSelected((identifier, length) => {
+        this.formControls.onPresetToggled((details) => {
             if (this.customLengthTimeoutId !== null) {
                 window.clearTimeout(this.customLengthTimeoutId);
                 this.customLengthTimeoutId = null;
             }
-            this.formControls.setActivePreset(identifier);
-            this.state.activeLength = length;
-            this.executeChunking(length, true);
+            if (!details.isActive || details.length === null) {
+                this.formControls.clearPresetSelection();
+                this.state.activeLength = null;
+                this.autoRechunkEnabled = false;
+                this.state.copySequenceNumber = 0;
+                this.chunkListView.clear();
+                this.inputPanel.clearError();
+                return;
+            }
+
+            this.formControls.setActivePreset(details.identifier);
+            this.state.activeLength = details.length;
+            this.executeChunking(details.length, true);
         });
 
         this.formControls.onCustomButtonClick((lengthValue) => {
@@ -185,7 +195,7 @@ export class ThreaderController {
      * @returns {void}
      */
     rechunkWithCurrentState(showErrorOnEmpty) {
-        if (!this.autoRechunkEnabled) {
+        if (!this.autoRechunkEnabled || this.state.activeLength === null) {
             return;
         }
         this.executeChunking(this.state.activeLength, showErrorOnEmpty);

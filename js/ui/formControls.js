@@ -14,6 +14,13 @@ import {
 } from "../constants.js";
 
 /**
+ * @typedef {Object} PresetToggleDetails
+ * @property {string} identifier Identifier associated with the preset button that was toggled.
+ * @property {boolean} isActive Indicates whether the preset is now active.
+ * @property {number | null} length Character length represented by the preset when active.
+ */
+
+/**
  * Handles form control interactions and exposes semantic events for the controller.
  */
 export class FormControls {
@@ -30,6 +37,8 @@ export class FormControls {
         this.customInputElement = customInputElement;
         this.toggleInputs = toggleInputs;
         this.toggleLabels = toggleLabels;
+        /** @type {string | null} */
+        this.activePresetIdentifier = null;
     }
 
     /**
@@ -55,18 +64,29 @@ export class FormControls {
     }
 
     /**
-     * Attaches handlers for preset button selection.
-     * @param {(identifier: string, length: number) => void} callback Callback receiving the preset identifier and length.
+     * Attaches handlers for preset button toggling.
+     * @param {(details: PresetToggleDetails) => void} callback Callback receiving selection change details.
      * @returns {void}
      */
-    onPresetSelected(callback) {
+    onPresetToggled(callback) {
         Object.keys(this.presetButtons).forEach((identifier) => {
             const buttonElement = this.presetButtons[identifier];
             buttonElement.addEventListener("click", () => {
-                const presetDefinition = PRESET_CONFIG[identifier];
-                if (presetDefinition) {
-                    callback(identifier, presetDefinition.length);
+                if (this.activePresetIdentifier === identifier) {
+                    callback({ identifier, isActive: false, length: null });
+                    return;
                 }
+
+                const presetDefinition = PRESET_CONFIG[identifier];
+                if (!presetDefinition) {
+                    return;
+                }
+
+                callback({
+                    identifier,
+                    isActive: true,
+                    length: presetDefinition.length
+                });
             });
         });
     }
@@ -77,15 +97,16 @@ export class FormControls {
      * @returns {void}
      */
     setActivePreset(identifier) {
+        this.activePresetIdentifier = identifier;
         Object.keys(this.presetButtons).forEach((presetIdentifier) => {
             const buttonElement = this.presetButtons[presetIdentifier];
             if (identifier !== null && presetIdentifier === identifier) {
-                buttonElement.classList.add("active");
+                buttonElement.classList.add(CLASS_NAMES.ACTIVE);
             } else {
-                buttonElement.classList.remove("active");
+                buttonElement.classList.remove(CLASS_NAMES.ACTIVE);
             }
         });
-        this.customButtonElement.classList.remove("active");
+        this.customButtonElement.classList.remove(CLASS_NAMES.ACTIVE);
     }
 
     /**
@@ -94,9 +115,10 @@ export class FormControls {
      */
     setCustomActive() {
         Object.values(this.presetButtons).forEach((buttonElement) => {
-            buttonElement.classList.remove("active");
+            buttonElement.classList.remove(CLASS_NAMES.ACTIVE);
         });
-        this.customButtonElement.classList.add("active");
+        this.activePresetIdentifier = null;
+        this.customButtonElement.classList.add(CLASS_NAMES.ACTIVE);
     }
 
     /**
@@ -104,7 +126,15 @@ export class FormControls {
      * @returns {boolean}
      */
     isCustomActive() {
-        return this.customButtonElement.classList.contains("active");
+        return this.customButtonElement.classList.contains(CLASS_NAMES.ACTIVE);
+    }
+
+    /**
+     * Clears any preset selection and removes active styling.
+     * @returns {void}
+     */
+    clearPresetSelection() {
+        this.setActivePreset(null);
     }
 
     /**
