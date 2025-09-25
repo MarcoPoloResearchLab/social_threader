@@ -238,10 +238,16 @@ function buildBaseChunks(rawText, options) {
  * @returns {import("../types.d.js").ChunkStatistics} Derived statistics.
  */
 function calculateStatistics(chunkText) {
+    const paragraphMatches = chunkText
+        .split(PARAGRAPH_SPLITTER)
+        .map((paragraphText) => paragraphText.trim())
+        .filter((paragraphText) => paragraphText.length > 0);
+
     return {
         characters: chunkText.length,
         words: (chunkText.match(WORD_MATCHER) || []).length,
-        sentences: (chunkText.match(SENTENCE_MATCHER) || []).length
+        sentences: (chunkText.match(SENTENCE_MATCHER) || []).length,
+        paragraphs: paragraphMatches.length
     };
 }
 

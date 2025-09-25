@@ -3,7 +3,15 @@
  * @fileoverview View model for preset buttons, custom input, and toggle controls.
  */
 
-import { TEXT_CONTENT, TOGGLE_LABELS, PRESET_IDENTIFIERS, PRESET_CONFIG, DEFAULT_LENGTHS } from "../constants.js";
+import {
+    TEXT_CONTENT,
+    TOGGLE_LABELS,
+    PRESET_IDENTIFIERS,
+    PRESET_CONFIG,
+    DEFAULT_LENGTHS,
+    ATTRIBUTE_NAMES,
+    CLASS_NAMES
+} from "../constants.js";
 
 /**
  * Handles form control interactions and exposes semantic events for the controller.
@@ -154,6 +162,35 @@ export class FormControls {
     setToggleState(identifier, checked) {
         if (this.toggleInputs[identifier]) {
             this.toggleInputs[identifier].checked = checked;
+        }
+    }
+
+    /**
+     * Enables or disables a toggle based on the current editor statistics.
+     * @param {string} identifier Toggle identifier to update.
+     * @param {boolean} isEnabled Whether the toggle should be interactive.
+     * @returns {void}
+     */
+    setToggleAvailability(identifier, isEnabled) {
+        const toggleElement = this.toggleInputs[identifier];
+        if (!toggleElement) {
+            return;
+        }
+
+        toggleElement.disabled = !isEnabled;
+        if (!isEnabled) {
+            toggleElement.checked = false;
+        }
+
+        const associatedLabel = this.toggleLabels[identifier];
+        if (associatedLabel) {
+            if (isEnabled) {
+                associatedLabel.removeAttribute(ATTRIBUTE_NAMES.ARIA_DISABLED);
+                associatedLabel.classList.remove(CLASS_NAMES.DISABLED);
+            } else {
+                associatedLabel.setAttribute(ATTRIBUTE_NAMES.ARIA_DISABLED, String(true));
+                associatedLabel.classList.add(CLASS_NAMES.DISABLED);
+            }
         }
     }
 

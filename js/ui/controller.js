@@ -91,6 +91,7 @@ export class ThreaderController {
         this.inputPanel.initializeCopy(titleElement, primaryDescriptionElement, secondaryDescriptionElement);
         footerElement.innerHTML = TEXT_CONTENT.FOOTER_HTML;
         this.formControls.initializeCopy();
+        this.formControls.setToggleAvailability(TOGGLE_IDENTIFIERS.PARAGRAPH, false);
         this.formControls.setActivePreset(null);
         this.attachEventListeners();
     }
@@ -158,6 +159,11 @@ export class ThreaderController {
             this.currentDocumentSnapshot = documentSnapshot;
             const statistics = this.chunkingService.calculateStatistics(documentSnapshot.plainText);
             this.inputPanel.updateStatistics(statistics);
+            const hasMultipleParagraphs = statistics.paragraphs > 1;
+            this.formControls.setToggleAvailability(TOGGLE_IDENTIFIERS.PARAGRAPH, hasMultipleParagraphs);
+            if (!hasMultipleParagraphs && this.state.breakOnParagraphs) {
+                this.state.breakOnParagraphs = false;
+            }
             if (this.rechunkTimeoutId !== null) {
                 window.clearTimeout(this.rechunkTimeoutId);
             }

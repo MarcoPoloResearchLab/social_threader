@@ -239,6 +239,25 @@ export async function runIntegrationTests(runTest) {
             }
         },
         {
+            name: "paragraph toggle availability reflects paragraph count",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                try {
+                    elements.editorElement.textContent = "Single paragraph only.";
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    await waitForAnimationFrame();
+                    assertEqual(elements.paragraphToggle.disabled, true, "paragraph toggle should be disabled for single paragraph");
+
+                    elements.editorElement.textContent = "First paragraph.\n\nSecond paragraph.";
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    await waitForAnimationFrame();
+                    assertEqual(elements.paragraphToggle.disabled, false, "paragraph toggle should enable when multiple paragraphs exist");
+                } finally {
+                    cleanup();
+                }
+            }
+        },
+        {
             name: "enumeration toggle appends ordering metadata",
             async execute() {
                 const { elements, cleanup } = setupControllerFixture();
