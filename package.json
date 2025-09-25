@@ -1,0 +1,12 @@
+{
+  "name": "social-threader",
+  "version": "1.0.0",
+  "description": "Browser test harness and Playwright runner for Social Threader",
+  "private": true,
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.45.3"
+  }
+}
