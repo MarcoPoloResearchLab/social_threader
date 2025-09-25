@@ -3,6 +3,7 @@ name: Browser Test Suite
 on:
   pull_request:
     branches:
+      - main
       - master
     paths:
       - '**/*.js'
