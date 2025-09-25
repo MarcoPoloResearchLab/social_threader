@@ -57,7 +57,8 @@ export const ATTRIBUTE_NAMES = Object.freeze({
 });
 
 export const CLASS_NAMES = Object.freeze({
-    DISABLED: "disabled"
+    DISABLED: "disabled",
+    ACTIVE: "active"
 });
 
 /** @type {Readonly<Record<string, number>>} */
