@@ -259,13 +259,15 @@ function calculateStatistics(chunkText) {
     const paragraphMatches = extractParagraphs(chunkText);
 
     const wordsArray = splitIntoWordsPreservingPunctuation(chunkText);
-    const sentencesArray = wordsArray.length === 0 ? [] : buildSentences(wordsArray, true);
-    const filteredSentences = sentencesArray.filter((sentenceText) => sentenceText.trim().length > 0);
+    const sentenceCount = wordsArray.reduce(
+        (count, word) => (isSentenceEnd(word) ? count + 1 : count),
+        0
+    );
 
     return {
         characters: chunkText.length,
         words: wordsArray.length,
-        sentences: filteredSentences.length,
+        sentences: sentenceCount,
         paragraphs: trimmedInput.length === 0 ? 0 : paragraphMatches.length
     };
 }
