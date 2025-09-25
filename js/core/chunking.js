@@ -6,15 +6,33 @@
 import { TEXT_CONTENT } from "../constants.js";
 
 /** @type {RegExp} */
-const WORD_MATCHER = /\b\w+\b/g;
-/** @type {RegExp} */
-const SENTENCE_MATCHER = /[.!?]+(\s|$)/g;
-/** @type {RegExp} */
-const PARAGRAPH_SPLITTER = /\r?\n+/;
+const EMBEDDED_WHITESPACE_BETWEEN_BREAKS = /\n[^\S\n]+\n/g;
 /** @type {string} */
 const SENTENCE_ENDING_PUNCTUATION = ".!?";
 /** @type {string} */
 const TRAILING_WRAPPING_CHARACTERS = '"\')]}';
+
+/**
+ * Normalizes paragraph breaks in the provided text.
+ * @param {string} rawText Raw text provided by the user.
+ * @returns {string[]} Trimmed paragraphs extracted from the text.
+ */
+function extractParagraphs(rawText) {
+    const trimmedInput = rawText.trim();
+    if (trimmedInput.length === 0) {
+        return [];
+    }
+
+    const standardizedBreaks = rawText
+        .replace(/\r\n/g, "\n")
+        .replace(/[\r\u2028\u2029\u0085\u000b\u000c]/g, "\n");
+    const normalizedWhitespace = standardizedBreaks.replace(EMBEDDED_WHITESPACE_BETWEEN_BREAKS, "\n\n");
+
+    return normalizedWhitespace
+        .split(/\n+/)
+        .map((paragraphText) => paragraphText.trim())
+        .filter((paragraphText) => paragraphText.length > 0);
+}
 
 /**
  * Splits a block of text into words while preserving punctuation alongside the word that precedes it.
@@ -182,14 +200,13 @@ function buildBaseChunks(rawText, options) {
     if (options.breakOnParagraphs) {
         /** @type {string[]} */
         const paragraphChunks = [];
-        const paragraphs = rawText.split(PARAGRAPH_SPLITTER);
-        for (const paragraph of paragraphs) {
-            const trimmedParagraph = paragraph.trim();
-            if (trimmedParagraph.length === 0) {
+        const normalizedParagraphs = extractParagraphs(rawText);
+        for (const paragraphText of normalizedParagraphs) {
+            if (paragraphText.length === 0) {
                 continue;
             }
             const nestedOptions = Object.assign({}, options, { breakOnParagraphs: false });
-            paragraphChunks.push(...buildBaseChunks(trimmedParagraph, nestedOptions));
+            paragraphChunks.push(...buildBaseChunks(paragraphText, nestedOptions));
         }
         return paragraphChunks;
     }
@@ -238,16 +255,18 @@ function buildBaseChunks(rawText, options) {
  * @returns {import("../types.d.js").ChunkStatistics} Derived statistics.
  */
 function calculateStatistics(chunkText) {
-    const paragraphMatches = chunkText
-        .split(PARAGRAPH_SPLITTER)
-        .map((paragraphText) => paragraphText.trim())
-        .filter((paragraphText) => paragraphText.length > 0);
+    const trimmedInput = chunkText.trim();
+    const paragraphMatches = extractParagraphs(chunkText);
+
+    const wordsArray = splitIntoWordsPreservingPunctuation(chunkText);
+    const sentencesArray = wordsArray.length === 0 ? [] : buildSentences(wordsArray, true);
+    const filteredSentences = sentencesArray.filter((sentenceText) => sentenceText.trim().length > 0);
 
     return {
         characters: chunkText.length,
-        words: (chunkText.match(WORD_MATCHER) || []).length,
-        sentences: (chunkText.match(SENTENCE_MATCHER) || []).length,
-        paragraphs: paragraphMatches.length
+        words: wordsArray.length,
+        sentences: filteredSentences.length,
+        paragraphs: trimmedInput.length === 0 ? 0 : paragraphMatches.length
     };
 }
 

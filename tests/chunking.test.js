@@ -76,6 +76,27 @@ export async function runChunkingTests(runTest) {
                 "content than the first",
                 "entry."
             ]
+        },
+        {
+            name: "respects multi-line paragraphs ending with parentheses",
+            input: [
+                "There are religious holidays (Christmas, Rosh Hashanah, Eid, Diwali, etc.)",
+                "There are pagan (old religions) holidays (solstices, harvest, Lunar New Year, etc.)",
+                "There are social contract holidays (Independence Day, Labor Day, etc.)",
+                "But there are no technology celebration holidays even though each of these holidays was enabled by technology."
+            ].join("\n \u00A0 \n"),
+            options: {
+                maximumLength: 280,
+                breakOnSentences: false,
+                enumerate: false,
+                breakOnParagraphs: true
+            },
+            expected: [
+                "There are religious holidays (Christmas, Rosh Hashanah, Eid, Diwali, etc.)",
+                "There are pagan (old religions) holidays (solstices, harvest, Lunar New Year, etc.)",
+                "There are social contract holidays (Independence Day, Labor Day, etc.)",
+                "But there are no technology celebration holidays even though each of these holidays was enabled by technology."
+            ]
         }
     ];
 
@@ -92,11 +113,48 @@ export async function runChunkingTests(runTest) {
         });
     }
 
-    await runTest("calculates statistics for provided text", () => {
-        const statistics = chunkingService.calculateStatistics("One two three. This is four?");
-        assertEqual(statistics.characters, 28, "character count should match");
-        assertEqual(statistics.words, 6, "word count should match");
-        assertEqual(statistics.sentences, 2, "sentence count should match");
-        assertEqual(statistics.paragraphs, 1, "paragraph count should match");
-    });
+    const statisticsCases = [
+        {
+            name: "calculates statistics for provided text",
+            input: "One two three. This is four?",
+            expected: {
+                characters: 28,
+                words: 6,
+                sentences: 2,
+                paragraphs: 1
+            }
+        },
+        {
+            name: "counts sentences and paragraphs when parentheses close text",
+            input: "First idea (alpha etc.)\rSecond idea (beta etc.)",
+            expected: {
+                characters: 47,
+                words: 8,
+                sentences: 2,
+                paragraphs: 2
+            }
+        },
+        {
+            name: "detects paragraphs separated by whitespace-wrapped line breaks",
+            input: [
+                "There are religious holidays (Christmas, Rosh Hashanah, Eid, Diwali, etc.)",
+                "There are pagan (old religions) holidays (solstices, harvest, Lunar New Year, etc.)",
+                "There are social contract holidays (Independence Day, Labor Day, etc.)",
+                "But there are no technology celebration holidays even though each of these holidays was enabled by technology."
+            ].join("\n \u00A0 \n"),
+            expected: {
+                characters: 352,
+                words: 49,
+                sentences: 4,
+                paragraphs: 4
+            }
+        }
+    ];
+
+    for (const statisticsCase of statisticsCases) {
+        await runTest(statisticsCase.name, () => {
+            const statistics = chunkingService.calculateStatistics(statisticsCase.input);
+            assertDeepEqual(statistics, statisticsCase.expected, "statistics should match expected values");
+        });
+    }
 }
