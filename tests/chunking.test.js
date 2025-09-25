@@ -76,6 +76,27 @@ export async function runChunkingTests(runTest) {
                 "content than the first",
                 "entry."
             ]
+        },
+        {
+            name: "respects multi-line paragraphs ending with parentheses",
+            input: [
+                "There are religious holidays (Christmas, Rosh Hashanah, Eid, Diwali, etc.)",
+                "There are pagan (old religions) holidays (solstices, harvest, Lunar New Year, etc.)",
+                "There are social contract holidays (Independence Day, Labor Day, etc.)",
+                "But there are no technology celebration holidays even though each of these holidays was enabled by technology."
+            ].join("\n \u00A0 \n"),
+            options: {
+                maximumLength: 280,
+                breakOnSentences: false,
+                enumerate: false,
+                breakOnParagraphs: true
+            },
+            expected: [
+                "There are religious holidays (Christmas, Rosh Hashanah, Eid, Diwali, etc.)",
+                "There are pagan (old religions) holidays (solstices, harvest, Lunar New Year, etc.)",
+                "There are social contract holidays (Independence Day, Labor Day, etc.)",
+                "But there are no technology celebration holidays even though each of these holidays was enabled by technology."
+            ]
         }
     ];
 
@@ -111,6 +132,21 @@ export async function runChunkingTests(runTest) {
                 words: 8,
                 sentences: 2,
                 paragraphs: 2
+            }
+        },
+        {
+            name: "detects paragraphs separated by whitespace-wrapped line breaks",
+            input: [
+                "There are religious holidays (Christmas, Rosh Hashanah, Eid, Diwali, etc.)",
+                "There are pagan (old religions) holidays (solstices, harvest, Lunar New Year, etc.)",
+                "There are social contract holidays (Independence Day, Labor Day, etc.)",
+                "But there are no technology celebration holidays even though each of these holidays was enabled by technology."
+            ].join("\n \u00A0 \n"),
+            expected: {
+                characters: 352,
+                words: 49,
+                sentences: 4,
+                paragraphs: 4
             }
         }
     ];
