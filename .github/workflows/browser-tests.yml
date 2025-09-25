@@ -25,6 +25,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx --yes playwright@1.45.3 install --with-deps chromium
 
+      - name: Install Playwright test runner
+        run: npm install --no-save @playwright/test@1.45.3
+
       - name: Execute browser tests
         run: |
           cat <<'TEST' > ci.spec.js
