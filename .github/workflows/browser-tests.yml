@@ -1,9 +1,15 @@
 name: Browser Test Suite
 
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - '**/*.js'
+      - '**/*.css'
+      - '**/*.html'
   pull_request:
     branches:
-      - main
       - master
     paths:
       - '**/*.js'
@@ -27,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps
 
       - name: Execute browser tests
         run: npm test

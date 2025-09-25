@@ -7,6 +7,7 @@ const TEST_HARNESS_FILE_NAME = "index.html";
 const FAILURE_ICON = "❌";
 const SUMMARY_SELECTOR = "#test-output p:last-of-type";
 const SUMMARY_EXPECTATION_PATTERN = /Passed: \d+, Failed: 0/;
+const SUMMARY_WAIT_TIMEOUT_MS = 15000;
 const TEST_SUITE_DESCRIPTION = "browser test harness";
 const CLEAN_SUMMARY_TEST_DESCRIPTION = "reports a clean test summary";
 
@@ -18,8 +19,9 @@ test.describe(TEST_SUITE_DESCRIPTION, () => {
         await page.goto(testHarnessUrl);
 
         const summaryLocator = page.locator(SUMMARY_SELECTOR);
-        await summaryLocator.waitFor({ state: "visible" });
-        await expect(summaryLocator).toHaveText(SUMMARY_EXPECTATION_PATTERN);
+        await expect(summaryLocator).toHaveText(SUMMARY_EXPECTATION_PATTERN, {
+            timeout: SUMMARY_WAIT_TIMEOUT_MS
+        });
 
         const failingTestLocator = page.locator(`#test-output li:has-text("${FAILURE_ICON}")`);
         await expect(failingTestLocator).toHaveCount(0);
