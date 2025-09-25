@@ -121,7 +121,7 @@ function classifyAbbreviation(token) {
     }
 
     if (MULTI_INITIAL_PATTERN.test(normalizedToken)) {
-        return "strict";
+        return "flexible";
     }
 
     if (SINGLE_INITIAL_PATTERN.test(normalizedToken)) {
@@ -335,8 +335,11 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         if (nextLead.length === 0) {
             return true;
         }
-        if (nextLead.toLowerCase() === nextLead) {
-            return false;
+        if (/[a-z]/i.test(nextLead)) {
+            if (nextLead.toLowerCase() === nextLead) {
+                return false;
+            }
+            return true;
         }
         return true;
     }
