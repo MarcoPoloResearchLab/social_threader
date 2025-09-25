@@ -22,32 +22,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Playwright browsers
-        run: npx --yes playwright@1.45.3 install --with-deps chromium
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Install Playwright test runner
-        run: npm install --no-save @playwright/test@1.45.3
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       - name: Execute browser tests
-        run: |
-          cat <<'TEST' > ci.spec.js
-          const { test, expect } = require('@playwright/test');
-          const path = require('path');
-          const { pathToFileURL } = require('url');
-
-          const testPageUrl = pathToFileURL(path.resolve('tests/index.html')).toString();
-
-          test('browser suite passes', async ({ page }) => {
-            await page.goto(testPageUrl);
-            await page.waitForSelector('text=Passed:');
-
-            const summaryLocator = page.locator('#test-output p').last();
-            await expect(summaryLocator).toContainText('Failed: 0');
-
-            const failureCount = await page.locator('li', { hasText: '❌' }).count();
-            expect(failureCount).toBe(0);
-          });
-          TEST
-
-          npx --yes playwright@1.45.3 test ci.spec.js
-          rm ci.spec.js
+        run: npm test
