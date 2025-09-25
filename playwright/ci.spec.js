@@ -18,6 +18,7 @@ test.describe(TEST_SUITE_DESCRIPTION, () => {
         await page.goto(testHarnessUrl);
 
         const summaryLocator = page.locator(SUMMARY_SELECTOR);
+        await summaryLocator.waitFor({ state: "visible" });
         await expect(summaryLocator).toHaveText(SUMMARY_EXPECTATION_PATTERN);
 
         const failingTestLocator = page.locator(`#test-output li:has-text("${FAILURE_ICON}")`);
