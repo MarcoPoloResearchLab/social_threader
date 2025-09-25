@@ -265,10 +265,6 @@ function calculateStatistics(chunkText) {
         0
     );
 
-    const wordsArray = splitIntoWordsPreservingPunctuation(chunkText);
-    const sentencesArray = wordsArray.length === 0 ? [] : buildSentences(wordsArray, true);
-    const filteredSentences = sentencesArray.filter((sentenceText) => sentenceText.trim().length > 0);
-
     return {
         characters: chunkText.length,
         words: wordsArray.length,
