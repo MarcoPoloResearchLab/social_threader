@@ -1,7 +1,7 @@
-const { defineConfig, devices } = require("@playwright/test");
+const { defineConfig } = require("@playwright/test");
 
 const PLAYWRIGHT_TEST_DIRECTORY = "playwright";
-const CHROMIUM_PROJECT = devices["Desktop Chrome"];
+const CHROMIUM_PROJECT_NAME = "chromium";
 
 module.exports = defineConfig({
     testDir: PLAYWRIGHT_TEST_DIRECTORY,
@@ -11,9 +11,9 @@ module.exports = defineConfig({
     },
     projects: [
         {
-            name: CHROMIUM_PROJECT.name,
+            name: CHROMIUM_PROJECT_NAME,
             use: {
-                ...CHROMIUM_PROJECT,
+                browserName: CHROMIUM_PROJECT_NAME,
                 headless: true
             }
         }
