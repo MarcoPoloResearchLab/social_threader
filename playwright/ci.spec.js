@@ -2,28 +2,65 @@ const { test, expect } = require("@playwright/test");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
-const TEST_HARNESS_DIRECTORY_NAME = "tests";
-const TEST_HARNESS_FILE_NAME = "index.html";
-const FAILURE_ICON = "❌";
-const SUMMARY_SELECTOR = "#test-output p:last-of-type";
-const SUMMARY_EXPECTATION_PATTERN = /Passed: \d+, Failed: 0/;
-const SUMMARY_WAIT_TIMEOUT_MS = 15000;
-const TEST_SUITE_DESCRIPTION = "browser test harness";
-const CLEAN_SUMMARY_TEST_DESCRIPTION = "reports a clean test summary";
+const APPLICATION_FILE_NAME = "index.html";
+const SOURCE_TEXT_SELECTOR = "#sourceText";
+const PRESET_TWITTER_SELECTOR = "#presetTwitter";
+const RESULTS_CHUNK_SELECTOR = ".chunkContainer .chunkContent";
+const PARAGRAPH_TOGGLE_SELECTOR = "#paragraphToggle";
+const INPUT_STATS_SELECTOR = "#inputStats";
 
-const testHarnessFilePath = path.join(__dirname, "..", TEST_HARNESS_DIRECTORY_NAME, TEST_HARNESS_FILE_NAME);
+const testHarnessFilePath = path.join(__dirname, "..", APPLICATION_FILE_NAME);
 const testHarnessUrl = pathToFileURL(testHarnessFilePath).href;
 
-test.describe(TEST_SUITE_DESCRIPTION, () => {
-    test(CLEAN_SUMMARY_TEST_DESCRIPTION, async ({ page }) => {
+async function setEditorContent(page, textContent) {
+    const editorLocator = page.locator(SOURCE_TEXT_SELECTOR);
+    await editorLocator.evaluate((element, value) => {
+        element.textContent = value;
+        const inputEvent = new Event("input", { bubbles: true });
+        element.dispatchEvent(inputEvent);
+    }, textContent);
+}
+
+test.describe("Social Threader application", () => {
+    test.beforeEach(async ({ page }) => {
         await page.goto(testHarnessUrl);
+        await page.waitForSelector(SOURCE_TEXT_SELECTOR);
+    });
 
-        const summaryLocator = page.locator(SUMMARY_SELECTOR);
-        await expect(summaryLocator).toHaveText(SUMMARY_EXPECTATION_PATTERN, {
-            timeout: SUMMARY_WAIT_TIMEOUT_MS
-        });
+    test("splits text using the Twitter preset", async ({ page }) => {
+        const sampleText = Array.from({ length: 10 }, () => "The quick brown fox jumps over the lazy dog.").join(" ");
+        await setEditorContent(page, sampleText);
 
-        const failingTestLocator = page.locator(`#test-output li:has-text("${FAILURE_ICON}")`);
-        await expect(failingTestLocator).toHaveCount(0);
+        await expect(page.locator(INPUT_STATS_SELECTOR)).toContainText("Characters:");
+
+        await page.locator(PRESET_TWITTER_SELECTOR).click();
+
+        const expectedChunks = await page.evaluate(async (text) => {
+            const chunkingModule = await import("./js/core/chunking.js");
+            return chunkingModule.chunkingService.getChunks(text, {
+                maximumLength: 280,
+                breakOnSentences: false,
+                enumerate: false,
+                breakOnParagraphs: false
+            });
+        }, sampleText);
+
+        const chunkLocator = page.locator(RESULTS_CHUNK_SELECTOR);
+        await expect(chunkLocator).toHaveCount(expectedChunks.length);
+
+        const renderedChunks = await chunkLocator.evaluateAll((elements) =>
+            elements.map((element) => element.textContent || "")
+        );
+        expect(renderedChunks).toEqual(expectedChunks);
+    });
+
+    test("enables paragraph chunking when multiple paragraphs are entered", async ({ page }) => {
+        const paragraphToggle = page.locator(PARAGRAPH_TOGGLE_SELECTOR);
+
+        await setEditorContent(page, "Single paragraph only.");
+        await expect(paragraphToggle).toBeDisabled();
+
+        await setEditorContent(page, "First paragraph.\n\nSecond paragraph.");
+        await expect(paragraphToggle).toBeEnabled();
     });
 });
