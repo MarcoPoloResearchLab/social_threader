@@ -14,7 +14,8 @@ import {
     PRESET_IDENTIFIERS,
     TOGGLE_IDENTIFIERS,
     DEFAULT_LENGTHS,
-    TEXT_CONTENT
+    TEXT_CONTENT,
+    CLASS_NAMES
 } from "../js/constants.js";
 import { assertEqual } from "./assert.js";
 
@@ -214,13 +215,13 @@ export async function runIntegrationTests(runTest) {
                     ];
                     for (const buttonElement of presetButtons) {
                         assertEqual(
-                            buttonElement.classList.contains("active"),
+                            buttonElement.classList.contains(CLASS_NAMES.ACTIVE),
                             false,
                             "preset buttons should start inactive"
                         );
                     }
                     assertEqual(
-                        elements.customButton.classList.contains("active"),
+                        elements.customButton.classList.contains(CLASS_NAMES.ACTIVE),
                         false,
                         "custom button should start inactive"
                     );
@@ -247,6 +248,50 @@ export async function runIntegrationTests(runTest) {
                     });
                     const renderedChunks = elements.resultsElement.querySelectorAll(".chunkContainer");
                     assertEqual(renderedChunks.length, expectedChunks.length, "rendered chunk count should match service output");
+                } finally {
+                    cleanup();
+                }
+            }
+        },
+        {
+            name: "preset button toggles off to clear the thread",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                try {
+                    const sampleText = Array.from({ length: 8 }, () => "Toggle behavior sample sentence.").join(" ");
+                    elements.editorElement.textContent = sampleText;
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    elements.presetTwitter.click();
+                    await waitForAnimationFrame();
+
+                    let renderedChunks = elements.resultsElement.querySelectorAll(".chunkContainer");
+                    assertEqual(renderedChunks.length > 0, true, "chunks should render when preset activates");
+                    assertEqual(
+                        elements.presetTwitter.classList.contains(CLASS_NAMES.ACTIVE),
+                        true,
+                        "preset button should be marked active after selection"
+                    );
+
+                    elements.presetTwitter.click();
+                    await waitForAnimationFrame();
+                    renderedChunks = elements.resultsElement.querySelectorAll(".chunkContainer");
+                    assertEqual(renderedChunks.length, 0, "chunks should clear when preset is toggled off");
+                    assertEqual(
+                        elements.presetTwitter.classList.contains(CLASS_NAMES.ACTIVE),
+                        false,
+                        "preset button should not remain active after toggling off"
+                    );
+
+                    elements.editorElement.textContent = `${sampleText} Additional content after toggle.`;
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    await new Promise((resolve) => setTimeout(resolve, 150));
+                    await waitForAnimationFrame();
+                    renderedChunks = elements.resultsElement.querySelectorAll(".chunkContainer");
+                    assertEqual(
+                        renderedChunks.length,
+                        0,
+                        "chunks should remain cleared until a preset is reselected"
+                    );
                 } finally {
                     cleanup();
                 }

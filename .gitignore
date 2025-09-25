@@ -1,6 +1,6 @@
 # Default ignored files
-/shelf/
-/.idea/
+shelf/
+.idea/
 *.iml
 node_modules/
 playwright-report/

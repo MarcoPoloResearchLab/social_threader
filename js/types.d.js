@@ -27,7 +27,7 @@
 
 /**
  * @typedef {Object} ThreadingState
- * @property {number} activeLength Currently selected maximum chunk length.
+ * @property {number | null} activeLength Currently selected maximum chunk length when a preset or custom value is active.
  * @property {boolean} breakOnSentences Flag capturing the UI state for sentence preservation.
  * @property {boolean} enumerate Flag capturing the UI state for enumerating chunks.
  * @property {boolean} breakOnParagraphs Flag capturing the UI state for paragraph preservation.
