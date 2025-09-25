@@ -57,27 +57,38 @@ if (typeof navigator.clipboard.write !== "function") {
     navigator.clipboard.write = () => Promise.resolve();
 }
 
-class ClipboardItemStub {
+const nativeClipboardItemConstructor =
+    typeof window.ClipboardItem === "function" ? window.ClipboardItem : null;
+
+/**
+ * ClipboardItem override used to expose payloads for assertions while still
+ * delegating to the native implementation when available.
+ */
+class ClipboardItemStub extends (nativeClipboardItemConstructor ?? class {}) {
     /**
      * @param {Record<string, Blob>} itemData
      */
     constructor(itemData) {
+        super(itemData);
         this.items = itemData;
     }
 
-    /** @returns {boolean} */
+    /**
+     * @returns {boolean}
+     */
     static supports() {
+        if (nativeClipboardItemConstructor && typeof nativeClipboardItemConstructor.supports === "function") {
+            return nativeClipboardItemConstructor.supports();
+        }
         return true;
     }
 }
 
-if (typeof window.ClipboardItem !== "function") {
-    Object.defineProperty(window, "ClipboardItem", {
-        value: ClipboardItemStub,
-        configurable: true,
-        writable: true
-    });
-}
+Object.defineProperty(window, "ClipboardItem", {
+    value: ClipboardItemStub,
+    configurable: true,
+    writable: true
+});
 
 /**
  * @returns {Promise<void>}
