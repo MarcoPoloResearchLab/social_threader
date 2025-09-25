@@ -71,11 +71,13 @@ class ClipboardItemStub {
     }
 }
 
-Object.defineProperty(window, "ClipboardItem", {
-    value: ClipboardItemStub,
-    configurable: true,
-    writable: true
-});
+if (typeof window.ClipboardItem !== "function") {
+    Object.defineProperty(window, "ClipboardItem", {
+        value: ClipboardItemStub,
+        configurable: true,
+        writable: true
+    });
+}
 
 /**
  * @returns {Promise<void>}
