@@ -7,11 +7,15 @@
  * @param {HTMLElement} outputElement Container for writing test results.
  */
 export function createTestRunner(outputElement) {
-    const listElement = document.createElement("ul");
-    outputElement.appendChild(listElement);
-    const summaryElement = document.createElement("p");
+    const existingSummary = outputElement.querySelector("p");
+    const summaryElement = existingSummary ?? document.createElement("p");
     summaryElement.textContent = "Running tests…";
-    outputElement.appendChild(summaryElement);
+    if (!existingSummary) {
+        outputElement.appendChild(summaryElement);
+    }
+
+    const listElement = document.createElement("ul");
+    outputElement.insertBefore(listElement, summaryElement);
     let passed = 0;
     let failed = 0;
 
@@ -54,6 +58,16 @@ export function createTestRunner(outputElement) {
          */
         summarize() {
             summaryElement.textContent = `Passed: ${passed}, Failed: ${failed}`;
+        },
+        /**
+         * Renders an error message without disturbing the summary element order.
+         * @param {string} message Error description to display.
+         * @returns {void}
+         */
+        reportHarnessError(message) {
+            const errorElement = document.createElement("p");
+            errorElement.textContent = message;
+            outputElement.insertBefore(errorElement, summaryElement);
         }
     };
 }

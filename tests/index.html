@@ -11,7 +11,9 @@
 </head>
 <body>
     <h1>Social Threader Browser Tests</h1>
-    <div id="test-output"></div>
+    <div id="test-output">
+        <p>Preparing test summary…</p>
+    </div>
     <script type="module">
         import { createTestRunner } from "./runner.js";
         import { runChunkingTests } from "./chunking.test.js";
@@ -19,7 +21,7 @@
         import { runIntegrationTests } from "./integration.test.js";
 
         const outputElement = /** @type {HTMLElement} */ (document.getElementById("test-output"));
-        const { runTest, summarize } = createTestRunner(outputElement);
+        const { runTest, summarize, reportHarnessError } = createTestRunner(outputElement);
 
         (async () => {
             try {
@@ -27,9 +29,8 @@
                 await runRichTextTests(runTest);
                 await runIntegrationTests(runTest);
             } catch (error) {
-                const errorMessage = document.createElement("p");
-                errorMessage.textContent = `Unexpected test harness failure: ${error}`;
-                outputElement.appendChild(errorMessage);
+                const message = error instanceof Error ? error.message : String(error);
+                reportHarnessError(`Unexpected test harness failure: ${message}`);
             } finally {
                 summarize();
             }
