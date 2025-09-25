@@ -7,6 +7,7 @@ import { TEXT_CONTENT } from "../constants.js";
 
 /** @type {RegExp} */
 const EMBEDDED_WHITESPACE_BETWEEN_BREAKS = /\n[^\S\n]+\n/g;
+const PARAGRAPH_SPLITTER = /(?:\r\n|\r|\n|\u2028|\u2029|\u0085)+/;
 /** @type {string} */
 const SENTENCE_ENDING_PUNCTUATION = ".!?";
 /** @type {string} */
@@ -263,6 +264,10 @@ function calculateStatistics(chunkText) {
         (count, word) => (isSentenceEnd(word) ? count + 1 : count),
         0
     );
+
+    const wordsArray = splitIntoWordsPreservingPunctuation(chunkText);
+    const sentencesArray = wordsArray.length === 0 ? [] : buildSentences(wordsArray, true);
+    const filteredSentences = sentencesArray.filter((sentenceText) => sentenceText.trim().length > 0);
 
     return {
         characters: chunkText.length,
