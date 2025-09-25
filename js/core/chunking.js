@@ -6,11 +6,7 @@
 import { TEXT_CONTENT } from "../constants.js";
 
 /** @type {RegExp} */
-const WORD_MATCHER = /\b\w+\b/g;
-/** @type {RegExp} */
-const SENTENCE_MATCHER = /[.!?]+(\s|$)/g;
-/** @type {RegExp} */
-const PARAGRAPH_SPLITTER = /\r?\n+/;
+const PARAGRAPH_SPLITTER = /(?:\r\n|\r|\n|\u2028|\u2029|\u0085)+/;
 /** @type {string} */
 const SENTENCE_ENDING_PUNCTUATION = ".!?";
 /** @type {string} */
@@ -238,16 +234,21 @@ function buildBaseChunks(rawText, options) {
  * @returns {import("../types.d.js").ChunkStatistics} Derived statistics.
  */
 function calculateStatistics(chunkText) {
+    const trimmedInput = chunkText.trim();
     const paragraphMatches = chunkText
         .split(PARAGRAPH_SPLITTER)
         .map((paragraphText) => paragraphText.trim())
         .filter((paragraphText) => paragraphText.length > 0);
 
+    const wordsArray = splitIntoWordsPreservingPunctuation(chunkText);
+    const sentencesArray = wordsArray.length === 0 ? [] : buildSentences(wordsArray, true);
+    const filteredSentences = sentencesArray.filter((sentenceText) => sentenceText.trim().length > 0);
+
     return {
         characters: chunkText.length,
-        words: (chunkText.match(WORD_MATCHER) || []).length,
-        sentences: (chunkText.match(SENTENCE_MATCHER) || []).length,
-        paragraphs: paragraphMatches.length
+        words: wordsArray.length,
+        sentences: filteredSentences.length,
+        paragraphs: trimmedInput.length === 0 ? 0 : paragraphMatches.length
     };
 }
 
