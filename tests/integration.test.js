@@ -407,7 +407,29 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Words wrong everywhere."] }
                             ],
                             false,
-                            { characters: 58, words: 7, sentences: 3, paragraphs: 2 }
+                            { characters: 59, words: 7, sentences: 3, paragraphs: 2 }
+                        ),
+                        createParagraphStatisticsFixture(
+                            "abbreviations and decimals do not inflate statistics",
+                            [
+                                {
+                                    children: [
+                                        "Dr. Rivera met approx. 30 volunteers at 5.5 p.m. for training."
+                                    ]
+                                },
+                                {
+                                    children: [
+                                        "Everyone said, \"Progress is slow... but steady!\" Did it improve?"
+                                    ]
+                                },
+                                {
+                                    children: [
+                                        "Next check-in is scheduled for Jan. 3rd, 2025."
+                                    ]
+                                }
+                            ],
+                            false,
+                            { characters: 176, words: 29, sentences: 4, paragraphs: 3 }
                         ),
                         createParagraphStatisticsFixture(
                             "single paragraph keeps toggle disabled",

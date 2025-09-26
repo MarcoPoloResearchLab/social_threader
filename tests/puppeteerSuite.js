@@ -53,6 +53,20 @@ const typedParagraphCases = [
             sentences: 3,
             paragraphs: 2
         }
+    },
+    {
+        name: "abbreviations and decimals do not inflate statistics",
+        paragraphs: [
+            "Dr. Rivera met approx. 30 volunteers at 5.5 p.m. for training.",
+            "Everyone said, \"Progress is slow... but steady!\" Did it improve?",
+            "Next check-in is scheduled for Jan. 3rd, 2025."
+        ],
+        expected: {
+            characters: 176,
+            words: 29,
+            sentences: 4,
+            paragraphs: 3
+        }
     }
 ];
 
