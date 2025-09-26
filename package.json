@@ -6,8 +6,8 @@
   "private": true,
   "scripts": {
     "test": "npm run test:headless && npm run test:browser",
-    "test:headless": "node tests/headlessHarness.mjs",
-    "test:browser": "node tests/puppeteerSuite.mjs"
+    "test:headless": "node tests/headlessHarness.js",
+    "test:browser": "node tests/puppeteerSuite.js"
   },
   "devDependencies": {
     "happy-dom": "18.0.1",

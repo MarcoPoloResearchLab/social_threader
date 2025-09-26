@@ -74,7 +74,7 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 
 - Run `npm install` to install the Happy DOM harness along with the Puppeteer regression runner.
 - Execute `npm test` to run the Happy DOM harness (`npm run test:headless`) followed by the Puppeteer browser suite (`npm run test:browser`). The command mirrors the sequence executed in CI so local runs surface the same failures.
-- The Puppeteer suite (`tests/puppeteerSuite.mjs`) opens `index.html`, injects rich text markup, and verifies the live statistics rendered in the UI.
+- The Puppeteer suite (`tests/puppeteerSuite.js`) opens `index.html`, injects rich text markup, and verifies the live statistics rendered in the UI.
 - Continue to use the `?test=true` query flag in a manual browser session to view the in-browser harness reporter.
 
 ### Continuous Integration
