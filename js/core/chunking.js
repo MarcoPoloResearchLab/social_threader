@@ -271,20 +271,15 @@ function splitIntoWordsPreservingPunctuation(textString) {
     /** @type {string[]} */
     const wordsArray = [];
     let currentWord = "";
-    let insideQuote = false;
 
     for (let index = 0; index < normalizedText.length; index += 1) {
         const character = normalizedText[index];
-        if (character === " " && !insideQuote) {
+        if (character === " ") {
             if (currentWord.length > 0) {
                 wordsArray.push(currentWord);
                 currentWord = "";
             }
             continue;
-        }
-
-        if (character === '"') {
-            insideQuote = !insideQuote;
         }
 
         currentWord += character;
@@ -308,11 +303,18 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         return false;
     }
 
+    const nextToken = typeof nextWord === "string" ? nextWord : "";
+    const trimmedNextToken = nextToken.trim();
+    const nextLead = getFirstSignificantCharacter(trimmedNextToken);
+
     if (!SENTENCE_TERMINATOR_PATTERN.test(strippedWord)) {
         return false;
     }
 
     if (ELLIPSIS_PATTERN.test(strippedWord)) {
+        if (nextLead.length > 0 && nextLead.toLowerCase() === nextLead) {
+            return false;
+        }
         return true;
     }
 
@@ -330,10 +332,11 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
     }
 
     if (abbreviationType === "flexible") {
-        const nextToken = typeof nextWord === "string" ? nextWord : "";
-        const nextLead = getFirstSignificantCharacter(nextToken.trim());
         if (nextLead.length === 0) {
             return true;
+        }
+        if (/\d/.test(nextLead)) {
+            return false;
         }
         if (/[a-z]/i.test(nextLead)) {
             if (nextLead.toLowerCase() === nextLead) {
@@ -344,7 +347,11 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         return true;
     }
 
-    if (typeof nextWord === "string" && nextWord.trim().length === 0) {
+    if (/^[A-Z][a-z]+\.$/.test(strippedWord) && /\d/.test(nextLead)) {
+        return false;
+    }
+
+    if (typeof nextWord === "string" && trimmedNextToken.length === 0) {
         return true;
     }
 
