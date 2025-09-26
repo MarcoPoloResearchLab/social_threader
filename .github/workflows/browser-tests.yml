@@ -50,8 +50,16 @@ jobs:
         env:
           PUPPETEER_CACHE_DIR: ~/.cache/puppeteer
 
+      - name: Install Chrome for Puppeteer
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
       - name: Run Happy DOM harness
         run: npm run test:headless
 
       - name: Run Puppeteer browser suite
+        env:
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: npm run test:browser
