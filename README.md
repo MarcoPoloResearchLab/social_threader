@@ -72,8 +72,9 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 
 ### Testing
 
-- Table-driven unit and integration tests run in-browser via `tests/index.html`.
-- `tests/assert.js` and `tests/runner.js` provide a lightweight harness for manual execution.
+- Run `npm test` to execute the happy-dom powered headless harness that loads the browser-oriented test modules.
+- Launch the production page with the `?test=true` query flag (for example `index.html?test=true`) to run the same suite in a real browser without needing a separate HTML harness.
+- `tests/assert.js` and `tests/runner.js` provide the lightweight reporting utilities shared by both harnesses.
 
 ## Local Installation
 

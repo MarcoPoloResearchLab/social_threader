@@ -340,3 +340,21 @@ button.active {
     box-shadow: none;
     font-weight: normal;
 }
+
+.testHarnessWrapper {
+    width: 90%;
+    max-width: 800px;
+    margin: 40px auto;
+    padding-top: 20px;
+    border-top: 1px solid #ccc;
+}
+
+.testHarnessWrapper ul {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 20px;
+}
+
+.testHarnessWrapper li {
+    margin-bottom: 8px;
+}

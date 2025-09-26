@@ -71,11 +71,18 @@ function initializeFeedbackWidget() {
     });
 }
 
+/** @type {boolean} */
+let bootstrapHasInitialized = false;
+
 /**
  * Bootstraps the UI after DOM content is ready.
  * @returns {void}
  */
 function bootstrap() {
+    if (bootstrapHasInitialized) {
+        return;
+    }
+    bootstrapHasInitialized = true;
     const titleElement = assertElement(document.getElementById("appTitle"), "appTitle");
     const primaryDescriptionElement = assertElement(document.getElementById("primaryDescription"), "primaryDescription");
     const secondaryDescriptionElement = assertElement(document.getElementById("secondaryDescription"), "secondaryDescription");
@@ -125,3 +132,7 @@ function bootstrap() {
 }
 
 document.addEventListener("DOMContentLoaded", bootstrap);
+
+if (document.readyState !== "loading") {
+    bootstrap();
+}

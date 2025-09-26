@@ -1,0 +1,41 @@
+name: Browser Test Suite
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '**/*.js'
+      - '**/*.css'
+      - '**/*.html'
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - '**/*.js'
+      - '**/*.css'
+      - '**/*.html'
+
+jobs:
+  run-browser-tests:
+    name: Run browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Execute browser tests
+        run: npm test

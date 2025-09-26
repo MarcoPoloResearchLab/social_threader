@@ -1,3 +1,7 @@
 # Default ignored files
+shelf/
 .idea/
 *.iml
+node_modules/
+playwright-report/
+test-results/
