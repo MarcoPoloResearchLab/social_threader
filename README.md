@@ -73,7 +73,7 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 ### Testing
 
 - Run `npm test` to execute the happy-dom powered headless harness that loads the browser-oriented test modules.
-- `tests/index.html` remains available for manual execution in a real browser.
+- Launch the production page with the `?test=true` query flag (for example `index.html?test=true`) to run the same suite in a real browser without needing a separate HTML harness.
 - `tests/assert.js` and `tests/runner.js` provide the lightweight reporting utilities shared by both harnesses.
 
 ## Local Installation

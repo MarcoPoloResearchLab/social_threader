@@ -51,7 +51,7 @@
 
 ### 6. Testing
 
-* Tests run in browser: `tests/index.html`.
+* Tests run in browser by opening `index.html?test=true`.
 * Table-driven cases, iterate array of inputs/outputs.
 * Black-box only: test public APIs and DOM, not internals.
 * Provide `assertEqual`, `assertDeepEqual`, `assertThrows` in `tests/assert.js`.

@@ -36,7 +36,9 @@ export const LOG_MESSAGES = Object.freeze({
     COPY_FAILURE: "Failed to copy chunk to clipboard",
     CLIPBOARD_UNAVAILABLE: "Clipboard API is not available",
     IMAGE_READ_FAILURE: "Unable to read file as data URL",
-    IMAGE_READ_ERROR: "Failed to read file"
+    IMAGE_READ_ERROR: "Failed to read file",
+    TEST_HARNESS_IMPORT_FAILURE: "Failed to load browser test harness",
+    TEST_HARNESS_INITIALIZATION_FAILURE: "Browser test harness encountered an initialization error"
 });
 
 /** @type {Readonly<Record<string, string>>} */
@@ -124,4 +126,26 @@ export const HTML_TEMPLATES = Object.freeze({
 export const PLACEHOLDER_TOKENS = Object.freeze({
     IMAGE_PREFIX: "[[IMAGE:",
     IMAGE_SUFFIX: "]]"
+});
+
+export const TEST_MODE_CONFIG = Object.freeze({
+    QUERY_PARAMETER: "test",
+    ENABLED_VALUE: "true"
+});
+
+export const TEST_HARNESS_DOM = Object.freeze({
+    WRAPPER_ID: "testHarness",
+    OUTPUT_ID: "testHarnessOutput",
+    TITLE_ID: "testHarnessTitle"
+});
+
+export const TEST_HARNESS_CLASS_NAMES = Object.freeze({
+    WRAPPER: "testHarnessWrapper"
+});
+
+export const TEST_HARNESS_TEXT_CONTENT = Object.freeze({
+    TITLE: "Social Threader Browser Tests",
+    SUMMARY_PLACEHOLDER: "Preparing test summary…",
+    INITIALIZATION_FAILURE: "Unable to initialize browser tests. Check console output for details.",
+    UNEXPECTED_ERROR_PREFIX: "Unexpected test harness failure: "
 });
