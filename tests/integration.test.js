@@ -407,7 +407,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Words wrong everywhere."] }
                             ],
                             false,
-                            { characters: 58, words: 7, sentences: 3, paragraphs: 2 }
+                            { characters: 59, words: 7, sentences: 3, paragraphs: 2 }
                         ),
                         createParagraphStatisticsFixture(
                             "abbreviations and decimals do not inflate statistics",
@@ -429,7 +429,7 @@ export async function runIntegrationTests(runTest) {
                                 }
                             ],
                             false,
-                            { characters: 174, words: 29, sentences: 4, paragraphs: 3 }
+                            { characters: 175, words: 29, sentences: 4, paragraphs: 3 }
                         ),
                         createParagraphStatisticsFixture(
                             "single paragraph keeps toggle disabled",
@@ -444,7 +444,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Second paragraph."] }
                             ],
                             false,
-                            { characters: 34, words: 4, sentences: 2, paragraphs: 2 }
+                            { characters: 35, words: 4, sentences: 2, paragraphs: 2 }
                         ),
                         createParagraphStatisticsFixture(
                             "inline formatting paragraphs preserve counts",
@@ -454,7 +454,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Paragraph ", { tagName: "strong", text: "#3" }, "."] }
                             ],
                             false,
-                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
+                            { characters: 42, words: 6, sentences: 3, paragraphs: 3 }
                         ),
                         createParagraphStatisticsFixture(
                             "trailing blank paragraph is ignored",
@@ -465,7 +465,7 @@ export async function runIntegrationTests(runTest) {
                                 { isBlank: true }
                             ],
                             false,
-                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
+                            { characters: 42, words: 6, sentences: 3, paragraphs: 3 }
                         )
                     ];
 

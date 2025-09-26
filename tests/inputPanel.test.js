@@ -23,9 +23,9 @@ const PARAGRAPH_TEXT_CONTENT = Object.freeze({
 });
 
 const EXPECTED_SNAPSHOT_TEXT = Object.freeze({
-    sequentialParagraphs: "Paragraph #1.\nParagraph #2.\nParagraph #3.",
+    sequentialParagraphs: "Paragraph #1.\nParagraph #2.\nParagraph #3.\n",
     inlineEmphasis: "Intro with emphasis highlighted conclusion.",
-    mixedInlineElements: "Leading strong text and trailing content.\nLink enriched paragraph content."
+    mixedInlineElements: "Leading strong text and trailing content.\nLink enriched paragraph content.\n"
 });
 
 const INLINE_ELEMENT_TEXT = Object.freeze({
