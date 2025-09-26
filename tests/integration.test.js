@@ -138,6 +138,89 @@ function parseStatisticsText(statisticsText) {
 }
 
 /**
+ * @typedef {string | { tagName: string, text: string }} ParagraphChildDefinition
+ */
+
+/**
+ * @typedef {{ children?: ParagraphChildDefinition[], isBlank?: boolean }} ContenteditableParagraphConfiguration
+ */
+
+/**
+ * Builds the contenteditable paragraph structure the browser generates for Enter-separated paragraphs.
+ * @param {HTMLDivElement} editorElement Editable element that should receive the generated structure.
+ * @param {ContenteditableParagraphConfiguration[]} paragraphConfigurations Ordered configuration describing each paragraph.
+ * @returns {void}
+ */
+function populateEditorWithParagraphStructure(editorElement, paragraphConfigurations) {
+    while (editorElement.firstChild) {
+        editorElement.removeChild(editorElement.firstChild);
+    }
+
+    paragraphConfigurations.forEach((paragraphConfiguration) => {
+        const paragraphElement = document.createElement("div");
+        if (paragraphConfiguration.isBlank) {
+            paragraphElement.appendChild(document.createElement("br"));
+        } else {
+            const childDefinitions = paragraphConfiguration.children ?? [];
+            childDefinitions.forEach((childDefinition) => {
+                if (typeof childDefinition === "string") {
+                    paragraphElement.append(childDefinition);
+                } else {
+                    const inlineElement = document.createElement(childDefinition.tagName);
+                    inlineElement.textContent = childDefinition.text;
+                    paragraphElement.appendChild(inlineElement);
+                }
+            });
+        }
+        editorElement.appendChild(paragraphElement);
+    });
+}
+
+/**
+ * Generates the plain-text representation used for statistics from a contenteditable paragraph configuration.
+ * @param {ContenteditableParagraphConfiguration[]} paragraphConfigurations Ordered configuration describing each paragraph.
+ * @returns {string} Plain-text content equivalent to the editor innerText output.
+ */
+function getPlainTextFromParagraphStructure(paragraphConfigurations) {
+    const scratchWrapper = document.createElement("div");
+    scratchWrapper.style.position = "absolute";
+    scratchWrapper.style.left = "-9999px";
+    const scratchEditor = document.createElement("div");
+    scratchWrapper.appendChild(scratchEditor);
+    document.body.appendChild(scratchWrapper);
+    populateEditorWithParagraphStructure(scratchEditor, paragraphConfigurations);
+    const normalizedText = scratchEditor.innerText
+        .replace(/\u00A0/g, " ")
+        .replace(/\r\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    scratchWrapper.remove();
+    return normalizedText;
+}
+
+/**
+ * Creates a paragraph statistics fixture with expectations derived up front.
+ * @param {string} description Human-readable description of the paragraph structure.
+ * @param {ContenteditableParagraphConfiguration[]} paragraphConfigurations Ordered configuration describing each paragraph.
+ * @param {boolean} expectedToggleDisabled Whether the paragraph toggle is expected to be disabled.
+ * @returns {{ description: string, paragraphConfigurations: ContenteditableParagraphConfiguration[], expectedToggleDisabled: boolean, expectedStatistics: import("../js/types.d.js").ChunkStatistics }} Fixture containing expectations.
+ */
+function createParagraphStatisticsFixture(
+    description,
+    paragraphConfigurations,
+    expectedToggleDisabled
+) {
+    const plainText = getPlainTextFromParagraphStructure(paragraphConfigurations);
+    const expectedStatistics = chunkingService.calculateStatistics(plainText);
+    return {
+        description,
+        paragraphConfigurations,
+        expectedToggleDisabled,
+        expectedStatistics
+    };
+}
+
+/**
  * Sets up a minimal DOM fixture and controller instance for integration testing.
  * @returns {{ elements: Record<string, HTMLElement>, cleanup: () => void }}
  */
@@ -335,126 +418,50 @@ export async function runIntegrationTests(runTest) {
             }
         },
         {
-            name: "paragraph toggle availability reflects paragraph count",
+            name: "contenteditable paragraphs update statistics and toggle availability",
             async execute() {
                 const { elements, cleanup } = setupControllerFixture();
                 try {
-                    elements.editorElement.textContent = "Single paragraph only.";
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    await waitForAnimationFrame();
-                    assertEqual(elements.paragraphToggle.disabled, true, "paragraph toggle should be disabled for single paragraph");
-
-                    elements.editorElement.textContent = "First paragraph.\n\nSecond paragraph.";
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    await waitForAnimationFrame();
-                    assertEqual(elements.paragraphToggle.disabled, false, "paragraph toggle should enable when multiple paragraphs exist");
-                } finally {
-                    cleanup();
-                }
-            }
-        },
-        {
-            name: "input statistics display paragraph totals",
-            async execute() {
-                const { elements, cleanup } = setupControllerFixture();
-                try {
-                    elements.editorElement.textContent = "First paragraph.\n\nSecond paragraph.";
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    await waitForAnimationFrame();
-
-                    const statistics = chunkingService.calculateStatistics(elements.editorElement.textContent || "");
-                    const displayedStatistics = parseStatisticsText(elements.statsElement.textContent || "");
-
-                    assertEqual(
-                        displayedStatistics.paragraphs,
-                        statistics.paragraphs,
-                        "input statistics should include paragraph counts"
-                    );
-                } finally {
-                    cleanup();
-                }
-            }
-        },
-        {
-            name: "multi-paragraph fixtures collapse statistics into a single block",
-            async execute() {
-                const { elements, cleanup } = setupControllerFixture();
-                try {
-                    const expectedStatisticTotals = {
-                        characters: 41,
-                        words: 6,
-                        sentences: 3,
-                        paragraphs: 3
-                    };
-                    /** @type {{ description: string, buildContent: (editorElement: HTMLDivElement) => void }[]} */
-                    const fixtureDefinitions = [
-                        {
-                            description: "plain paragraph divs",
-                            buildContent(editorElement) {
-                                const paragraphTexts = ["Paragraph #1.", "Paragraph #2.", "Paragraph #3."];
-                                for (const paragraphText of paragraphTexts) {
-                                    const paragraphElement = document.createElement("div");
-                                    paragraphElement.textContent = paragraphText;
-                                    editorElement.appendChild(paragraphElement);
-                                }
-                            }
-                        },
-                        {
-                            description: "paragraphs with trailing blank div",
-                            buildContent(editorElement) {
-                                const paragraphTexts = ["Paragraph #1.", "Paragraph #2.", "Paragraph #3."];
-                                for (const paragraphText of paragraphTexts) {
-                                    const paragraphElement = document.createElement("div");
-                                    paragraphElement.textContent = paragraphText;
-                                    editorElement.appendChild(paragraphElement);
-                                }
-                                const trailingEmptyParagraphElement = document.createElement("div");
-                                const breakElement = document.createElement("br");
-                                trailingEmptyParagraphElement.appendChild(breakElement);
-                                editorElement.appendChild(trailingEmptyParagraphElement);
-                            }
-                        },
-                        {
-                            description: "paragraphs with inline formatting",
-                            buildContent(editorElement) {
-                                const paragraphDefinitions = [
-                                    {
-                                        prefixText: "Paragraph ",
-                                        emphasisTag: "strong",
-                                        emphasisText: "#1",
-                                        suffixText: "."
-                                    },
-                                    {
-                                        prefixText: "Paragraph ",
-                                        emphasisTag: "em",
-                                        emphasisText: "#2",
-                                        suffixText: "."
-                                    },
-                                    {
-                                        prefixText: "Paragraph ",
-                                        emphasisTag: "strong",
-                                        emphasisText: "#3",
-                                        suffixText: "."
-                                    }
-                                ];
-                                for (const paragraphDefinition of paragraphDefinitions) {
-                                    const paragraphElement = document.createElement("div");
-                                    paragraphElement.append(paragraphDefinition.prefixText);
-                                    const emphasisElement = document.createElement(paragraphDefinition.emphasisTag);
-                                    emphasisElement.textContent = paragraphDefinition.emphasisText;
-                                    paragraphElement.appendChild(emphasisElement);
-                                    paragraphElement.append(paragraphDefinition.suffixText);
-                                    editorElement.appendChild(paragraphElement);
-                                }
-                            }
-                        }
+                    const paragraphStatisticsFixtures = [
+                        createParagraphStatisticsFixture(
+                            "single paragraph keeps toggle disabled",
+                            [{ children: ["Single paragraph only."] }],
+                            true
+                        ),
+                        createParagraphStatisticsFixture(
+                            "multiple paragraphs enable toggle",
+                            [
+                                { children: ["First paragraph."] },
+                                { children: ["Second paragraph."] }
+                            ],
+                            false
+                        ),
+                        createParagraphStatisticsFixture(
+                            "inline formatting paragraphs preserve counts",
+                            [
+                                { children: ["Paragraph ", { tagName: "strong", text: "#1" }, "."] },
+                                { children: ["Paragraph ", { tagName: "em", text: "#2" }, "."] },
+                                { children: ["Paragraph ", { tagName: "strong", text: "#3" }, "."] }
+                            ],
+                            false
+                        ),
+                        createParagraphStatisticsFixture(
+                            "trailing blank paragraph is ignored",
+                            [
+                                { children: ["Paragraph #1."] },
+                                { children: ["Paragraph #2."] },
+                                { children: ["Paragraph #3."] },
+                                { isBlank: true }
+                            ],
+                            false
+                        )
                     ];
 
-                    for (const fixtureDefinition of fixtureDefinitions) {
-                        while (elements.editorElement.firstChild) {
-                            elements.editorElement.removeChild(elements.editorElement.firstChild);
-                        }
-                        fixtureDefinition.buildContent(elements.editorElement);
+                    for (const fixtureDefinition of paragraphStatisticsFixtures) {
+                        populateEditorWithParagraphStructure(
+                            elements.editorElement,
+                            fixtureDefinition.paragraphConfigurations
+                        );
                         elements.editorElement.dispatchEvent(new Event("input"));
                         await waitForAnimationFrame();
                         await waitForAnimationFrame();
@@ -463,23 +470,32 @@ export async function runIntegrationTests(runTest) {
 
                         assertEqual(
                             displayedStatistics.characters,
-                            expectedStatisticTotals.characters,
-                            `${fixtureDefinition.description} should report forty-one characters`
+                            fixtureDefinition.expectedStatistics.characters,
+                            `${fixtureDefinition.description} should display the expected character count`
                         );
                         assertEqual(
                             displayedStatistics.words,
-                            expectedStatisticTotals.words,
-                            `${fixtureDefinition.description} should report six words`
+                            fixtureDefinition.expectedStatistics.words,
+                            `${fixtureDefinition.description} should display the expected word count`
                         );
                         assertEqual(
                             displayedStatistics.sentences,
-                            expectedStatisticTotals.sentences,
-                            `${fixtureDefinition.description} should report three sentences`
+                            fixtureDefinition.expectedStatistics.sentences,
+                            `${fixtureDefinition.description} should display the expected sentence count`
                         );
                         assertEqual(
                             displayedStatistics.paragraphs,
-                            expectedStatisticTotals.paragraphs,
-                            `${fixtureDefinition.description} should report three paragraphs`
+                            fixtureDefinition.expectedStatistics.paragraphs,
+                            `${fixtureDefinition.description} should display the expected paragraph count`
+                        );
+                        assertEqual(
+                            elements.paragraphToggle.disabled,
+                            fixtureDefinition.expectedToggleDisabled,
+                            `${fixtureDefinition.description} should ${
+                                fixtureDefinition.expectedToggleDisabled ? "keep" : "make"
+                            } the paragraph toggle ${
+                                fixtureDefinition.expectedToggleDisabled ? "disabled" : "enabled"
+                            }`
                         );
                     }
                 } finally {
