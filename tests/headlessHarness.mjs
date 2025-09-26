@@ -113,25 +113,12 @@ async function main() {
     outputContainer.id = OUTPUT_CONTAINER_ID;
     browserWindow.document.body.appendChild(outputContainer);
 
-    const { createTestRunner } = await import("./runner.js");
+    const { createTestRunner, runRegisteredSuites } = await import("./runner.js");
     const testRunner = createTestRunner(outputContainer);
 
     const runTest = (name, testBody) => testRunner.runTest(name, testBody);
 
-    const testModules = [
-        { path: "./chunking.test.js", symbol: "runChunkingTests" },
-        { path: "./richText.test.js", symbol: "runRichTextTests" },
-        { path: "./integration.test.js", symbol: "runIntegrationTests" }
-    ];
-
-    for (const testModule of testModules) {
-        const moduleExports = await import(testModule.path);
-        const runnerFunction = moduleExports[testModule.symbol];
-        if (typeof runnerFunction !== "function") {
-            throw new Error(`Module ${testModule.path} did not export ${testModule.symbol}`);
-        }
-        await runnerFunction(runTest);
-    }
+    await runRegisteredSuites(runTest);
 
     testRunner.summarize();
     const failureCount = summarizeResults(outputContainer);
