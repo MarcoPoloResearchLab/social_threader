@@ -226,6 +226,16 @@ export async function runChunkingTests(runTest) {
             }
         },
         {
+            name: "treats month abbreviations followed by ordinals as a single sentence",
+            input: "The festival begins on May. 5th at noon. Please arrive early.",
+            expected: {
+                characters: 61,
+                words: 11,
+                sentences: 2,
+                paragraphs: 1
+            }
+        },
+        {
             name: "ignores abbreviations while counting sentences",
             input: "Please schedule a visit with Dr. Smith tomorrow. Bring completed forms.",
             expected: {

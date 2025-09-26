@@ -63,6 +63,7 @@ const FLEXIBLE_ABBREVIATIONS = Object.freeze(
         "feb.",
         "mar.",
         "apr.",
+        "may.",
         "jun.",
         "jul.",
         "aug.",
