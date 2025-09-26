@@ -118,12 +118,25 @@ function stripTrailingWrappingCharacters(token) {
 }
 
 /**
+ * Strips leading wrapping characters such as quotes or parentheses.
+ * @param {string} token Word token to sanitize.
+ * @returns {string} Token without leading wrapping characters.
+ */
+function stripLeadingWrappingCharacters(token) {
+    let sanitizedToken = token;
+    while (sanitizedToken.length > 0 && LEADING_PUNCTUATION_TO_IGNORE.includes(sanitizedToken.charAt(0))) {
+        sanitizedToken = sanitizedToken.slice(1);
+    }
+    return sanitizedToken;
+}
+
+/**
  * Determines the classification of an abbreviation if applicable.
  * @param {string} token Candidate token potentially representing an abbreviation.
  * @returns {"strict" | "flexible" | null} Classification result or null when not an abbreviation.
  */
 function classifyAbbreviation(token) {
-    const normalizedToken = stripTrailingWrappingCharacters(token).toLowerCase();
+    const normalizedToken = stripTrailingWrappingCharacters(stripLeadingWrappingCharacters(token)).toLowerCase();
     if (normalizedToken.length === 0) {
         return null;
     }
@@ -153,7 +166,7 @@ function classifyAbbreviation(token) {
  * @returns {boolean} True when the token is decimal-like and should not end a sentence.
  */
 function isDecimalNotation(token) {
-    const normalizedToken = stripTrailingWrappingCharacters(token).toLowerCase();
+    const normalizedToken = stripTrailingWrappingCharacters(stripLeadingWrappingCharacters(token)).toLowerCase();
     return DECIMAL_LIKE_PATTERN.test(normalizedToken);
 }
 
