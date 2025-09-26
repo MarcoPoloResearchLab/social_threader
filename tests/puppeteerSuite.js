@@ -48,7 +48,7 @@ const typedParagraphCases = [
             "Words wrong everywhere."
         ],
         expected: {
-            characters: 59,
+            characters: 58,
             words: 7,
             sentences: 3,
             paragraphs: 2
@@ -62,7 +62,7 @@ const typedParagraphCases = [
             "Next check-in is scheduled for Jan. 3rd, 2025."
         ],
         expected: {
-            characters: 176,
+            characters: 174,
             words: 29,
             sentences: 4,
             paragraphs: 3

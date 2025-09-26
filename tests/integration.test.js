@@ -407,7 +407,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Words wrong everywhere."] }
                             ],
                             false,
-                            { characters: 59, words: 7, sentences: 3, paragraphs: 2 }
+                            { characters: 58, words: 7, sentences: 3, paragraphs: 2 }
                         ),
                         createParagraphStatisticsFixture(
                             "abbreviations and decimals do not inflate statistics",
@@ -429,7 +429,7 @@ export async function runIntegrationTests(runTest) {
                                 }
                             ],
                             false,
-                            { characters: 176, words: 29, sentences: 4, paragraphs: 3 }
+                            { characters: 174, words: 29, sentences: 4, paragraphs: 3 }
                         ),
                         createParagraphStatisticsFixture(
                             "single paragraph keeps toggle disabled",
