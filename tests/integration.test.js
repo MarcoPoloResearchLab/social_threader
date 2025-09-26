@@ -380,12 +380,12 @@ export async function runIntegrationTests(runTest) {
             async execute() {
                 const { elements, cleanup } = setupControllerFixture();
                 try {
-                    const multiParagraphText = [
-                        "Paragraph #1.",
-                        "Paragraph #2.",
-                        "Paragraph #3."
-                    ].join("\n\n");
-                    elements.editorElement.textContent = multiParagraphText;
+                    const multiParagraphMarkup = [
+                        "<div>Paragraph #1.</div>",
+                        "<div>Paragraph #2.</div>",
+                        "<div>Paragraph #3.</div>"
+                    ].join("");
+                    elements.editorElement.innerHTML = multiParagraphMarkup;
                     elements.editorElement.dispatchEvent(new Event("input"));
                     await waitForAnimationFrame();
 
