@@ -9,7 +9,8 @@ import { assertEqual } from "./assert.js";
 const SNAPSHOT_ASSERTION_MESSAGES = Object.freeze({
     placeholderMismatch: "Snapshot placeholder text should match expected newline separated paragraphs",
     plainTextMismatch: "Snapshot plain text should match expected newline separated paragraphs",
-    serializedLengthMismatch: "Serialized text should match the expected character length"
+    serializedLengthMismatch: "Serialized placeholder text should match the expected character length",
+    plainTextLengthMismatch: "Snapshot plain text should match the expected character length"
 });
 
 const PARAGRAPH_TEXT_CONTENT = Object.freeze({
@@ -235,6 +236,11 @@ export async function runInputPanelTests(runTest) {
                         snapshot.placeholderText.length,
                         documentCase.expectedLength,
                         SNAPSHOT_ASSERTION_MESSAGES.serializedLengthMismatch
+                    );
+                    assertEqual(
+                        snapshot.plainText.length,
+                        documentCase.expectedLength,
+                        SNAPSHOT_ASSERTION_MESSAGES.plainTextLengthMismatch
                     );
                 }
             } finally {

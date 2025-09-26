@@ -18,6 +18,7 @@ const SINGLE_NEWLINE = "\n";
 /** @type {string} */
 const DOUBLE_NEWLINE = "\n\n";
 const PLACEHOLDER_SEPARATOR_FLAG = Symbol("placeholderSeparatorFlag");
+const TRAILING_NEWLINE_PATTERN = /\n+$/u;
 
 /**
  * Normalizes editor text content by replacing non-breaking spaces and Windows newlines.
@@ -253,7 +254,10 @@ export class InputPanel {
         inertEditor.childNodes.forEach((childNode) => {
             if (childNode instanceof window.Text) {
                 const textContent = childNode.textContent || "";
-                const normalizedText = normalizeEditorText(textContent);
+                const normalizedText = normalizeEditorText(textContent).replace(
+                    TRAILING_NEWLINE_PATTERN,
+                    ""
+                );
                 if (normalizedText.trim().length === 0) {
                     return;
                 }
@@ -264,11 +268,15 @@ export class InputPanel {
             if (childNode instanceof HTMLElement) {
                 const element = childNode;
                 const normalizedInnerText = normalizeEditorText(element.innerText);
-                if (isEmptyOrNewlineOnly(normalizedInnerText)) {
+                const trimmedInnerText = normalizedInnerText.replace(
+                    TRAILING_NEWLINE_PATTERN,
+                    ""
+                );
+                if (isEmptyOrNewlineOnly(trimmedInnerText)) {
                     placeholderSegments.push(PLACEHOLDER_SEPARATOR_FLAG);
                     return;
                 }
-                placeholderSegments.push(normalizedInnerText);
+                placeholderSegments.push(trimmedInnerText);
             }
         });
 
