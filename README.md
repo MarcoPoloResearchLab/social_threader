@@ -72,16 +72,15 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 
 ### Testing
 
-- Run `npm install` to install the Happy DOM harness along with the Playwright test runner.
-- Install browser binaries once per machine with `npx playwright install` (use `npx playwright install --with-deps chromium` on Linux environments that need system packages).
-- Execute `npm test` to run the Happy DOM harness (`npm run test:headless`) followed by the Playwright browser suite (`npm run test:browser`). The command mirrors the sequence executed in CI so local runs surface the same failures.
-- The Playwright suite (for example `tests/browser.stats.spec.ts`) opens `index.html?test=true`, injects rich text markup, and verifies the live statistics rendered in the UI.
+- Run `npm install` to install the Happy DOM harness along with the Puppeteer regression runner.
+- Execute `npm test` to run the Happy DOM harness (`npm run test:headless`) followed by the Puppeteer browser suite (`npm run test:browser`). The command mirrors the sequence executed in CI so local runs surface the same failures.
+- The Puppeteer suite (`tests/puppeteerSuite.mjs`) opens `index.html`, injects rich text markup, and verifies the live statistics rendered in the UI.
 - Continue to use the `?test=true` query flag in a manual browser session to view the in-browser harness reporter.
 
 ### Continuous Integration
 
-- `.github/workflows/browser-tests.yml` runs on pull requests and pushes that modify application code or test tooling. The single job executes the Happy DOM harness first and then the Chromium-only Playwright suite, matching the default `npm test` flow.
-- The workflow installs Playwright with required operating-system dependencies, caches the browser downloads, and publishes HTML reports, JUnit output, and traces for debugging failed runs.
+- `.github/workflows/browser-tests.yml` runs on pull requests and pushes that modify application code or test tooling. The single job executes the Happy DOM harness first and then the Chromium-only Puppeteer suite, matching the default `npm test` flow.
+- The workflow caches the Chromium download used by Puppeteer and executes the same commands developers run locally for consistent feedback.
 
 ## Local Installation
 
@@ -95,12 +94,7 @@ git clone https://github.com/MarkoPoloResearchLab/social_threader.git
 npm install
 ```
 
-3. Install Playwright browser binaries (first run only):
-```bash
-npx playwright install
-```
-
-4. Open `index.html` in a web browser to use the app directly.
+3. Open `index.html` in a web browser to use the app directly.
 
 The application remains a static HTML/CSS/JS bundle, while the optional tooling supports automated testing.
 
