@@ -225,10 +225,51 @@ export class InputPanel {
         const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
         inertDocument.body.appendChild(inertEditor);
 
-        const normalizedPlaceholderText = inertEditor.innerText
-            .replace(/\u00A0/g, " ")
-            .replace(/\r\n/g, "\n");
-        const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
+        /** @type {string[]} */
+        const placeholderSegments = [];
+        inertEditor.childNodes.forEach((childNode) => {
+            if (childNode instanceof window.Text) {
+                const textContent = childNode.textContent || "";
+                if (textContent.trim().length === 0) {
+                    return;
+                }
+                placeholderSegments.push(
+                    textContent
+                        .replace(/\u00A0/g, " ")
+                        .replace(/\r\n/g, "\n")
+                );
+                return;
+            }
+
+            if (childNode instanceof HTMLElement) {
+                const element = childNode;
+                placeholderSegments.push(
+                    element.innerText
+                        .replace(/\u00A0/g, " ")
+                        .replace(/\r\n/g, "\n")
+                );
+            }
+        });
+
+        while (placeholderSegments.length > 0 && placeholderSegments[placeholderSegments.length - 1].length === 0) {
+            placeholderSegments.pop();
+        }
+
+        let normalizedPlaceholderText = "";
+        placeholderSegments.forEach((segment, index) => {
+            if (index > 0) {
+                normalizedPlaceholderText += "\n\n";
+            }
+            normalizedPlaceholderText += segment;
+        });
+        const collapsedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n");
+        const trailingNewlinesMatch = collapsedPlaceholderText.match(/\n+$/);
+        const trimmedPlaceholderTextCore = collapsedPlaceholderText.trim();
+        const shouldRestoreTrailingSeparators =
+            trimmedPlaceholderTextCore.length > 0 && trailingNewlinesMatch !== null;
+        const trimmedPlaceholderText = shouldRestoreTrailingSeparators
+            ? `${trimmedPlaceholderTextCore}${trailingNewlinesMatch[0]}`
+            : trimmedPlaceholderTextCore;
         const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
 
         return {

@@ -51,22 +51,34 @@ const STRICT_NON_TERMINATING_ABBREVIATIONS = Object.freeze(
 
 const FLEXIBLE_ABBREVIATIONS = Object.freeze(
     new Set([
+        "a.m.",
         "approx.",
         "appt.",
+        "apr.",
+        "aug.",
         "ave.",
         "corp.",
-        "etc.",
-        "fig.",
-        "inc.",
-        "vs.",
-        "i.e.",
+        "dec.",
         "e.g.",
-        "u.s.",
-        "u.k.",
-        "a.m.",
-        "p.m.",
+        "etc.",
+        "feb.",
+        "fig.",
+        "i.e.",
+        "inc.",
+        "jan.",
+        "jul.",
+        "jun.",
+        "mar.",
         "no.",
-        "vol."
+        "nov.",
+        "oct.",
+        "p.m.",
+        "sep.",
+        "sept.",
+        "u.k.",
+        "u.s.",
+        "vol.",
+        "vs."
     ])
 );
 
@@ -275,7 +287,7 @@ function splitIntoWordsPreservingPunctuation(textString) {
 
     for (let index = 0; index < normalizedText.length; index += 1) {
         const character = normalizedText[index];
-        if (character === " " && !insideQuote) {
+        if (character === " ") {
             if (currentWord.length > 0) {
                 wordsArray.push(currentWord);
                 currentWord = "";
@@ -284,7 +296,18 @@ function splitIntoWordsPreservingPunctuation(textString) {
         }
 
         if (character === '"') {
-            insideQuote = !insideQuote;
+            if (!insideQuote) {
+                if (currentWord.length > 0) {
+                    wordsArray.push(currentWord);
+                }
+                currentWord = '"';
+                insideQuote = true;
+                continue;
+            }
+
+            currentWord += character;
+            insideQuote = false;
+            continue;
         }
 
         currentWord += character;
@@ -312,10 +335,6 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         return false;
     }
 
-    if (ELLIPSIS_PATTERN.test(strippedWord)) {
-        return true;
-    }
-
     if (isDecimalNotation(strippedWord)) {
         return false;
     }
@@ -324,14 +343,22 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         return false;
     }
 
+    const nextToken = typeof nextWord === "string" ? nextWord : "";
+    const nextLead = getFirstSignificantCharacter(nextToken.trim());
+
+    if (ELLIPSIS_PATTERN.test(strippedWord)) {
+        if (nextLead.length > 0 && nextLead.toLowerCase() === nextLead) {
+            return false;
+        }
+        return true;
+    }
+
     const abbreviationType = classifyAbbreviation(strippedWord);
     if (abbreviationType === "strict") {
         return false;
     }
 
     if (abbreviationType === "flexible") {
-        const nextToken = typeof nextWord === "string" ? nextWord : "";
-        const nextLead = getFirstSignificantCharacter(nextToken.trim());
         if (nextLead.length === 0) {
             return true;
         }
@@ -340,6 +367,9 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
                 return false;
             }
             return true;
+        }
+        if (/\d/.test(nextLead)) {
+            return false;
         }
         return true;
     }
