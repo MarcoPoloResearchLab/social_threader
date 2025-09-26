@@ -6,22 +6,31 @@ on:
       - main
       - master
     paths:
-      - '**/*.js'
-      - '**/*.css'
-      - '**/*.html'
+      - "**/*.js"
+      - "**/*.css"
+      - "**/*.html"
+      - package.json
+      - package-lock.json
+      - .github/workflows/browser-tests.yml
   pull_request:
     branches:
       - main
       - master
     paths:
-      - '**/*.js'
-      - '**/*.css'
-      - '**/*.html'
+      - "**/*.js"
+      - "**/*.css"
+      - "**/*.html"
+      - package.json
+      - package-lock.json
+      - .github/workflows/browser-tests.yml
 
 jobs:
   run-browser-tests:
     name: Run browser tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -29,13 +38,34 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+          cache: "npm"
+
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+      - name: Install Playwright browsers and dependencies
+        run: npx playwright install --with-deps chromium
 
-      - name: Execute browser tests
-        run: npm test
+      - name: Run Happy DOM harness
+        run: npm run test:headless
+
+      - name: Run Playwright browser suite
+        run: npx playwright test --reporter=list,junit --output=test-results --trace=on-first-retry
+
+      - name: Upload Playwright report and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            playwright-report
+            test-results
+            **/trace.zip
+          if-no-files-found: ignore

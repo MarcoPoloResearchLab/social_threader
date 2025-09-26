@@ -72,9 +72,16 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 
 ### Testing
 
-- Run `npm test` to execute the happy-dom powered headless harness that loads the browser-oriented test modules.
-- Launch the production page with the `?test=true` query flag (for example `index.html?test=true`) to run the same suite in a real browser without needing a separate HTML harness.
-- `tests/assert.js` and `tests/runner.js` provide the lightweight reporting utilities shared by both harnesses.
+- Run `npm install` to install the Happy DOM harness along with the Playwright test runner.
+- Install browser binaries once per machine with `npx playwright install` (use `npx playwright install --with-deps chromium` on Linux environments that need system packages).
+- Execute `npm test` to run the Happy DOM harness (`npm run test:headless`) followed by the Playwright browser suite (`npm run test:browser`). The command mirrors the sequence executed in CI so local runs surface the same failures.
+- The Playwright suite (for example `tests/browser.stats.spec.ts`) opens `index.html?test=true`, injects rich text markup, and verifies the live statistics rendered in the UI.
+- Continue to use the `?test=true` query flag in a manual browser session to view the in-browser harness reporter.
+
+### Continuous Integration
+
+- `.github/workflows/browser-tests.yml` runs on pull requests and pushes that modify application code or test tooling. The single job executes the Happy DOM harness first and then the Chromium-only Playwright suite, matching the default `npm test` flow.
+- The workflow installs Playwright with required operating-system dependencies, caches the browser downloads, and publishes HTML reports, JUnit output, and traces for debugging failed runs.
 
 ## Local Installation
 
@@ -83,9 +90,19 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 git clone https://github.com/MarkoPoloResearchLab/social_threader.git
 ```
 
-2. Open `index.html` in a web browser
+2. Install development dependencies for tests:
+```bash
+npm install
+```
 
-No build process or dependencies required - it's pure HTML, CSS, and JavaScript.
+3. Install Playwright browser binaries (first run only):
+```bash
+npx playwright install
+```
+
+4. Open `index.html` in a web browser to use the app directly.
+
+The application remains a static HTML/CSS/JS bundle, while the optional tooling supports automated testing.
 
 ## Contributing
 
