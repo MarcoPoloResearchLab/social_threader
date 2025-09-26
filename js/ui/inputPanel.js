@@ -98,6 +98,26 @@ function createEditorImageElement(dataUrl) {
 }
 
 /**
+ * Removes active content nodes and inline event handlers from the snapshot tree.
+ * @param {HTMLElement} rootElement Cloned editor element prepared for snapshot analysis.
+ * @returns {void}
+ */
+function sanitizeSnapshotTree(rootElement) {
+    const disallowedSelectors = "script, style, link, meta, iframe, object, embed";
+    rootElement.querySelectorAll(disallowedSelectors).forEach((node) => {
+        node.remove();
+    });
+
+    rootElement.querySelectorAll("*").forEach((element) => {
+        Array.from(element.attributes).forEach((attribute) => {
+            if (attribute.name.toLowerCase().startsWith("on")) {
+                element.removeAttribute(attribute.name);
+            }
+        });
+    });
+}
+
+/**
  * Dispatches an input event so listeners can react to programmatic changes.
  * @param {HTMLElement} targetElement Editable container element.
  * @returns {void}
@@ -199,22 +219,17 @@ export class InputPanel {
             imageElement.replaceWith(placeholderNode);
         });
 
-        const temporaryContainer = document.createElement("div");
-        temporaryContainer.style.position = "absolute";
-        temporaryContainer.style.left = "-9999px";
-        temporaryContainer.style.top = "-9999px";
-        temporaryContainer.style.opacity = "0";
-        temporaryContainer.style.pointerEvents = "none";
-        temporaryContainer.appendChild(clonedEditor);
-        document.body.appendChild(temporaryContainer);
+        sanitizeSnapshotTree(clonedEditor);
 
-        const normalizedPlaceholderText = clonedEditor.innerText
+        const inertDocument = document.implementation.createHTMLDocument("input-snapshot");
+        const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
+        inertDocument.body.appendChild(inertEditor);
+
+        const normalizedPlaceholderText = inertEditor.innerText
             .replace(/\u00A0/g, " ")
             .replace(/\r\n/g, "\n");
         const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
         const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
-
-        temporaryContainer.remove();
 
         return {
             placeholderText: trimmedPlaceholderText,
