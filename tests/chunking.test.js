@@ -216,6 +216,16 @@ export async function runChunkingTests(runTest) {
             }
         },
         {
+            name: "treats digits after sentence-ending abbreviations as new sentences",
+            input: "The meeting ended at 5 p.m. 13 attendees stayed behind.",
+            expected: {
+                characters: 55,
+                words: 10,
+                sentences: 2,
+                paragraphs: 1
+            }
+        },
+        {
             name: "ignores abbreviations while counting sentences",
             input: "Please schedule a visit with Dr. Smith tomorrow. Bring completed forms.",
             expected: {
