@@ -13,6 +13,29 @@ const MINIMUM_FONT_SIZE = 14;
 const MAXIMUM_FONT_SIZE = 24;
 /** @type {number} */
 const FONT_INCREMENT = 0.05;
+/** @type {string} */
+const SINGLE_NEWLINE = "\n";
+/** @type {string} */
+const DOUBLE_NEWLINE = "\n\n";
+const PLACEHOLDER_SEPARATOR_FLAG = Symbol("placeholderSeparatorFlag");
+
+/**
+ * Normalizes editor text content by replacing non-breaking spaces and Windows newlines.
+ * @param {string} text Text content captured from the editor snapshot.
+ * @returns {string} Normalized text safe for serialization.
+ */
+function normalizeEditorText(text) {
+    return text.replace(/\u00A0/g, " ").replace(/\r\n/g, "\n");
+}
+
+/**
+ * Determines whether text is empty or contains only newline characters once normalized.
+ * @param {string} normalizedText Text that has already passed through normalizeEditorText.
+ * @returns {boolean} True when the text contains no visible characters.
+ */
+function isEmptyOrNewlineOnly(normalizedText) {
+    return normalizedText.replace(/\n/g, "").trim().length === 0;
+}
 
 /**
  * Retrieves the current selection range within the contenteditable element.
@@ -225,55 +248,57 @@ export class InputPanel {
         const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
         inertDocument.body.appendChild(inertEditor);
 
-        /** @type {string[]} */
+        /** @type {(string | symbol)[]} */
         const placeholderSegments = [];
         inertEditor.childNodes.forEach((childNode) => {
             if (childNode instanceof window.Text) {
                 const textContent = childNode.textContent || "";
-                if (textContent.trim().length === 0) {
+                const normalizedText = normalizeEditorText(textContent);
+                if (normalizedText.trim().length === 0) {
                     return;
                 }
-                placeholderSegments.push(
-                    textContent
-                        .replace(/\u00A0/g, " ")
-                        .replace(/\r\n/g, "\n")
-                );
+                placeholderSegments.push(normalizedText);
                 return;
             }
 
             if (childNode instanceof HTMLElement) {
                 const element = childNode;
-                placeholderSegments.push(
-                    element.innerText
-                        .replace(/\u00A0/g, " ")
-                        .replace(/\r\n/g, "\n")
-                );
+                const normalizedInnerText = normalizeEditorText(element.innerText);
+                if (isEmptyOrNewlineOnly(normalizedInnerText)) {
+                    placeholderSegments.push(PLACEHOLDER_SEPARATOR_FLAG);
+                    return;
+                }
+                placeholderSegments.push(normalizedInnerText);
             }
         });
-
-        while (placeholderSegments.length > 0 && placeholderSegments[placeholderSegments.length - 1].length === 0) {
-            placeholderSegments.pop();
-        }
 
         let normalizedPlaceholderText = "";
-        placeholderSegments.forEach((segment, index) => {
-            if (index > 0) {
-                normalizedPlaceholderText += "\n\n";
+        let hasWrittenText = false;
+        let pendingSeparatorCount = 0;
+        placeholderSegments.forEach((segment) => {
+            if (segment === PLACEHOLDER_SEPARATOR_FLAG) {
+                pendingSeparatorCount += 1;
+                return;
             }
-            normalizedPlaceholderText += segment;
+
+            const segmentText = /** @type {string} */ (segment);
+            if (hasWrittenText) {
+                if (pendingSeparatorCount === 0) {
+                    normalizedPlaceholderText += DOUBLE_NEWLINE;
+                } else if (pendingSeparatorCount === 1) {
+                    normalizedPlaceholderText += SINGLE_NEWLINE;
+                } else {
+                    normalizedPlaceholderText += DOUBLE_NEWLINE;
+                }
+            }
+            normalizedPlaceholderText += segmentText;
+            hasWrittenText = true;
+            pendingSeparatorCount = 0;
         });
-        const collapsedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n");
-        const trailingNewlinesMatch = collapsedPlaceholderText.match(/\n+$/);
-        const trimmedPlaceholderTextCore = collapsedPlaceholderText.trim();
-        const shouldRestoreTrailingSeparators =
-            trimmedPlaceholderTextCore.length > 0 && trailingNewlinesMatch !== null;
-        const trimmedPlaceholderText = shouldRestoreTrailingSeparators
-            ? `${trimmedPlaceholderTextCore}${trailingNewlinesMatch[0]}`
-            : trimmedPlaceholderTextCore;
-        const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
+        const plainText = richTextHelpers.extractPlainText(normalizedPlaceholderText, imageRecords);
 
         return {
-            placeholderText: trimmedPlaceholderText,
+            placeholderText: normalizedPlaceholderText,
             plainText,
             images: imageRecords
         };

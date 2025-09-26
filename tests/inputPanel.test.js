@@ -8,7 +8,8 @@ import { assertEqual } from "./assert.js";
 
 const SNAPSHOT_ASSERTION_MESSAGES = Object.freeze({
     placeholderMismatch: "Snapshot placeholder text should match expected newline separated paragraphs",
-    plainTextMismatch: "Snapshot plain text should match expected newline separated paragraphs"
+    plainTextMismatch: "Snapshot plain text should match expected newline separated paragraphs",
+    serializedLengthMismatch: "Serialized text should match the expected character length"
 });
 
 const PARAGRAPH_TEXT_CONTENT = Object.freeze({
@@ -36,6 +37,12 @@ const INLINE_ELEMENT_TEXT = Object.freeze({
 
 const INLINE_ELEMENT_URLS = Object.freeze({
     exampleLink: "https://example.com"
+});
+
+const EDITOR_SEPARATOR_REGRESSION_TEXT = Object.freeze({
+    firstParagraph: "Puppeteer ensures reliable browser coverage.",
+    secondParagraph: "Browser automation validates paragraph counts.",
+    expectedLength: 91
 });
 
 /**
@@ -123,6 +130,31 @@ const DOCUMENT_CASES = [
         ]
     },
     {
+        name: "treats spacer divs as single newline separators",
+        expectedText: `${EDITOR_SEPARATOR_REGRESSION_TEXT.firstParagraph}\n${EDITOR_SEPARATOR_REGRESSION_TEXT.secondParagraph}`,
+        expectedLength: EDITOR_SEPARATOR_REGRESSION_TEXT.expectedLength,
+        builderSteps: [
+            /**
+             * @param {HTMLDivElement} targetEditorElement
+             */
+            (targetEditorElement) => {
+                appendParagraphWithChildren(targetEditorElement, [
+                    document.createTextNode(EDITOR_SEPARATOR_REGRESSION_TEXT.firstParagraph)
+                ]);
+            },
+            appendEmptyParagraph,
+            /**
+             * @param {HTMLDivElement} targetEditorElement
+             */
+            (targetEditorElement) => {
+                appendParagraphWithChildren(targetEditorElement, [
+                    document.createTextNode(EDITOR_SEPARATOR_REGRESSION_TEXT.secondParagraph)
+                ]);
+            },
+            appendEmptyParagraph
+        ]
+    },
+    {
         name: "captures inline formatting within paragraph boundaries",
         expectedText: EXPECTED_SNAPSHOT_TEXT.inlineEmphasis,
         builderSteps: [
@@ -198,6 +230,13 @@ export async function runInputPanelTests(runTest) {
                     documentCase.expectedText,
                     SNAPSHOT_ASSERTION_MESSAGES.plainTextMismatch
                 );
+                if (typeof documentCase.expectedLength === "number") {
+                    assertEqual(
+                        snapshot.placeholderText.length,
+                        documentCase.expectedLength,
+                        SNAPSHOT_ASSERTION_MESSAGES.serializedLengthMismatch
+                    );
+                }
             } finally {
                 cleanup();
             }
