@@ -199,11 +199,22 @@ export class InputPanel {
             imageElement.replaceWith(placeholderNode);
         });
 
+        const temporaryContainer = document.createElement("div");
+        temporaryContainer.style.position = "absolute";
+        temporaryContainer.style.left = "-9999px";
+        temporaryContainer.style.top = "-9999px";
+        temporaryContainer.style.opacity = "0";
+        temporaryContainer.style.pointerEvents = "none";
+        temporaryContainer.appendChild(clonedEditor);
+        document.body.appendChild(temporaryContainer);
+
         const normalizedPlaceholderText = clonedEditor.innerText
             .replace(/\u00A0/g, " ")
             .replace(/\r\n/g, "\n");
         const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
         const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
+
+        temporaryContainer.remove();
 
         return {
             placeholderText: trimmedPlaceholderText,
