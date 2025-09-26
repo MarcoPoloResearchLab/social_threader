@@ -1,12 +1,13 @@
 {
   "name": "social-threader",
   "version": "1.0.0",
-  "description": "Browser test harness and Playwright runner for Social Threader",
+  "description": "Browser test harness for Social Threader",
+  "type": "module",
   "private": true,
   "scripts": {
-    "test": "playwright test"
+    "test": "node tests/headlessHarness.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "1.45.3"
+    "happy-dom": "18.0.1"
   }
 }

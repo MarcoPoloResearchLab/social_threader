@@ -32,6 +32,7 @@ Implements the chunking algorithm, sentence detection, and statistics gathering 
 Bootstraps DOM references, instantiates view models, initializes the controller, and configures the Formspree widget.
 
 ### Testing (`tests/`)
+- `headlessHarness.mjs` – Node-based happy-dom runner for automated execution (`npm test`).
 - `assert.js` / `runner.js` – Minimal assertion and reporting utilities.
 - `chunking.test.js` – Table-driven unit tests for the core algorithm.
 - `integration.test.js` – Black-box tests exercising the UI controller and DOM updates.
