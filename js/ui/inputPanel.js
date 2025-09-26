@@ -98,6 +98,26 @@ function createEditorImageElement(dataUrl) {
 }
 
 /**
+ * Removes active content nodes and inline event handlers from the snapshot tree.
+ * @param {HTMLElement} rootElement Cloned editor element prepared for snapshot analysis.
+ * @returns {void}
+ */
+function sanitizeSnapshotTree(rootElement) {
+    const disallowedSelectors = "script, style, link, meta, iframe, object, embed";
+    rootElement.querySelectorAll(disallowedSelectors).forEach((node) => {
+        node.remove();
+    });
+
+    rootElement.querySelectorAll("*").forEach((element) => {
+        Array.from(element.attributes).forEach((attribute) => {
+            if (attribute.name.toLowerCase().startsWith("on")) {
+                element.removeAttribute(attribute.name);
+            }
+        });
+    });
+}
+
+/**
  * Dispatches an input event so listeners can react to programmatic changes.
  * @param {HTMLElement} targetElement Editable container element.
  * @returns {void}
@@ -199,7 +219,13 @@ export class InputPanel {
             imageElement.replaceWith(placeholderNode);
         });
 
-        const normalizedPlaceholderText = clonedEditor.innerText
+        sanitizeSnapshotTree(clonedEditor);
+
+        const inertDocument = document.implementation.createHTMLDocument("input-snapshot");
+        const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
+        inertDocument.body.appendChild(inertEditor);
+
+        const normalizedPlaceholderText = inertEditor.innerText
             .replace(/\u00A0/g, " ")
             .replace(/\r\n/g, "\n");
         const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();

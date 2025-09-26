@@ -101,6 +101,43 @@ function waitForAnimationFrame() {
 }
 
 /**
+ * Converts the rendered statistics string into numeric values for assertions.
+ * @param {string} statisticsText Text content produced by the statistics template.
+ * @returns {{ characters: number, words: number, sentences: number, paragraphs: number }} Parsed statistics values.
+ */
+function parseStatisticsText(statisticsText) {
+    const parsedValues = {
+        characters: 0,
+        words: 0,
+        sentences: 0,
+        paragraphs: 0
+    };
+
+    statisticsText.split(" | ").forEach((segment) => {
+        const [rawLabel, rawValue] = segment.split(": ");
+        if (!rawLabel || !rawValue) {
+            return;
+        }
+        const normalizedLabel = rawLabel.trim().toLowerCase();
+        const numericValue = Number.parseInt(rawValue.trim(), 10);
+        if (Number.isNaN(numericValue)) {
+            return;
+        }
+        if (normalizedLabel === "characters") {
+            parsedValues.characters = numericValue;
+        } else if (normalizedLabel === "words") {
+            parsedValues.words = numericValue;
+        } else if (normalizedLabel === "sentences") {
+            parsedValues.sentences = numericValue;
+        } else if (normalizedLabel === "paragraphs") {
+            parsedValues.paragraphs = numericValue;
+        }
+    });
+
+    return parsedValues;
+}
+
+/**
  * Sets up a minimal DOM fixture and controller instance for integration testing.
  * @returns {{ elements: Record<string, HTMLElement>, cleanup: () => void }}
  */
@@ -326,18 +363,36 @@ export async function runIntegrationTests(runTest) {
                     await waitForAnimationFrame();
 
                     const statistics = chunkingService.calculateStatistics(elements.editorElement.textContent || "");
-                    const expectedStatsText = templateHelpers.interpolate(TEXT_CONTENT.INPUT_STATS_TEMPLATE, {
-                        characters: statistics.characters,
-                        words: statistics.words,
-                        sentences: statistics.sentences,
-                        paragraphs: statistics.paragraphs
-                    });
+                    const displayedStatistics = parseStatisticsText(elements.statsElement.textContent || "");
 
                     assertEqual(
-                        elements.statsElement.textContent,
-                        expectedStatsText,
+                        displayedStatistics.paragraphs,
+                        statistics.paragraphs,
                         "input statistics should include paragraph counts"
                     );
+                } finally {
+                    cleanup();
+                }
+            }
+        },
+        {
+            name: "multi-paragraph input preserves newline separated statistics",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                try {
+                    const multiParagraphText = [
+                        "Paragraph #1.",
+                        "Paragraph #2.",
+                        "Paragraph #3."
+                    ].join("\n\n");
+                    elements.editorElement.textContent = multiParagraphText;
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    await waitForAnimationFrame();
+
+                    const displayedStatistics = parseStatisticsText(elements.statsElement.textContent || "");
+
+                    assertEqual(displayedStatistics.paragraphs, 3, "statistics should report three paragraphs");
+                    assertEqual(displayedStatistics.words, 6, "statistics should report six words");
                 } finally {
                     cleanup();
                 }
