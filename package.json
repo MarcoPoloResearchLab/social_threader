@@ -5,9 +5,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node tests/headlessHarness.mjs"
+    "test": "npm run test:headless && npm run test:browser",
+    "test:headless": "node tests/headlessHarness.mjs",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.44.1",
     "happy-dom": "18.0.1"
   }
 }

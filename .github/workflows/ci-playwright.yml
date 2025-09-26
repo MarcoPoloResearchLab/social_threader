@@ -1,0 +1,50 @@
+name: ci-playwright
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Critical: installs Chromium + Ubuntu packages for it
+      - name: Install Playwright browsers and OS deps
+        run: npx playwright install --with-deps chromium
+
+      # Optional but speeds up subsequent runs
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run Playwright tests (headless)
+        run: npx playwright test --reporter=list,junit --output=test-results --trace=on-first-retry
+
+      - name: Upload report and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            playwright-report
+            test-results
+            **/trace.zip
+          if-no-files-found: ignore
