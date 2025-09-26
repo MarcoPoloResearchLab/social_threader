@@ -97,6 +97,25 @@ export async function runChunkingTests(runTest) {
                 "There are social contract holidays (Independence Day, Labor Day, etc.)",
                 "But there are no technology celebration holidays even though each of these holidays was enabled by technology."
             ]
+        },
+        {
+            name: "treats list markers as standalone paragraphs when enabled",
+            input: [
+                "Agenda overview.",
+                "- Item one is important.",
+                "- Item two requires review."
+            ].join("\n"),
+            options: {
+                maximumLength: 280,
+                breakOnSentences: false,
+                enumerate: false,
+                breakOnParagraphs: true
+            },
+            expected: [
+                "Agenda overview.",
+                "- Item one is important.",
+                "- Item two requires review."
+            ]
         }
     ];
 
@@ -147,6 +166,36 @@ export async function runChunkingTests(runTest) {
                 words: 49,
                 sentences: 4,
                 paragraphs: 4
+            }
+        },
+        {
+            name: "counts paragraphs when blank lines include stray spaces",
+            input: "Alpha paragraph.\n   \nSecond block continues here.",
+            expected: {
+                characters: 49,
+                words: 6,
+                sentences: 2,
+                paragraphs: 2
+            }
+        },
+        {
+            name: "ignores abbreviations while counting sentences",
+            input: "Please schedule a visit with Dr. Smith tomorrow. Bring completed forms.",
+            expected: {
+                characters: 71,
+                words: 11,
+                sentences: 2,
+                paragraphs: 1
+            }
+        },
+        {
+            name: "counts ellipsis terminated thoughts as sentences",
+            input: "Wait... Are you there? Yes!",
+            expected: {
+                characters: 27,
+                words: 5,
+                sentences: 3,
+                paragraphs: 1
             }
         }
     ];
