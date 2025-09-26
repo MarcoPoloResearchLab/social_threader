@@ -376,23 +376,112 @@ export async function runIntegrationTests(runTest) {
             }
         },
         {
-            name: "multi-paragraph input preserves newline separated statistics",
+            name: "multi-paragraph fixtures collapse statistics into a single block",
             async execute() {
                 const { elements, cleanup } = setupControllerFixture();
                 try {
-                    const multiParagraphMarkup = [
-                        "<div>Paragraph #1.</div>",
-                        "<div>Paragraph #2.</div>",
-                        "<div>Paragraph #3.</div>"
-                    ].join("");
-                    elements.editorElement.innerHTML = multiParagraphMarkup;
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    await waitForAnimationFrame();
+                    const expectedStatisticTotals = {
+                        characters: 41,
+                        words: 6,
+                        sentences: 3,
+                        paragraphs: 3
+                    };
+                    /** @type {{ description: string, buildContent: (editorElement: HTMLDivElement) => void }[]} */
+                    const fixtureDefinitions = [
+                        {
+                            description: "plain paragraph divs",
+                            buildContent(editorElement) {
+                                const paragraphTexts = ["Paragraph #1.", "Paragraph #2.", "Paragraph #3."];
+                                for (const paragraphText of paragraphTexts) {
+                                    const paragraphElement = document.createElement("div");
+                                    paragraphElement.textContent = paragraphText;
+                                    editorElement.appendChild(paragraphElement);
+                                }
+                            }
+                        },
+                        {
+                            description: "paragraphs with trailing blank div",
+                            buildContent(editorElement) {
+                                const paragraphTexts = ["Paragraph #1.", "Paragraph #2.", "Paragraph #3."];
+                                for (const paragraphText of paragraphTexts) {
+                                    const paragraphElement = document.createElement("div");
+                                    paragraphElement.textContent = paragraphText;
+                                    editorElement.appendChild(paragraphElement);
+                                }
+                                const trailingEmptyParagraphElement = document.createElement("div");
+                                const breakElement = document.createElement("br");
+                                trailingEmptyParagraphElement.appendChild(breakElement);
+                                editorElement.appendChild(trailingEmptyParagraphElement);
+                            }
+                        },
+                        {
+                            description: "paragraphs with inline formatting",
+                            buildContent(editorElement) {
+                                const paragraphDefinitions = [
+                                    {
+                                        prefixText: "Paragraph ",
+                                        emphasisTag: "strong",
+                                        emphasisText: "#1",
+                                        suffixText: "."
+                                    },
+                                    {
+                                        prefixText: "Paragraph ",
+                                        emphasisTag: "em",
+                                        emphasisText: "#2",
+                                        suffixText: "."
+                                    },
+                                    {
+                                        prefixText: "Paragraph ",
+                                        emphasisTag: "strong",
+                                        emphasisText: "#3",
+                                        suffixText: "."
+                                    }
+                                ];
+                                for (const paragraphDefinition of paragraphDefinitions) {
+                                    const paragraphElement = document.createElement("div");
+                                    paragraphElement.append(paragraphDefinition.prefixText);
+                                    const emphasisElement = document.createElement(paragraphDefinition.emphasisTag);
+                                    emphasisElement.textContent = paragraphDefinition.emphasisText;
+                                    paragraphElement.appendChild(emphasisElement);
+                                    paragraphElement.append(paragraphDefinition.suffixText);
+                                    editorElement.appendChild(paragraphElement);
+                                }
+                            }
+                        }
+                    ];
 
-                    const displayedStatistics = parseStatisticsText(elements.statsElement.textContent || "");
+                    for (const fixtureDefinition of fixtureDefinitions) {
+                        while (elements.editorElement.firstChild) {
+                            elements.editorElement.removeChild(elements.editorElement.firstChild);
+                        }
+                        fixtureDefinition.buildContent(elements.editorElement);
+                        elements.editorElement.dispatchEvent(new Event("input"));
+                        await waitForAnimationFrame();
+                        await waitForAnimationFrame();
 
-                    assertEqual(displayedStatistics.paragraphs, 3, "statistics should report three paragraphs");
-                    assertEqual(displayedStatistics.words, 6, "statistics should report six words");
+                        const displayedStatistics = parseStatisticsText(elements.statsElement.textContent || "");
+
+                        assertEqual(
+                            displayedStatistics.characters,
+                            expectedStatisticTotals.characters,
+                            `${fixtureDefinition.description} should report forty-one characters`
+                        );
+                        assertEqual(
+                            displayedStatistics.words,
+                            expectedStatisticTotals.words,
+                            `${fixtureDefinition.description} should report six words`
+                        );
+                        assertEqual(
+                            displayedStatistics.sentences,
+                            expectedStatisticTotals.sentences,
+                            `${fixtureDefinition.description} should report three sentences`
+                        );
+                        assertEqual(
+                            displayedStatistics.paragraphs,
+                            expectedStatisticTotals.paragraphs,
+                            `${fixtureDefinition.description} should report three paragraphs`
+                        );
+                    }
                 } finally {
                     cleanup();
                 }
