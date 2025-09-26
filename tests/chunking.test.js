@@ -179,6 +179,19 @@ export async function runChunkingTests(runTest) {
             }
         },
         {
+            name: "tracks statistics when all metrics would fail together",
+            input: [
+                "Sentences wrong. Paragraphs wrong.",
+                "Words wrong everywhere."
+            ].join("\n\n"),
+            expected: {
+                characters: 59,
+                words: 7,
+                sentences: 3,
+                paragraphs: 2
+            }
+        },
+        {
             name: "ignores abbreviations while counting sentences",
             input: "Please schedule a visit with Dr. Smith tomorrow. Bring completed forms.",
             expected: {

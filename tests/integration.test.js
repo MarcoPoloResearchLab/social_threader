@@ -401,6 +401,15 @@ export async function runIntegrationTests(runTest) {
                 try {
                     const paragraphStatisticsFixtures = [
                         createParagraphStatisticsFixture(
+                            "multi-paragraph copy updates every statistic",
+                            [
+                                { children: ["Sentences wrong. Paragraphs wrong."] },
+                                { children: ["Words wrong everywhere."] }
+                            ],
+                            false,
+                            { characters: 58, words: 7, sentences: 3, paragraphs: 2 }
+                        ),
+                        createParagraphStatisticsFixture(
                             "single paragraph keeps toggle disabled",
                             [{ children: ["Single paragraph only."] }],
                             true,

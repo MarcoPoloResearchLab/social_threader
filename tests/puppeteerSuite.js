@@ -40,6 +40,19 @@ const typedParagraphCases = [
             sentences: 2,
             paragraphs: 2
         }
+    },
+    {
+        name: "multi-paragraph copy updates every statistic",
+        paragraphs: [
+            "Sentences wrong. Paragraphs wrong.",
+            "Words wrong everywhere."
+        ],
+        expected: {
+            characters: 59,
+            words: 7,
+            sentences: 3,
+            paragraphs: 2
+        }
     }
 ];
 
