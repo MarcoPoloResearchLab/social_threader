@@ -3,6 +3,13 @@
  * @fileoverview Lightweight test runner for browser execution.
  */
 
+const TEST_SUITE_REGISTRY = Object.freeze([
+    { modulePath: "./chunking.test.js", exportName: "runChunkingTests" },
+    { modulePath: "./richText.test.js", exportName: "runRichTextTests" },
+    { modulePath: "./inputPanel.test.js", exportName: "runInputPanelTests" },
+    { modulePath: "./integration.test.js", exportName: "runIntegrationTests" }
+]);
+
 /**
  * @param {HTMLElement} outputElement Container for writing test results.
  */
@@ -70,4 +77,20 @@ export function createTestRunner(outputElement) {
             outputElement.insertBefore(errorElement, summaryElement);
         }
     };
+}
+
+/**
+ * Dynamically imports and executes all registered test suites.
+ * @param {(name: string, fn: () => (void | Promise<void>)) => Promise<void>} runTest Test harness callback.
+ * @returns {Promise<void>}
+ */
+export async function runRegisteredSuites(runTest) {
+    for (const testSuite of TEST_SUITE_REGISTRY) {
+        const moduleExports = await import(testSuite.modulePath);
+        const suiteRunner = moduleExports[testSuite.exportName];
+        if (typeof suiteRunner !== "function") {
+            throw new Error(`Module ${testSuite.modulePath} did not export ${testSuite.exportName}`);
+        }
+        await suiteRunner(runTest);
+    }
 }

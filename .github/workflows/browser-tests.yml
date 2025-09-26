@@ -3,25 +3,32 @@ name: Browser Test Suite
 on:
   push:
     branches:
-      - main
       - master
     paths:
-      - '**/*.js'
-      - '**/*.css'
-      - '**/*.html'
+      - "**/*.js"
+      - "**/*.css"
+      - "**/*.html"
+      - package.json
+      - package-lock.json
+      - .github/workflows/browser-tests.yml
   pull_request:
     branches:
-      - main
       - master
     paths:
-      - '**/*.js'
-      - '**/*.css'
-      - '**/*.html'
+      - "**/*.js"
+      - "**/*.css"
+      - "**/*.html"
+      - package.json
+      - package-lock.json
+      - .github/workflows/browser-tests.yml
 
 jobs:
   run-browser-tests:
     name: Run browser tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -29,13 +36,30 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+          cache: "npm"
+
+      - name: Restore Puppeteer browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: ${{ runner.os }}-puppeteer-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
         run: npm ci
+        env:
+          PUPPETEER_CACHE_DIR: ~/.cache/puppeteer
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+      - name: Install Chrome for Puppeteer
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
-      - name: Execute browser tests
-        run: npm test
+      - name: Run Happy DOM harness
+        run: npm run test:headless
+
+      - name: Run Puppeteer browser suite
+        env:
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: npm run test:browser

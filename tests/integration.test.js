@@ -138,6 +138,66 @@ function parseStatisticsText(statisticsText) {
 }
 
 /**
+ * @typedef {string | { tagName: string, text: string }} ParagraphChildDefinition
+ */
+
+/**
+ * @typedef {{ children?: ParagraphChildDefinition[], isBlank?: boolean }} ContenteditableParagraphConfiguration
+ */
+
+/**
+ * Builds the contenteditable paragraph structure the browser generates for Enter-separated paragraphs.
+ * @param {HTMLDivElement} editorElement Editable element that should receive the generated structure.
+ * @param {ContenteditableParagraphConfiguration[]} paragraphConfigurations Ordered configuration describing each paragraph.
+ * @returns {void}
+ */
+function populateEditorWithParagraphStructure(editorElement, paragraphConfigurations) {
+    while (editorElement.firstChild) {
+        editorElement.removeChild(editorElement.firstChild);
+    }
+
+    paragraphConfigurations.forEach((paragraphConfiguration) => {
+        const paragraphElement = document.createElement("div");
+        if (paragraphConfiguration.isBlank) {
+            paragraphElement.appendChild(document.createElement("br"));
+        } else {
+            const childDefinitions = paragraphConfiguration.children ?? [];
+            childDefinitions.forEach((childDefinition) => {
+                if (typeof childDefinition === "string") {
+                    paragraphElement.append(childDefinition);
+                } else {
+                    const inlineElement = document.createElement(childDefinition.tagName);
+                    inlineElement.textContent = childDefinition.text;
+                    paragraphElement.appendChild(inlineElement);
+                }
+            });
+        }
+        editorElement.appendChild(paragraphElement);
+    });
+}
+
+/**
+ * Creates a paragraph statistics fixture with expectations derived up front.
+ * @param {string} description Human-readable description of the paragraph structure.
+ * @param {ContenteditableParagraphConfiguration[]} paragraphConfigurations Ordered configuration describing each paragraph.
+ * @param {boolean} expectedToggleDisabled Whether the paragraph toggle is expected to be disabled.
+ * @returns {{ description: string, paragraphConfigurations: ContenteditableParagraphConfiguration[], expectedToggleDisabled: boolean, expectedStatistics: import("../js/types.d.js").ChunkStatistics }} Fixture containing expectations.
+ */
+function createParagraphStatisticsFixture(
+    description,
+    paragraphConfigurations,
+    expectedToggleDisabled,
+    expectedStatistics
+) {
+    return {
+        description,
+        paragraphConfigurations,
+        expectedToggleDisabled,
+        expectedStatistics
+    };
+}
+
+/**
  * Sets up a minimal DOM fixture and controller instance for integration testing.
  * @returns {{ elements: Record<string, HTMLElement>, cleanup: () => void }}
  */
@@ -335,64 +395,121 @@ export async function runIntegrationTests(runTest) {
             }
         },
         {
-            name: "paragraph toggle availability reflects paragraph count",
+            name: "contenteditable paragraphs update statistics and toggle availability",
             async execute() {
                 const { elements, cleanup } = setupControllerFixture();
                 try {
-                    elements.editorElement.textContent = "Single paragraph only.";
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    await waitForAnimationFrame();
-                    assertEqual(elements.paragraphToggle.disabled, true, "paragraph toggle should be disabled for single paragraph");
+                    const paragraphStatisticsFixtures = [
+                        createParagraphStatisticsFixture(
+                            "multi-paragraph copy updates every statistic",
+                            [
+                                { children: ["Sentences wrong. Paragraphs wrong."] },
+                                { children: ["Words wrong everywhere."] }
+                            ],
+                            false,
+                            { characters: 59, words: 7, sentences: 3, paragraphs: 2 }
+                        ),
+                        createParagraphStatisticsFixture(
+                            "abbreviations and decimals do not inflate statistics",
+                            [
+                                {
+                                    children: [
+                                        "Dr. Rivera met approx. 30 volunteers at 5.5 p.m. for training."
+                                    ]
+                                },
+                                {
+                                    children: [
+                                        "Everyone said, \"Progress is slow... but steady!\" Did it improve?"
+                                    ]
+                                },
+                                {
+                                    children: [
+                                        "Next check-in is scheduled for Jan. 3rd, 2025."
+                                    ]
+                                }
+                            ],
+                            false,
+                            { characters: 176, words: 29, sentences: 4, paragraphs: 3 }
+                        ),
+                        createParagraphStatisticsFixture(
+                            "single paragraph keeps toggle disabled",
+                            [{ children: ["Single paragraph only."] }],
+                            true,
+                            { characters: 22, words: 3, sentences: 1, paragraphs: 1 }
+                        ),
+                        createParagraphStatisticsFixture(
+                            "multiple paragraphs enable toggle",
+                            [
+                                { children: ["First paragraph."] },
+                                { children: ["Second paragraph."] }
+                            ],
+                            false,
+                            { characters: 34, words: 4, sentences: 2, paragraphs: 2 }
+                        ),
+                        createParagraphStatisticsFixture(
+                            "inline formatting paragraphs preserve counts",
+                            [
+                                { children: ["Paragraph ", { tagName: "strong", text: "#1" }, "."] },
+                                { children: ["Paragraph ", { tagName: "em", text: "#2" }, "."] },
+                                { children: ["Paragraph ", { tagName: "strong", text: "#3" }, "."] }
+                            ],
+                            false,
+                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
+                        ),
+                        createParagraphStatisticsFixture(
+                            "trailing blank paragraph is ignored",
+                            [
+                                { children: ["Paragraph #1."] },
+                                { children: ["Paragraph #2."] },
+                                { children: ["Paragraph #3."] },
+                                { isBlank: true }
+                            ],
+                            false,
+                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
+                        )
+                    ];
 
-                    elements.editorElement.textContent = "First paragraph.\n\nSecond paragraph.";
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    await waitForAnimationFrame();
-                    assertEqual(elements.paragraphToggle.disabled, false, "paragraph toggle should enable when multiple paragraphs exist");
-                } finally {
-                    cleanup();
-                }
-            }
-        },
-        {
-            name: "input statistics display paragraph totals",
-            async execute() {
-                const { elements, cleanup } = setupControllerFixture();
-                try {
-                    elements.editorElement.textContent = "First paragraph.\n\nSecond paragraph.";
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    await waitForAnimationFrame();
+                    for (const fixtureDefinition of paragraphStatisticsFixtures) {
+                        populateEditorWithParagraphStructure(
+                            elements.editorElement,
+                            fixtureDefinition.paragraphConfigurations
+                        );
+                        elements.editorElement.dispatchEvent(new Event("input"));
+                        await waitForAnimationFrame();
+                        await waitForAnimationFrame();
 
-                    const statistics = chunkingService.calculateStatistics(elements.editorElement.textContent || "");
-                    const displayedStatistics = parseStatisticsText(elements.statsElement.textContent || "");
+                        const displayedStatistics = parseStatisticsText(elements.statsElement.textContent || "");
 
-                    assertEqual(
-                        displayedStatistics.paragraphs,
-                        statistics.paragraphs,
-                        "input statistics should include paragraph counts"
-                    );
-                } finally {
-                    cleanup();
-                }
-            }
-        },
-        {
-            name: "multi-paragraph input preserves newline separated statistics",
-            async execute() {
-                const { elements, cleanup } = setupControllerFixture();
-                try {
-                    const multiParagraphMarkup = [
-                        "<div>Paragraph #1.</div>",
-                        "<div>Paragraph #2.</div>",
-                        "<div>Paragraph #3.</div>"
-                    ].join("");
-                    elements.editorElement.innerHTML = multiParagraphMarkup;
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    await waitForAnimationFrame();
-
-                    const displayedStatistics = parseStatisticsText(elements.statsElement.textContent || "");
-
-                    assertEqual(displayedStatistics.paragraphs, 3, "statistics should report three paragraphs");
-                    assertEqual(displayedStatistics.words, 6, "statistics should report six words");
+                        assertEqual(
+                            displayedStatistics.characters,
+                            fixtureDefinition.expectedStatistics.characters,
+                            `${fixtureDefinition.description} should display the expected character count`
+                        );
+                        assertEqual(
+                            displayedStatistics.words,
+                            fixtureDefinition.expectedStatistics.words,
+                            `${fixtureDefinition.description} should display the expected word count`
+                        );
+                        assertEqual(
+                            displayedStatistics.sentences,
+                            fixtureDefinition.expectedStatistics.sentences,
+                            `${fixtureDefinition.description} should display the expected sentence count`
+                        );
+                        assertEqual(
+                            displayedStatistics.paragraphs,
+                            fixtureDefinition.expectedStatistics.paragraphs,
+                            `${fixtureDefinition.description} should display the expected paragraph count`
+                        );
+                        assertEqual(
+                            elements.paragraphToggle.disabled,
+                            fixtureDefinition.expectedToggleDisabled,
+                            `${fixtureDefinition.description} should ${
+                                fixtureDefinition.expectedToggleDisabled ? "keep" : "make"
+                            } the paragraph toggle ${
+                                fixtureDefinition.expectedToggleDisabled ? "disabled" : "enabled"
+                            }`
+                        );
+                    }
                 } finally {
                     cleanup();
                 }

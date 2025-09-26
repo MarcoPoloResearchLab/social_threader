@@ -2,6 +2,10 @@
 
 ## Social Threader
 
+### Tooling Restrictions
+
+Under no circumstances may Playwright be introduced into this codebase. Prefer Puppeteer for browser automation.
+
 ## JavaScript Coding Standards (Browser ES Modules)
 
 ### 1. Naming & Identifiers
