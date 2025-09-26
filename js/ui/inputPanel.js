@@ -30,6 +30,21 @@ function normalizeEditorText(text) {
 }
 
 /**
+ * Serializes an element's text content, converting soft breaks to newline characters.
+ * @param {HTMLElement} element Element whose textual content should be extracted.
+ * @returns {string} Text content with `<br>` tags replaced by newline characters.
+ */
+function serializeElementTextWithSoftBreaks(element) {
+    const inertDocument = document.implementation.createHTMLDocument("element-text-serialization");
+    const clonedElement = /** @type {HTMLElement} */ (inertDocument.importNode(element, true));
+    clonedElement.querySelectorAll("br").forEach((lineBreakElement) => {
+        lineBreakElement.replaceWith(inertDocument.createTextNode(SINGLE_NEWLINE));
+    });
+    const serializedTextContent = clonedElement.textContent || "";
+    return normalizeEditorText(serializedTextContent);
+}
+
+/**
  * Determines whether text is empty or contains only newline characters once normalized.
  * @param {string} normalizedText Text that has already passed through normalizeEditorText.
  * @returns {boolean} True when the text contains no visible characters.
@@ -267,7 +282,7 @@ export class InputPanel {
 
             if (childNode instanceof HTMLElement) {
                 const element = childNode;
-                const normalizedInnerText = normalizeEditorText(element.innerText);
+                const normalizedInnerText = serializeElementTextWithSoftBreaks(element);
                 const trimmedInnerText = normalizedInnerText.replace(
                     TRAILING_NEWLINE_PATTERN,
                     ""
@@ -291,13 +306,7 @@ export class InputPanel {
 
             const segmentText = /** @type {string} */ (segment);
             if (hasWrittenText) {
-                if (pendingSeparatorCount === 0) {
-                    normalizedPlaceholderText += DOUBLE_NEWLINE;
-                } else if (pendingSeparatorCount === 1) {
-                    normalizedPlaceholderText += SINGLE_NEWLINE;
-                } else {
-                    normalizedPlaceholderText += DOUBLE_NEWLINE;
-                }
+                normalizedPlaceholderText += DOUBLE_NEWLINE;
             }
             normalizedPlaceholderText += segmentText;
             hasWrittenText = true;
