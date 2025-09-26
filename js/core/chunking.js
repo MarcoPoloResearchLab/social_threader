@@ -84,36 +84,6 @@ const FLEXIBLE_ABBREVIATIONS = Object.freeze(
     ])
 );
 
-const FLEXIBLE_ABBREVIATIONS_ALLOWING_NUMERIC_CONTINUATION = Object.freeze(
-    new Set([
-        "approx.",
-        "appt.",
-        "ave.",
-        "corp.",
-        "fig.",
-        "jan.",
-        "feb.",
-        "mar.",
-        "apr.",
-        "jun.",
-        "jul.",
-        "aug.",
-        "sep.",
-        "sept.",
-        "oct.",
-        "nov.",
-        "dec.",
-        "inc.",
-        "vs.",
-        "i.e.",
-        "e.g.",
-        "u.s.",
-        "u.k.",
-        "no.",
-        "vol."
-    ])
-);
-
 /**
  * Normalizes whitespace-only lines to ensure consistent line separator handling.
  * @param {string} rawText Raw text provided by the user.
@@ -415,15 +385,11 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         if (nextLead.length === 0) {
             return true;
         }
+        if (/\d/.test(nextLead)) {
+            return false;
+        }
         if (/[a-z]/i.test(nextLead)) {
             if (nextLead.toLowerCase() === nextLead) {
-                return false;
-            }
-            return true;
-        }
-        if (/\d/.test(nextLead)) {
-            const normalizedAbbreviation = strippedWord.toLowerCase();
-            if (FLEXIBLE_ABBREVIATIONS_ALLOWING_NUMERIC_CONTINUATION.has(normalizedAbbreviation)) {
                 return false;
             }
             return true;
