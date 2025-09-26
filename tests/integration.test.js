@@ -177,28 +177,6 @@ function populateEditorWithParagraphStructure(editorElement, paragraphConfigurat
 }
 
 /**
- * Generates the plain-text representation used for statistics from a contenteditable paragraph configuration.
- * @param {ContenteditableParagraphConfiguration[]} paragraphConfigurations Ordered configuration describing each paragraph.
- * @returns {string} Plain-text content equivalent to the editor innerText output.
- */
-function getPlainTextFromParagraphStructure(paragraphConfigurations) {
-    const scratchWrapper = document.createElement("div");
-    scratchWrapper.style.position = "absolute";
-    scratchWrapper.style.left = "-9999px";
-    const scratchEditor = document.createElement("div");
-    scratchWrapper.appendChild(scratchEditor);
-    document.body.appendChild(scratchWrapper);
-    populateEditorWithParagraphStructure(scratchEditor, paragraphConfigurations);
-    const normalizedText = scratchEditor.innerText
-        .replace(/\u00A0/g, " ")
-        .replace(/\r\n/g, "\n")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-    scratchWrapper.remove();
-    return normalizedText;
-}
-
-/**
  * Creates a paragraph statistics fixture with expectations derived up front.
  * @param {string} description Human-readable description of the paragraph structure.
  * @param {ContenteditableParagraphConfiguration[]} paragraphConfigurations Ordered configuration describing each paragraph.
@@ -208,10 +186,9 @@ function getPlainTextFromParagraphStructure(paragraphConfigurations) {
 function createParagraphStatisticsFixture(
     description,
     paragraphConfigurations,
-    expectedToggleDisabled
+    expectedToggleDisabled,
+    expectedStatistics
 ) {
-    const plainText = getPlainTextFromParagraphStructure(paragraphConfigurations);
-    const expectedStatistics = chunkingService.calculateStatistics(plainText);
     return {
         description,
         paragraphConfigurations,
@@ -426,7 +403,8 @@ export async function runIntegrationTests(runTest) {
                         createParagraphStatisticsFixture(
                             "single paragraph keeps toggle disabled",
                             [{ children: ["Single paragraph only."] }],
-                            true
+                            true,
+                            { characters: 22, words: 3, sentences: 1, paragraphs: 1 }
                         ),
                         createParagraphStatisticsFixture(
                             "multiple paragraphs enable toggle",
@@ -434,7 +412,8 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["First paragraph."] },
                                 { children: ["Second paragraph."] }
                             ],
-                            false
+                            false,
+                            { characters: 34, words: 4, sentences: 2, paragraphs: 2 }
                         ),
                         createParagraphStatisticsFixture(
                             "inline formatting paragraphs preserve counts",
@@ -443,7 +422,8 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Paragraph ", { tagName: "em", text: "#2" }, "."] },
                                 { children: ["Paragraph ", { tagName: "strong", text: "#3" }, "."] }
                             ],
-                            false
+                            false,
+                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
                         ),
                         createParagraphStatisticsFixture(
                             "trailing blank paragraph is ignored",
@@ -453,7 +433,8 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Paragraph #3."] },
                                 { isBlank: true }
                             ],
-                            false
+                            false,
+                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
                         )
                     ];
 

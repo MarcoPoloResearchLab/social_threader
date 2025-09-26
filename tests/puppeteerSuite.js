@@ -35,7 +35,9 @@ const typedParagraphCases = [
             "Browser automation validates paragraph counts."
         ],
         expected: {
+            characters: 91,
             words: 10,
+            sentences: 2,
             paragraphs: 2
         }
     }
@@ -168,8 +170,10 @@ async function runInputStatisticsSuite(page, pass, fail) {
 
                 statistics = parseStatisticsText(statisticsText);
                 if (
-                    statistics.paragraphs === typedParagraphCase.expected.paragraphs &&
-                    statistics.words === typedParagraphCase.expected.words
+                    statistics.characters === typedParagraphCase.expected.characters &&
+                    statistics.words === typedParagraphCase.expected.words &&
+                    statistics.sentences === typedParagraphCase.expected.sentences &&
+                    statistics.paragraphs === typedParagraphCase.expected.paragraphs
                 ) {
                     break;
                 }
@@ -177,17 +181,33 @@ async function runInputStatisticsSuite(page, pass, fail) {
                 await delay(POLL_INTERVAL_MS);
             }
 
-            if (statistics.paragraphs !== typedParagraphCase.expected.paragraphs) {
+            const expected = typedParagraphCase.expected;
+
+            if (statistics.characters !== expected.characters) {
                 throw new Error(
-                    `Expected paragraphs=${typedParagraphCase.expected.paragraphs} ` +
-                        `but received ${statistics.paragraphs}. Latest statistics text: ${statisticsText}`
+                    `Expected characters=${expected.characters} ` +
+                        `but received ${statistics.characters}. Latest statistics text: ${statisticsText}`
                 );
             }
 
-            if (statistics.words !== typedParagraphCase.expected.words) {
+            if (statistics.words !== expected.words) {
                 throw new Error(
-                    `Expected words=${typedParagraphCase.expected.words} ` +
+                    `Expected words=${expected.words} ` +
                         `but received ${statistics.words}. Latest statistics text: ${statisticsText}`
+                );
+            }
+
+            if (statistics.sentences !== expected.sentences) {
+                throw new Error(
+                    `Expected sentences=${expected.sentences} ` +
+                        `but received ${statistics.sentences}. Latest statistics text: ${statisticsText}`
+                );
+            }
+
+            if (statistics.paragraphs !== expected.paragraphs) {
+                throw new Error(
+                    `Expected paragraphs=${expected.paragraphs} ` +
+                        `but received ${statistics.paragraphs}. Latest statistics text: ${statisticsText}`
                 );
             }
 
