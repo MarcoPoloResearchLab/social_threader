@@ -221,6 +221,19 @@ export class InputPanel {
 
         sanitizeSnapshotTree(clonedEditor);
 
+        const paragraphElements = Array.from(clonedEditor.children).filter((childNode) => {
+            if (!(childNode instanceof HTMLElement)) {
+                return false;
+            }
+            const normalizedTagName = childNode.tagName.toLowerCase();
+            return normalizedTagName === "div" || normalizedTagName === "p";
+        });
+        const meaningfulParagraphs = paragraphElements.filter((paragraphElement) => {
+            const paragraphTextContent = paragraphElement.textContent ?? "";
+            return paragraphTextContent.trim().length > 0;
+        });
+        const hasMultipleParagraphs = meaningfulParagraphs.length > 1;
+
         const inertDocument = document.implementation.createHTMLDocument("input-snapshot");
         const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
         inertDocument.body.appendChild(inertEditor);
@@ -228,11 +241,20 @@ export class InputPanel {
         const normalizedPlaceholderText = inertEditor.innerText
             .replace(/\u00A0/g, " ")
             .replace(/\r\n/g, "\n");
-        const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
-        const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
+        const paragraphNormalizedText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n");
+        const leadingTrimmedText = paragraphNormalizedText.replace(/^\s+/, "");
+        let placeholderText = hasMultipleParagraphs
+            ? leadingTrimmedText.replace(/[ \t]+$/, "")
+            : leadingTrimmedText.replace(/\s+$/, "");
+
+        if (hasMultipleParagraphs && !placeholderText.endsWith("\n")) {
+            placeholderText += "\n";
+        }
+
+        const plainText = richTextHelpers.extractPlainText(placeholderText, imageRecords);
 
         return {
-            placeholderText: trimmedPlaceholderText,
+            placeholderText,
             plainText,
             images: imageRecords
         };
