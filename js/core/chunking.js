@@ -16,6 +16,8 @@ const TAB_CHARACTER_PATTERN = /\t+/g;
 /** @type {string} */
 const TRAILING_WRAPPING_CHARACTERS = '"\')]}';
 /** @type {string} */
+const DOUBLE_QUOTE_CHARACTER = '"';
+/** @type {string} */
 const LEADING_PUNCTUATION_TO_IGNORE = "\"'([{“”‘’`";
 /** @type {RegExp} */
 const SENTENCE_TERMINATOR_PATTERN = /[.!?]+$/;
@@ -57,6 +59,18 @@ const FLEXIBLE_ABBREVIATIONS = Object.freeze(
         "corp.",
         "etc.",
         "fig.",
+        "jan.",
+        "feb.",
+        "mar.",
+        "apr.",
+        "jun.",
+        "jul.",
+        "aug.",
+        "sep.",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dec.",
         "inc.",
         "vs.",
         "i.e.",
@@ -65,6 +79,36 @@ const FLEXIBLE_ABBREVIATIONS = Object.freeze(
         "u.k.",
         "a.m.",
         "p.m.",
+        "no.",
+        "vol."
+    ])
+);
+
+const FLEXIBLE_ABBREVIATIONS_ALLOWING_NUMERIC_CONTINUATION = Object.freeze(
+    new Set([
+        "approx.",
+        "appt.",
+        "ave.",
+        "corp.",
+        "fig.",
+        "jan.",
+        "feb.",
+        "mar.",
+        "apr.",
+        "jun.",
+        "jul.",
+        "aug.",
+        "sep.",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dec.",
+        "inc.",
+        "vs.",
+        "i.e.",
+        "e.g.",
+        "u.s.",
+        "u.k.",
         "no.",
         "vol."
     ])
@@ -272,21 +316,46 @@ function splitIntoWordsPreservingPunctuation(textString) {
     const wordsArray = [];
     let currentWord = "";
     let insideQuote = false;
+    let shouldContinueAppendingToPreviousWord = false;
 
     for (let index = 0; index < normalizedText.length; index += 1) {
         const character = normalizedText[index];
-        if (character === " " && !insideQuote) {
+        if (character === DOUBLE_QUOTE_CHARACTER) {
+            if (!insideQuote) {
+                if (currentWord.length > 0) {
+                    wordsArray.push(currentWord);
+                    currentWord = "";
+                }
+                currentWord = DOUBLE_QUOTE_CHARACTER;
+                insideQuote = true;
+                shouldContinueAppendingToPreviousWord = false;
+                continue;
+            }
+
+            currentWord += DOUBLE_QUOTE_CHARACTER;
+            wordsArray.push(currentWord);
+            currentWord = "";
+            insideQuote = false;
+            shouldContinueAppendingToPreviousWord = wordsArray.length > 0;
+            continue;
+        }
+
+        if (character === " ") {
             if (currentWord.length > 0) {
                 wordsArray.push(currentWord);
                 currentWord = "";
             }
+            shouldContinueAppendingToPreviousWord = false;
             continue;
         }
 
-        if (character === '"') {
-            insideQuote = !insideQuote;
+        if (shouldContinueAppendingToPreviousWord && wordsArray.length > 0) {
+            const lastWordIndex = wordsArray.length - 1;
+            wordsArray[lastWordIndex] += character;
+            continue;
         }
 
+        shouldContinueAppendingToPreviousWord = false;
         currentWord += character;
     }
 
@@ -313,6 +382,17 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
     }
 
     if (ELLIPSIS_PATTERN.test(strippedWord)) {
+        const nextToken = typeof nextWord === "string" ? nextWord.trim() : "";
+        if (nextToken.length === 0) {
+            return true;
+        }
+        const nextLead = getFirstSignificantCharacter(nextToken);
+        if (nextLead.length === 0) {
+            return true;
+        }
+        if (/[a-z]/.test(nextLead)) {
+            return nextLead.toUpperCase() === nextLead;
+        }
         return true;
     }
 
@@ -337,6 +417,13 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         }
         if (/[a-z]/i.test(nextLead)) {
             if (nextLead.toLowerCase() === nextLead) {
+                return false;
+            }
+            return true;
+        }
+        if (/\d/.test(nextLead)) {
+            const normalizedAbbreviation = strippedWord.toLowerCase();
+            if (FLEXIBLE_ABBREVIATIONS_ALLOWING_NUMERIC_CONTINUATION.has(normalizedAbbreviation)) {
                 return false;
             }
             return true;

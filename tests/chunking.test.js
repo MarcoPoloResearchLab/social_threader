@@ -144,6 +144,16 @@ export async function runChunkingTests(runTest) {
             }
         },
         {
+            name: "counts words inside quoted multi-word phrases",
+            input: "We heard \"count every single word\" today.",
+            expected: {
+                characters: 41,
+                words: 7,
+                sentences: 1,
+                paragraphs: 1
+            }
+        },
+        {
             name: "counts sentences and paragraphs when parentheses close text",
             input: "First idea (alpha etc.)\rSecond idea (beta etc.)",
             expected: {
@@ -203,6 +213,16 @@ export async function runChunkingTests(runTest) {
                 words: 29,
                 sentences: 4,
                 paragraphs: 3
+            }
+        },
+        {
+            name: "treats digits after sentence-ending abbreviations as new sentences",
+            input: "The meeting ended at 5 p.m. 13 attendees stayed behind.",
+            expected: {
+                characters: 55,
+                words: 10,
+                sentences: 2,
+                paragraphs: 1
             }
         },
         {
