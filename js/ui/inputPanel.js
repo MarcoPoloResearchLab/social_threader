@@ -267,7 +267,7 @@ export class InputPanel {
         /** @type {(string | symbol)[]} */
         const placeholderSegments = [];
         inertEditor.childNodes.forEach((childNode) => {
-            if (childNode instanceof window.Text) {
+            if (childNode.nodeType === Node.TEXT_NODE) {
                 const textContent = childNode.textContent || "";
                 const normalizedText = normalizeEditorText(textContent).replace(
                     TRAILING_NEWLINE_PATTERN,
@@ -280,8 +280,8 @@ export class InputPanel {
                 return;
             }
 
-            if (childNode instanceof HTMLElement) {
-                const element = childNode;
+            if (childNode.nodeType === Node.ELEMENT_NODE) {
+                const element = /** @type {HTMLElement} */ (childNode);
                 const normalizedInnerText = serializeElementTextWithSoftBreaks(element);
                 const trimmedInnerText = normalizedInnerText.replace(
                     TRAILING_NEWLINE_PATTERN,
