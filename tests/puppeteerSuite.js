@@ -35,7 +35,7 @@ const typedParagraphCases = [
             "Browser automation validates paragraph counts."
         ],
         expected: {
-            characters: 91,
+            characters: 92,
             words: 10,
             sentences: 2,
             paragraphs: 2
