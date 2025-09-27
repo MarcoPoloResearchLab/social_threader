@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet">
+  <rect x="0" y="0" width="512" height="512" fill="#0A1B3D"/>
+  <g shape-rendering="geometricPrecision">
+    <path d="M 80,64 H 432 A 24,24 0 0 1 456,88 V 160 A 24,24 0 0 1 432,184 H 316.0 L 316.0,254.0 L 196.0,238.0 L 196.0,184 H 80 A 24,24 0 0 1 56,160 V 88 A 24,24 0 0 1 80,64 Z" fill="#D4AF37"/>
+    <polygon points="196.000,256.000 316.000,272.000 316.000,358.000 196.000,342.000" fill="#F2C94C"/>
+    <polygon points="196.000,360.000 316.000,376.000 316.000,462.000 196.000,462.000" fill="#E0B646"/>
+  </g>
+</svg>
