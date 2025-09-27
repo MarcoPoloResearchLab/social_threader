@@ -265,18 +265,23 @@ export class InputPanel {
         inertDocument.body.appendChild(inertEditor);
 
         const inertChildNodes = Array.from(inertEditor.childNodes);
-        const sampleNodeForNodeType = inertChildNodes[0] ?? inertEditor;
-        const windowNodeConstructor = typeof window === "undefined" ? undefined : window.Node;
-        const nodeConstructor =
-            sampleNodeForNodeType.ownerDocument?.defaultView?.Node ?? windowNodeConstructor;
-        const resolvedTextNodeType =
-            typeof nodeConstructor === "undefined" || nodeConstructor === null
-                ? 3
-                : nodeConstructor.TEXT_NODE;
-        const resolvedElementNodeType =
-            typeof nodeConstructor === "undefined" || nodeConstructor === null
-                ? 1
-                : nodeConstructor.ELEMENT_NODE;
+        const fallbackNodeConstructor = typeof window === "undefined" ? undefined : window.Node;
+        /** @type {{ text: number; element: number } | null} */
+        let resolvedNodeTypeValues = null;
+        inertChildNodes.some((childNode) => {
+            const nodeConstructor =
+                childNode.ownerDocument?.defaultView?.Node ?? fallbackNodeConstructor;
+            if (typeof nodeConstructor === "undefined" || nodeConstructor === null) {
+                return false;
+            }
+            resolvedNodeTypeValues = {
+                text: nodeConstructor.TEXT_NODE,
+                element: nodeConstructor.ELEMENT_NODE
+            };
+            return true;
+        });
+        const resolvedTextNodeType = resolvedNodeTypeValues?.text ?? 3;
+        const resolvedElementNodeType = resolvedNodeTypeValues?.element ?? 1;
 
         /** @type {(string | symbol)[]} */
         const placeholderSegments = [];

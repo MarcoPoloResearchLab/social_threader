@@ -13,7 +13,8 @@ const SNAPSHOT_ASSERTION_MESSAGES = Object.freeze({
     plainTextMismatch: "Snapshot plain text should match expected newline separated paragraphs",
     serializedLengthMismatch: "Serialized placeholder text should match the expected character length",
     plainTextLengthMismatch: "Snapshot plain text should match the expected character length",
-    statisticsTextMismatch: "Statistics summary should match expected template output when Node constructor is removed"
+    statisticsTextMismatch:
+        "Statistics summary should match expected template output when globalThis.Node constructor is removed"
 });
 
 const PARAGRAPH_TEXT_CONTENT = Object.freeze({
@@ -260,7 +261,7 @@ const DOCUMENT_CASES = [
         ]
     },
     {
-        name: "captures text and statistics when Node constructor is removed",
+        name: "captures text and statistics when globalThis.Node constructor is removed",
         expectedText: EXPECTED_SNAPSHOT_TEXT.sequentialParagraphs,
         builderSteps: SEQUENTIAL_PARAGRAPH_BUILDER_STEPS,
         prepareEnvironment: () => {
