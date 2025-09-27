@@ -190,7 +190,14 @@ function shouldStartNewParagraph(previousLine, currentLine) {
         return false;
     }
 
-    return firstCharacter.toUpperCase() === firstCharacter;
+    if (firstCharacter.toUpperCase() === firstCharacter) {
+        return true;
+    }
+
+    // Contenteditable paragraphs can legitimately begin with lowercase letters when the
+    // author intentionally continues a thought without capitalization. Respect the manual
+    // line break and treat the current line as a new paragraph even when lowercase-led.
+    return true;
 }
 
 /**
