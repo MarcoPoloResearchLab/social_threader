@@ -6,6 +6,14 @@
 import { chunkingService } from "../js/core/chunking.js";
 import { assertDeepEqual, assertEqual } from "./assert.js";
 
+const STATISTICS_SAMPLE_TEXT = Object.freeze({
+    lowercaseParagraphs: [
+        "Paragraph #1.",
+        "paragraph #2.",
+        "paragraph #3."
+    ].join("\n")
+});
+
 /**
  * Executes chunking unit tests.
  * @param {(name: string, fn: () => (void | Promise<void>)) => Promise<void>} runTest Test harness callback.
@@ -223,6 +231,16 @@ export async function runChunkingTests(runTest) {
                 words: 5,
                 sentences: 3,
                 paragraphs: 1
+            }
+        },
+        {
+            name: "treats lowercase-leading paragraphs as distinct entries",
+            input: STATISTICS_SAMPLE_TEXT.lowercaseParagraphs,
+            expected: {
+                characters: STATISTICS_SAMPLE_TEXT.lowercaseParagraphs.length,
+                words: 6,
+                sentences: 3,
+                paragraphs: 3
             }
         }
     ];

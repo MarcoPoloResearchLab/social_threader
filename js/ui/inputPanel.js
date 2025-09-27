@@ -221,13 +221,23 @@ export class InputPanel {
 
         sanitizeSnapshotTree(clonedEditor);
 
-        const inertDocument = document.implementation.createHTMLDocument("input-snapshot");
-        const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
-        inertDocument.body.appendChild(inertEditor);
+        const measurementContainer = document.createElement("div");
+        measurementContainer.style.position = "fixed";
+        measurementContainer.style.opacity = "0";
+        measurementContainer.style.pointerEvents = "none";
+        measurementContainer.style.whiteSpace = "pre-wrap";
+        measurementContainer.style.maxWidth = "100%";
+        measurementContainer.appendChild(clonedEditor);
+        document.body.appendChild(measurementContainer);
 
-        const normalizedPlaceholderText = inertEditor.innerText
-            .replace(/\u00A0/g, " ")
-            .replace(/\r\n/g, "\n");
+        let normalizedPlaceholderText = "";
+        try {
+            normalizedPlaceholderText = clonedEditor.innerText
+                .replace(/\u00A0/g, " ")
+                .replace(/\r\n/g, "\n");
+        } finally {
+            measurementContainer.remove();
+        }
         const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
         const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
 
