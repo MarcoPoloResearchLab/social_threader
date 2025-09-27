@@ -3,6 +3,8 @@
  * @fileoverview Tests covering InputPanel document snapshot serialization.
  */
 
+import { TEXT_CONTENT } from "../js/constants.js";
+import { templateHelpers } from "../js/utils/templates.js";
 import { InputPanel } from "../js/ui/inputPanel.js";
 import { assertEqual } from "./assert.js";
 
@@ -10,7 +12,8 @@ const SNAPSHOT_ASSERTION_MESSAGES = Object.freeze({
     placeholderMismatch: "Snapshot placeholder text should match expected newline separated paragraphs",
     plainTextMismatch: "Snapshot plain text should match expected newline separated paragraphs",
     serializedLengthMismatch: "Serialized placeholder text should match the expected character length",
-    plainTextLengthMismatch: "Snapshot plain text should match the expected character length"
+    plainTextLengthMismatch: "Snapshot plain text should match the expected character length",
+    statisticsTextMismatch: "Statistics summary should match expected template output when Node constructor is removed"
 });
 
 const PARAGRAPH_TEXT_CONTENT = Object.freeze({
@@ -34,6 +37,20 @@ const EXPECTED_SNAPSHOT_TEXT = Object.freeze({
     inlineEmphasis: "Intro with emphasis highlighted conclusion.",
     mixedInlineElements: "Leading strong text and trailing content.\n\nLink enriched paragraph content.",
     softLineBreakParagraph: `${SOFT_BREAK_TEXT_CONTENT.firstLine}\n${SOFT_BREAK_TEXT_CONTENT.secondLine}`
+});
+
+const NODE_REMOVAL_EXPECTED_STATISTICS = Object.freeze({
+    characters: 43,
+    words: 6,
+    sentences: 3,
+    paragraphs: 3
+});
+
+const EXPECTED_STATISTICS_TEXT = Object.freeze({
+    nodeConstructorRemoved: templateHelpers.interpolate(
+        TEXT_CONTENT.INPUT_STATS_TEMPLATE,
+        NODE_REMOVAL_EXPECTED_STATISTICS
+    )
 });
 
 const INLINE_ELEMENT_TEXT = Object.freeze({
@@ -79,9 +96,37 @@ function appendEmptyParagraph(targetEditorElement) {
     targetEditorElement.appendChild(paragraphElement);
 }
 
+const SEQUENTIAL_PARAGRAPH_BUILDER_STEPS = Object.freeze([
+    /**
+     * @param {HTMLDivElement} targetEditorElement
+     */
+    (targetEditorElement) => {
+        appendParagraphWithChildren(targetEditorElement, [
+            document.createTextNode(PARAGRAPH_TEXT_CONTENT.firstParagraph)
+        ]);
+    },
+    /**
+     * @param {HTMLDivElement} targetEditorElement
+     */
+    (targetEditorElement) => {
+        appendParagraphWithChildren(targetEditorElement, [
+            document.createTextNode(PARAGRAPH_TEXT_CONTENT.secondParagraph)
+        ]);
+    },
+    /**
+     * @param {HTMLDivElement} targetEditorElement
+     */
+    (targetEditorElement) => {
+        appendParagraphWithChildren(targetEditorElement, [
+            document.createTextNode(PARAGRAPH_TEXT_CONTENT.thirdParagraph)
+        ]);
+    },
+    appendEmptyParagraph
+]);
+
 /**
  * Creates a consistent DOM fixture for InputPanel tests.
- * @returns {{ inputPanel: InputPanel, editorElement: HTMLDivElement, cleanup: () => void }}
+ * @returns {{ inputPanel: InputPanel, editorElement: HTMLDivElement, statsElement: HTMLElement, cleanup: () => void }}
  */
 function createInputPanelFixture() {
     const fixtureContainer = document.createElement("div");
@@ -101,40 +146,26 @@ function createInputPanelFixture() {
         fixtureContainer.remove();
     };
 
-    return { inputPanel, editorElement, cleanup };
+    return { inputPanel, editorElement, statsElement, cleanup };
 }
 
+/**
+ * @typedef {Object} DocumentCaseDefinition
+ * @property {string} name
+ * @property {string} expectedText
+ * @property {Array<(targetEditorElement: HTMLDivElement) => void>} builderSteps
+ * @property {number=} expectedLength
+ * @property {(context: { inputPanel: InputPanel, editorElement: HTMLDivElement }) => (() => void)} [prepareEnvironment]
+ * @property {import("../js/types.d.js").ChunkStatistics=} expectedStatistics
+ * @property {string=} expectedStatisticsText
+ */
+
+/** @type {DocumentCaseDefinition[]} */
 const DOCUMENT_CASES = [
     {
         name: "captures newline separated paragraphs for plain text content",
         expectedText: EXPECTED_SNAPSHOT_TEXT.sequentialParagraphs,
-        builderSteps: [
-            /**
-             * @param {HTMLDivElement} targetEditorElement
-             */
-            (targetEditorElement) => {
-                appendParagraphWithChildren(targetEditorElement, [
-                    document.createTextNode(PARAGRAPH_TEXT_CONTENT.firstParagraph)
-                ]);
-            },
-            /**
-             * @param {HTMLDivElement} targetEditorElement
-             */
-            (targetEditorElement) => {
-                appendParagraphWithChildren(targetEditorElement, [
-                    document.createTextNode(PARAGRAPH_TEXT_CONTENT.secondParagraph)
-                ]);
-            },
-            /**
-             * @param {HTMLDivElement} targetEditorElement
-             */
-            (targetEditorElement) => {
-                appendParagraphWithChildren(targetEditorElement, [
-                    document.createTextNode(PARAGRAPH_TEXT_CONTENT.thirdParagraph)
-                ]);
-            },
-            appendEmptyParagraph
-        ]
+        builderSteps: SEQUENTIAL_PARAGRAPH_BUILDER_STEPS
     },
     {
         name: "expands spacer divs to paragraph separators",
@@ -227,6 +258,24 @@ const DOCUMENT_CASES = [
             },
             appendEmptyParagraph
         ]
+    },
+    {
+        name: "captures text and statistics when Node constructor is removed",
+        expectedText: EXPECTED_SNAPSHOT_TEXT.sequentialParagraphs,
+        builderSteps: SEQUENTIAL_PARAGRAPH_BUILDER_STEPS,
+        prepareEnvironment: () => {
+            const originalNodeConstructor = globalThis.Node;
+            delete globalThis.Node;
+            return () => {
+                if (typeof originalNodeConstructor === "undefined") {
+                    delete globalThis.Node;
+                    return;
+                }
+                globalThis.Node = originalNodeConstructor;
+            };
+        },
+        expectedStatistics: NODE_REMOVAL_EXPECTED_STATISTICS,
+        expectedStatisticsText: EXPECTED_STATISTICS_TEXT.nodeConstructorRemoved
     }
 ];
 
@@ -238,11 +287,17 @@ const DOCUMENT_CASES = [
 export async function runInputPanelTests(runTest) {
     for (const documentCase of DOCUMENT_CASES) {
         await runTest(documentCase.name, () => {
-            const { inputPanel, editorElement, cleanup } = createInputPanelFixture();
+            const fixture = createInputPanelFixture();
+            const { inputPanel, editorElement, cleanup } = fixture;
+            /** @type {(() => void) | null} */
+            let restoreEnvironment = null;
             try {
                 documentCase.builderSteps.forEach((builderStep) => {
                     builderStep(editorElement);
                 });
+                if (typeof documentCase.prepareEnvironment === "function") {
+                    restoreEnvironment = documentCase.prepareEnvironment({ inputPanel, editorElement });
+                }
                 const snapshot = inputPanel.getDocumentSnapshot();
                 assertEqual(
                     snapshot.placeholderText,
@@ -266,7 +321,21 @@ export async function runInputPanelTests(runTest) {
                         SNAPSHOT_ASSERTION_MESSAGES.plainTextLengthMismatch
                     );
                 }
+                if (
+                    documentCase.expectedStatistics &&
+                    typeof documentCase.expectedStatisticsText === "string"
+                ) {
+                    inputPanel.updateStatistics(documentCase.expectedStatistics);
+                    assertEqual(
+                        fixture.statsElement.textContent,
+                        documentCase.expectedStatisticsText,
+                        SNAPSHOT_ASSERTION_MESSAGES.statisticsTextMismatch
+                    );
+                }
             } finally {
+                if (typeof restoreEnvironment === "function") {
+                    restoreEnvironment();
+                }
                 cleanup();
             }
         });

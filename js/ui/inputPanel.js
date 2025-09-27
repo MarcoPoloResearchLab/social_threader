@@ -264,10 +264,24 @@ export class InputPanel {
         const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
         inertDocument.body.appendChild(inertEditor);
 
+        const inertChildNodes = Array.from(inertEditor.childNodes);
+        const sampleNodeForNodeType = inertChildNodes[0] ?? inertEditor;
+        const windowNodeConstructor = typeof window === "undefined" ? undefined : window.Node;
+        const nodeConstructor =
+            sampleNodeForNodeType.ownerDocument?.defaultView?.Node ?? windowNodeConstructor;
+        const resolvedTextNodeType =
+            typeof nodeConstructor === "undefined" || nodeConstructor === null
+                ? 3
+                : nodeConstructor.TEXT_NODE;
+        const resolvedElementNodeType =
+            typeof nodeConstructor === "undefined" || nodeConstructor === null
+                ? 1
+                : nodeConstructor.ELEMENT_NODE;
+
         /** @type {(string | symbol)[]} */
         const placeholderSegments = [];
-        inertEditor.childNodes.forEach((childNode) => {
-            if (childNode.nodeType === Node.TEXT_NODE) {
+        inertChildNodes.forEach((childNode) => {
+            if (childNode.nodeType === resolvedTextNodeType) {
                 const textContent = childNode.textContent || "";
                 const normalizedText = normalizeEditorText(textContent).replace(
                     TRAILING_NEWLINE_PATTERN,
@@ -280,7 +294,7 @@ export class InputPanel {
                 return;
             }
 
-            if (childNode.nodeType === Node.ELEMENT_NODE) {
+            if (childNode.nodeType === resolvedElementNodeType) {
                 const element = /** @type {HTMLElement} */ (childNode);
                 const normalizedInnerText = serializeElementTextWithSoftBreaks(element);
                 const trimmedInnerText = normalizedInnerText.replace(
