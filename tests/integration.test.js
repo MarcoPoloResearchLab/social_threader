@@ -197,6 +197,25 @@ function createParagraphStatisticsFixture(
     };
 }
 
+const LOWERCASE_PARAGRAPH_SAMPLE = Object.freeze({
+    first: "Paragraph #1.",
+    second: "paragraph #2.",
+    third: "paragraph #3."
+});
+
+const LOWERCASE_PARAGRAPH_JOINED = [
+    LOWERCASE_PARAGRAPH_SAMPLE.first,
+    LOWERCASE_PARAGRAPH_SAMPLE.second,
+    LOWERCASE_PARAGRAPH_SAMPLE.third
+].join("\n");
+
+const LOWERCASE_PARAGRAPH_EXPECTED_STATISTICS = Object.freeze({
+    characters: LOWERCASE_PARAGRAPH_JOINED.length,
+    words: 6,
+    sentences: 3,
+    paragraphs: 3
+});
+
 /**
  * Sets up a minimal DOM fixture and controller instance for integration testing.
  * @returns {{ elements: Record<string, HTMLElement>, cleanup: () => void }}
@@ -455,6 +474,16 @@ export async function runIntegrationTests(runTest) {
                             ],
                             false,
                             { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
+                        ),
+                        createParagraphStatisticsFixture(
+                            "lowercase-leading paragraphs collapse into one block",
+                            [
+                                { children: [LOWERCASE_PARAGRAPH_SAMPLE.first] },
+                                { children: [LOWERCASE_PARAGRAPH_SAMPLE.second] },
+                                { children: [LOWERCASE_PARAGRAPH_SAMPLE.third] }
+                            ],
+                            false,
+                            LOWERCASE_PARAGRAPH_EXPECTED_STATISTICS
                         ),
                         createParagraphStatisticsFixture(
                             "trailing blank paragraph is ignored",
