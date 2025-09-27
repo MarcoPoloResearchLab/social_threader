@@ -306,7 +306,11 @@ export class InputPanel {
 
             const segmentText = /** @type {string} */ (segment);
             if (hasWrittenText) {
-                normalizedPlaceholderText += DOUBLE_NEWLINE;
+                if (pendingSeparatorCount === 0) {
+                    normalizedPlaceholderText += SINGLE_NEWLINE;
+                } else {
+                    normalizedPlaceholderText += DOUBLE_NEWLINE.repeat(pendingSeparatorCount);
+                }
             }
             normalizedPlaceholderText += segmentText;
             hasWrittenText = true;
