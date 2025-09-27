@@ -8,7 +8,9 @@ import { assertEqual } from "./assert.js";
 
 const SNAPSHOT_ASSERTION_MESSAGES = Object.freeze({
     placeholderMismatch: "Snapshot placeholder text should match expected newline separated paragraphs",
-    plainTextMismatch: "Snapshot plain text should match expected newline separated paragraphs"
+    plainTextMismatch: "Snapshot plain text should match expected newline separated paragraphs",
+    serializedLengthMismatch: "Serialized placeholder text should match the expected character length",
+    plainTextLengthMismatch: "Snapshot plain text should match the expected character length"
 });
 
 const PARAGRAPH_TEXT_CONTENT = Object.freeze({
@@ -22,10 +24,16 @@ const PARAGRAPH_TEXT_CONTENT = Object.freeze({
     inlineLinkTrailingText: " enriched paragraph content."
 });
 
+const SOFT_BREAK_TEXT_CONTENT = Object.freeze({
+    firstLine: "Soft line breaks remain within paragraphs.",
+    secondLine: "Soft line breaks should not create new paragraphs."
+});
+
 const EXPECTED_SNAPSHOT_TEXT = Object.freeze({
-    sequentialParagraphs: "Paragraph #1.\nParagraph #2.\nParagraph #3.",
+    sequentialParagraphs: "Paragraph #1.\n\nParagraph #2.\n\nParagraph #3.",
     inlineEmphasis: "Intro with emphasis highlighted conclusion.",
-    mixedInlineElements: "Leading strong text and trailing content.\nLink enriched paragraph content."
+    mixedInlineElements: "Leading strong text and trailing content.\n\nLink enriched paragraph content.",
+    softLineBreakParagraph: `${SOFT_BREAK_TEXT_CONTENT.firstLine}\n${SOFT_BREAK_TEXT_CONTENT.secondLine}`
 });
 
 const INLINE_ELEMENT_TEXT = Object.freeze({
@@ -36,6 +44,12 @@ const INLINE_ELEMENT_TEXT = Object.freeze({
 
 const INLINE_ELEMENT_URLS = Object.freeze({
     exampleLink: "https://example.com"
+});
+
+const EDITOR_SEPARATOR_REGRESSION_TEXT = Object.freeze({
+    firstParagraph: "Puppeteer ensures reliable browser coverage.",
+    secondParagraph: "Browser automation validates paragraph counts.",
+    expectedLength: 92
 });
 
 /**
@@ -123,6 +137,48 @@ const DOCUMENT_CASES = [
         ]
     },
     {
+        name: "expands spacer divs to paragraph separators",
+        expectedText: `${EDITOR_SEPARATOR_REGRESSION_TEXT.firstParagraph}\n\n${EDITOR_SEPARATOR_REGRESSION_TEXT.secondParagraph}`,
+        expectedLength: EDITOR_SEPARATOR_REGRESSION_TEXT.expectedLength,
+        builderSteps: [
+            /**
+             * @param {HTMLDivElement} targetEditorElement
+             */
+            (targetEditorElement) => {
+                appendParagraphWithChildren(targetEditorElement, [
+                    document.createTextNode(EDITOR_SEPARATOR_REGRESSION_TEXT.firstParagraph)
+                ]);
+            },
+            appendEmptyParagraph,
+            /**
+             * @param {HTMLDivElement} targetEditorElement
+             */
+            (targetEditorElement) => {
+                appendParagraphWithChildren(targetEditorElement, [
+                    document.createTextNode(EDITOR_SEPARATOR_REGRESSION_TEXT.secondParagraph)
+                ]);
+            },
+            appendEmptyParagraph
+        ]
+    },
+    {
+        name: "preserves soft line breaks within paragraph boundaries",
+        expectedText: EXPECTED_SNAPSHOT_TEXT.softLineBreakParagraph,
+        builderSteps: [
+            /**
+             * @param {HTMLDivElement} targetEditorElement
+             */
+            (targetEditorElement) => {
+                appendParagraphWithChildren(targetEditorElement, [
+                    document.createTextNode(SOFT_BREAK_TEXT_CONTENT.firstLine),
+                    document.createElement("br"),
+                    document.createTextNode(SOFT_BREAK_TEXT_CONTENT.secondLine)
+                ]);
+            },
+            appendEmptyParagraph
+        ]
+    },
+    {
         name: "captures inline formatting within paragraph boundaries",
         expectedText: EXPECTED_SNAPSHOT_TEXT.inlineEmphasis,
         builderSteps: [
@@ -198,6 +254,18 @@ export async function runInputPanelTests(runTest) {
                     documentCase.expectedText,
                     SNAPSHOT_ASSERTION_MESSAGES.plainTextMismatch
                 );
+                if (typeof documentCase.expectedLength === "number") {
+                    assertEqual(
+                        snapshot.placeholderText.length,
+                        documentCase.expectedLength,
+                        SNAPSHOT_ASSERTION_MESSAGES.serializedLengthMismatch
+                    );
+                    assertEqual(
+                        snapshot.plainText.length,
+                        documentCase.expectedLength,
+                        SNAPSHOT_ASSERTION_MESSAGES.plainTextLengthMismatch
+                    );
+                }
             } finally {
                 cleanup();
             }

@@ -51,22 +51,34 @@ const STRICT_NON_TERMINATING_ABBREVIATIONS = Object.freeze(
 
 const FLEXIBLE_ABBREVIATIONS = Object.freeze(
     new Set([
+        "a.m.",
         "approx.",
         "appt.",
+        "apr.",
+        "aug.",
         "ave.",
         "corp.",
-        "etc.",
-        "fig.",
-        "inc.",
-        "vs.",
-        "i.e.",
+        "dec.",
         "e.g.",
-        "u.s.",
-        "u.k.",
-        "a.m.",
-        "p.m.",
+        "etc.",
+        "feb.",
+        "fig.",
+        "i.e.",
+        "inc.",
+        "jan.",
+        "jul.",
+        "jun.",
+        "mar.",
         "no.",
-        "vol."
+        "nov.",
+        "oct.",
+        "p.m.",
+        "sep.",
+        "sept.",
+        "u.k.",
+        "u.s.",
+        "vol.",
+        "vs."
     ])
 );
 
@@ -106,12 +118,25 @@ function stripTrailingWrappingCharacters(token) {
 }
 
 /**
+ * Strips leading wrapping characters such as quotes or parentheses.
+ * @param {string} token Word token to sanitize.
+ * @returns {string} Token without leading wrapping characters.
+ */
+function stripLeadingWrappingCharacters(token) {
+    let sanitizedToken = token;
+    while (sanitizedToken.length > 0 && LEADING_PUNCTUATION_TO_IGNORE.includes(sanitizedToken.charAt(0))) {
+        sanitizedToken = sanitizedToken.slice(1);
+    }
+    return sanitizedToken;
+}
+
+/**
  * Determines the classification of an abbreviation if applicable.
  * @param {string} token Candidate token potentially representing an abbreviation.
  * @returns {"strict" | "flexible" | null} Classification result or null when not an abbreviation.
  */
 function classifyAbbreviation(token) {
-    const normalizedToken = stripTrailingWrappingCharacters(token).toLowerCase();
+    const normalizedToken = stripTrailingWrappingCharacters(stripLeadingWrappingCharacters(token)).toLowerCase();
     if (normalizedToken.length === 0) {
         return null;
     }
@@ -141,7 +166,7 @@ function classifyAbbreviation(token) {
  * @returns {boolean} True when the token is decimal-like and should not end a sentence.
  */
 function isDecimalNotation(token) {
-    const normalizedToken = stripTrailingWrappingCharacters(token).toLowerCase();
+    const normalizedToken = stripTrailingWrappingCharacters(stripLeadingWrappingCharacters(token)).toLowerCase();
     return DECIMAL_LIKE_PATTERN.test(normalizedToken);
 }
 
@@ -275,7 +300,7 @@ function splitIntoWordsPreservingPunctuation(textString) {
 
     for (let index = 0; index < normalizedText.length; index += 1) {
         const character = normalizedText[index];
-        if (character === " " && !insideQuote) {
+        if (character === " ") {
             if (currentWord.length > 0) {
                 wordsArray.push(currentWord);
                 currentWord = "";
@@ -284,7 +309,18 @@ function splitIntoWordsPreservingPunctuation(textString) {
         }
 
         if (character === '"') {
-            insideQuote = !insideQuote;
+            if (!insideQuote) {
+                if (currentWord.length > 0) {
+                    wordsArray.push(currentWord);
+                }
+                currentWord = '"';
+                insideQuote = true;
+                continue;
+            }
+
+            currentWord += character;
+            insideQuote = false;
+            continue;
         }
 
         currentWord += character;
@@ -312,10 +348,6 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         return false;
     }
 
-    if (ELLIPSIS_PATTERN.test(strippedWord)) {
-        return true;
-    }
-
     if (isDecimalNotation(strippedWord)) {
         return false;
     }
@@ -324,14 +356,22 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         return false;
     }
 
+    const nextToken = typeof nextWord === "string" ? nextWord : "";
+    const nextLead = getFirstSignificantCharacter(nextToken.trim());
+
+    if (ELLIPSIS_PATTERN.test(strippedWord)) {
+        if (nextLead.length > 0 && nextLead.toLowerCase() === nextLead) {
+            return false;
+        }
+        return true;
+    }
+
     const abbreviationType = classifyAbbreviation(strippedWord);
     if (abbreviationType === "strict") {
         return false;
     }
 
     if (abbreviationType === "flexible") {
-        const nextToken = typeof nextWord === "string" ? nextWord : "";
-        const nextLead = getFirstSignificantCharacter(nextToken.trim());
         if (nextLead.length === 0) {
             return true;
         }
@@ -340,6 +380,9 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
                 return false;
             }
             return true;
+        }
+        if (/\d/.test(nextLead)) {
+            return false;
         }
         return true;
     }

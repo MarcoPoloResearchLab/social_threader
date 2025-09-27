@@ -444,7 +444,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Second paragraph."] }
                             ],
                             false,
-                            { characters: 34, words: 4, sentences: 2, paragraphs: 2 }
+                            { characters: 35, words: 4, sentences: 2, paragraphs: 2 }
                         ),
                         createParagraphStatisticsFixture(
                             "inline formatting paragraphs preserve counts",
@@ -454,7 +454,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Paragraph ", { tagName: "strong", text: "#3" }, "."] }
                             ],
                             false,
-                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
+                            { characters: 43, words: 6, sentences: 3, paragraphs: 3 }
                         ),
                         createParagraphStatisticsFixture(
                             "trailing blank paragraph is ignored",
@@ -465,7 +465,7 @@ export async function runIntegrationTests(runTest) {
                                 { isBlank: true }
                             ],
                             false,
-                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
+                            { characters: 43, words: 6, sentences: 3, paragraphs: 3 }
                         )
                     ];
 

@@ -13,6 +13,45 @@ const MINIMUM_FONT_SIZE = 14;
 const MAXIMUM_FONT_SIZE = 24;
 /** @type {number} */
 const FONT_INCREMENT = 0.05;
+/** @type {string} */
+const SINGLE_NEWLINE = "\n";
+/** @type {string} */
+const DOUBLE_NEWLINE = "\n\n";
+const PLACEHOLDER_SEPARATOR_FLAG = Symbol("placeholderSeparatorFlag");
+const TRAILING_NEWLINE_PATTERN = /\n+$/u;
+
+/**
+ * Normalizes editor text content by replacing non-breaking spaces and Windows newlines.
+ * @param {string} text Text content captured from the editor snapshot.
+ * @returns {string} Normalized text safe for serialization.
+ */
+function normalizeEditorText(text) {
+    return text.replace(/\u00A0/g, " ").replace(/\r\n/g, "\n");
+}
+
+/**
+ * Serializes an element's text content, converting soft breaks to newline characters.
+ * @param {HTMLElement} element Element whose textual content should be extracted.
+ * @returns {string} Text content with `<br>` tags replaced by newline characters.
+ */
+function serializeElementTextWithSoftBreaks(element) {
+    const inertDocument = document.implementation.createHTMLDocument("element-text-serialization");
+    const clonedElement = /** @type {HTMLElement} */ (inertDocument.importNode(element, true));
+    clonedElement.querySelectorAll("br").forEach((lineBreakElement) => {
+        lineBreakElement.replaceWith(inertDocument.createTextNode(SINGLE_NEWLINE));
+    });
+    const serializedTextContent = clonedElement.textContent || "";
+    return normalizeEditorText(serializedTextContent);
+}
+
+/**
+ * Determines whether text is empty or contains only newline characters once normalized.
+ * @param {string} normalizedText Text that has already passed through normalizeEditorText.
+ * @returns {boolean} True when the text contains no visible characters.
+ */
+function isEmptyOrNewlineOnly(normalizedText) {
+    return normalizedText.replace(/\n/g, "").trim().length === 0;
+}
 
 /**
  * Retrieves the current selection range within the contenteditable element.
@@ -225,14 +264,62 @@ export class InputPanel {
         const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
         inertDocument.body.appendChild(inertEditor);
 
-        const normalizedPlaceholderText = inertEditor.innerText
-            .replace(/\u00A0/g, " ")
-            .replace(/\r\n/g, "\n");
-        const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
-        const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
+        /** @type {(string | symbol)[]} */
+        const placeholderSegments = [];
+        inertEditor.childNodes.forEach((childNode) => {
+            if (childNode instanceof window.Text) {
+                const textContent = childNode.textContent || "";
+                const normalizedText = normalizeEditorText(textContent).replace(
+                    TRAILING_NEWLINE_PATTERN,
+                    ""
+                );
+                if (normalizedText.trim().length === 0) {
+                    return;
+                }
+                placeholderSegments.push(normalizedText);
+                return;
+            }
+
+            if (childNode instanceof HTMLElement) {
+                const element = childNode;
+                const normalizedInnerText = serializeElementTextWithSoftBreaks(element);
+                const trimmedInnerText = normalizedInnerText.replace(
+                    TRAILING_NEWLINE_PATTERN,
+                    ""
+                );
+                if (isEmptyOrNewlineOnly(trimmedInnerText)) {
+                    placeholderSegments.push(PLACEHOLDER_SEPARATOR_FLAG);
+                    return;
+                }
+                placeholderSegments.push(trimmedInnerText);
+            }
+        });
+
+        let normalizedPlaceholderText = "";
+        let hasWrittenText = false;
+        let pendingSeparatorCount = 0;
+        placeholderSegments.forEach((segment) => {
+            if (segment === PLACEHOLDER_SEPARATOR_FLAG) {
+                pendingSeparatorCount += 1;
+                return;
+            }
+
+            const segmentText = /** @type {string} */ (segment);
+            if (hasWrittenText) {
+                if (pendingSeparatorCount === 0) {
+                    normalizedPlaceholderText += SINGLE_NEWLINE;
+                } else {
+                    normalizedPlaceholderText += DOUBLE_NEWLINE.repeat(pendingSeparatorCount);
+                }
+            }
+            normalizedPlaceholderText += segmentText;
+            hasWrittenText = true;
+            pendingSeparatorCount = 0;
+        });
+        const plainText = richTextHelpers.extractPlainText(normalizedPlaceholderText, imageRecords);
 
         return {
-            placeholderText: trimmedPlaceholderText,
+            placeholderText: normalizedPlaceholderText,
             plainText,
             images: imageRecords
         };
