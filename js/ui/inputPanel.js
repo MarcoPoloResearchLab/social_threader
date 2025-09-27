@@ -19,6 +19,8 @@ const SINGLE_NEWLINE = "\n";
 const DOUBLE_NEWLINE = "\n\n";
 const PLACEHOLDER_SEPARATOR_FLAG = Symbol("placeholderSeparatorFlag");
 const TRAILING_NEWLINE_PATTERN = /\n+$/u;
+const TEXT_NODE_TYPE_FALLBACK = 3;
+const ELEMENT_NODE_TYPE_FALLBACK = 1;
 
 /**
  * Normalizes editor text content by replacing non-breaking spaces and Windows newlines.
@@ -265,23 +267,18 @@ export class InputPanel {
         inertDocument.body.appendChild(inertEditor);
 
         const inertChildNodes = Array.from(inertEditor.childNodes);
-        const fallbackNodeConstructor = typeof window === "undefined" ? undefined : window.Node;
-        /** @type {{ text: number; element: number } | null} */
-        let resolvedNodeTypeValues = null;
-        inertChildNodes.some((childNode) => {
-            const nodeConstructor =
-                childNode.ownerDocument?.defaultView?.Node ?? fallbackNodeConstructor;
-            if (typeof nodeConstructor === "undefined" || nodeConstructor === null) {
-                return false;
-            }
-            resolvedNodeTypeValues = {
-                text: nodeConstructor.TEXT_NODE,
-                element: nodeConstructor.ELEMENT_NODE
-            };
-            return true;
-        });
-        const resolvedTextNodeType = resolvedNodeTypeValues?.text ?? 3;
-        const resolvedElementNodeType = resolvedNodeTypeValues?.element ?? 1;
+        const fallbackNodeConstructor =
+            typeof window === "undefined" ? undefined : window.Node;
+        const snapshotNodeConstructor =
+            inertEditor.ownerDocument?.defaultView?.Node ?? fallbackNodeConstructor;
+        const resolvedTextNodeType =
+            snapshotNodeConstructor && typeof snapshotNodeConstructor.TEXT_NODE === "number"
+                ? snapshotNodeConstructor.TEXT_NODE
+                : TEXT_NODE_TYPE_FALLBACK;
+        const resolvedElementNodeType =
+            snapshotNodeConstructor && typeof snapshotNodeConstructor.ELEMENT_NODE === "number"
+                ? snapshotNodeConstructor.ELEMENT_NODE
+                : ELEMENT_NODE_TYPE_FALLBACK;
 
         /** @type {(string | symbol)[]} */
         const placeholderSegments = [];

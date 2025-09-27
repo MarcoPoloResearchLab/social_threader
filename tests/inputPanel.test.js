@@ -97,6 +97,18 @@ function appendEmptyParagraph(targetEditorElement) {
     targetEditorElement.appendChild(paragraphElement);
 }
 
+/**
+ * Executes each builder step to populate the editor element with test content.
+ * @param {HTMLDivElement} targetEditorElement Editor element receiving constructed nodes.
+ * @param {Array<(targetEditorElement: HTMLDivElement) => void>} builderSteps Ordered builder callbacks.
+ * @returns {void}
+ */
+function populateEditorFromSteps(targetEditorElement, builderSteps) {
+    builderSteps.forEach((builderStep) => {
+        builderStep(targetEditorElement);
+    });
+}
+
 const SEQUENTIAL_PARAGRAPH_BUILDER_STEPS = Object.freeze([
     /**
      * @param {HTMLDivElement} targetEditorElement
@@ -156,7 +168,6 @@ function createInputPanelFixture() {
  * @property {string} expectedText
  * @property {Array<(targetEditorElement: HTMLDivElement) => void>} builderSteps
  * @property {number=} expectedLength
- * @property {(context: { inputPanel: InputPanel, editorElement: HTMLDivElement }) => (() => void)} [prepareEnvironment]
  * @property {import("../js/types.d.js").ChunkStatistics=} expectedStatistics
  * @property {string=} expectedStatisticsText
  */
@@ -259,26 +270,19 @@ const DOCUMENT_CASES = [
             },
             appendEmptyParagraph
         ]
-    },
+    }
+];
+
+const NODE_CONSTRUCTOR_REGRESSION_CASES = Object.freeze([
     {
-        name: "captures text and statistics when globalThis.Node constructor is removed",
-        expectedText: EXPECTED_SNAPSHOT_TEXT.sequentialParagraphs,
+        name: "maintains placeholder serialization when globalThis.Node constructor is removed",
         builderSteps: SEQUENTIAL_PARAGRAPH_BUILDER_STEPS,
-        prepareEnvironment: () => {
-            const originalNodeConstructor = globalThis.Node;
-            delete globalThis.Node;
-            return () => {
-                if (typeof originalNodeConstructor === "undefined") {
-                    delete globalThis.Node;
-                    return;
-                }
-                globalThis.Node = originalNodeConstructor;
-            };
-        },
+        expectedPlaceholderText: EXPECTED_SNAPSHOT_TEXT.sequentialParagraphs,
+        expectedPlainText: EXPECTED_SNAPSHOT_TEXT.sequentialParagraphs,
         expectedStatistics: NODE_REMOVAL_EXPECTED_STATISTICS,
         expectedStatisticsText: EXPECTED_STATISTICS_TEXT.nodeConstructorRemoved
     }
-];
+]);
 
 /**
  * Runs InputPanel serialization tests.
@@ -289,16 +293,9 @@ export async function runInputPanelTests(runTest) {
     for (const documentCase of DOCUMENT_CASES) {
         await runTest(documentCase.name, () => {
             const fixture = createInputPanelFixture();
-            const { inputPanel, editorElement, cleanup } = fixture;
-            /** @type {(() => void) | null} */
-            let restoreEnvironment = null;
+            const { inputPanel, editorElement, statsElement, cleanup } = fixture;
             try {
-                documentCase.builderSteps.forEach((builderStep) => {
-                    builderStep(editorElement);
-                });
-                if (typeof documentCase.prepareEnvironment === "function") {
-                    restoreEnvironment = documentCase.prepareEnvironment({ inputPanel, editorElement });
-                }
+                populateEditorFromSteps(editorElement, documentCase.builderSteps);
                 const snapshot = inputPanel.getDocumentSnapshot();
                 assertEqual(
                     snapshot.placeholderText,
@@ -328,14 +325,52 @@ export async function runInputPanelTests(runTest) {
                 ) {
                     inputPanel.updateStatistics(documentCase.expectedStatistics);
                     assertEqual(
-                        fixture.statsElement.textContent,
+                        statsElement.textContent,
                         documentCase.expectedStatisticsText,
                         SNAPSHOT_ASSERTION_MESSAGES.statisticsTextMismatch
                     );
                 }
             } finally {
-                if (typeof restoreEnvironment === "function") {
-                    restoreEnvironment();
+                cleanup();
+            }
+        });
+    }
+
+    for (const regressionCase of NODE_CONSTRUCTOR_REGRESSION_CASES) {
+        await runTest(regressionCase.name, () => {
+            const fixture = createInputPanelFixture();
+            const { inputPanel, editorElement, statsElement, cleanup } = fixture;
+            const originalNodeConstructor = globalThis.Node;
+            try {
+                populateEditorFromSteps(editorElement, regressionCase.builderSteps);
+                delete globalThis.Node;
+                const snapshot = inputPanel.getDocumentSnapshot();
+                assertEqual(
+                    snapshot.placeholderText,
+                    regressionCase.expectedPlaceholderText,
+                    SNAPSHOT_ASSERTION_MESSAGES.placeholderMismatch
+                );
+                assertEqual(
+                    snapshot.plainText,
+                    regressionCase.expectedPlainText,
+                    SNAPSHOT_ASSERTION_MESSAGES.plainTextMismatch
+                );
+                if (
+                    regressionCase.expectedStatistics &&
+                    typeof regressionCase.expectedStatisticsText === "string"
+                ) {
+                    inputPanel.updateStatistics(regressionCase.expectedStatistics);
+                    assertEqual(
+                        statsElement.textContent,
+                        regressionCase.expectedStatisticsText,
+                        SNAPSHOT_ASSERTION_MESSAGES.statisticsTextMismatch
+                    );
+                }
+            } finally {
+                if (typeof originalNodeConstructor === "undefined") {
+                    delete globalThis.Node;
+                } else {
+                    globalThis.Node = originalNodeConstructor;
                 }
                 cleanup();
             }
