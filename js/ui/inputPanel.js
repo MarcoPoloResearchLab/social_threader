@@ -23,6 +23,101 @@ const ELEMENT_NODE_TYPE_FALLBACK = 1;
 const MULTIPLE_NEWLINE_PATTERN = /\n{3,}/g;
 
 /**
+ * @typedef {Object} ParagraphAssembler
+ * @property {(segmentText: string) => void} commitSegment Appends a paragraph segment to the assembly.
+ * @property {() => boolean} hasWrittenSegments Indicates whether the assembler has captured text content.
+ * @property {() => void} registerEmptyParagraph Tracks an encountered empty paragraph separator.
+ * @property {() => string} buildResult Serializes the assembled segments into a single string.
+ */
+
+/**
+ * Creates a helper responsible for collecting paragraph segments and separators.
+ * @returns {ParagraphAssembler} Paragraph assembler instance.
+ */
+function createParagraphAssembler() {
+    /** @type {string[]} */
+    const assembledSegments = [];
+    let hasWrittenSegments = false;
+    let pendingEmptyParagraphs = 0;
+
+    return {
+        registerEmptyParagraph() {
+            pendingEmptyParagraphs += 1;
+        },
+        commitSegment(segmentText) {
+            if (hasWrittenSegments) {
+                const separatorCount = pendingEmptyParagraphs > 0 ? pendingEmptyParagraphs : 1;
+                assembledSegments.push(DOUBLE_NEWLINE.repeat(separatorCount));
+            }
+            assembledSegments.push(segmentText);
+            hasWrittenSegments = true;
+            pendingEmptyParagraphs = 0;
+        },
+        hasWrittenSegments() {
+            return hasWrittenSegments;
+        },
+        buildResult() {
+            return assembledSegments.join("");
+        }
+    };
+}
+
+/**
+ * Processes a text node and commits its content to the assembler when non-empty.
+ * @param {Node} textNode Node representing textual content.
+ * @param {ParagraphAssembler} paragraphAssembler Accumulator tracking paragraph boundaries.
+ * @returns {void}
+ */
+function processTextNodeForPlaceholder(textNode, paragraphAssembler) {
+    const textContent = textNode.textContent || "";
+    const normalizedText = normalizeEditorText(textContent);
+    const trimmedText = normalizedText.replace(TRAILING_NEWLINE_PATTERN, "");
+    if (trimmedText.trim().length === 0) {
+        return;
+    }
+    paragraphAssembler.commitSegment(trimmedText);
+}
+
+/**
+ * Processes an element node, converting soft breaks and committing the resulting text when applicable.
+ * @param {HTMLElement} element Element representing a paragraph candidate.
+ * @param {ParagraphAssembler} paragraphAssembler Accumulator tracking paragraph boundaries.
+ * @returns {void}
+ */
+function processElementForPlaceholder(element, paragraphAssembler) {
+    if (element.tagName.toLowerCase() === "br") {
+        paragraphAssembler.registerEmptyParagraph();
+        return;
+    }
+
+    const serializedText = serializeElementTextWithSoftBreaks(element);
+    const trimmedInnerText = serializedText.replace(TRAILING_NEWLINE_PATTERN, "");
+    if (trimmedInnerText.replace(/\n/g, "").trim().length === 0) {
+        paragraphAssembler.registerEmptyParagraph();
+        return;
+    }
+
+    paragraphAssembler.commitSegment(trimmedInnerText);
+}
+
+/**
+ * Assembles placeholder text by iterating element children, ignoring node type constants.
+ * @param {Element[]} elements Ordered collection of element children representing sanitized paragraphs.
+ * @returns {ParagraphAssembler} Paragraph assembler populated from the supplied elements.
+ */
+function assemblePlaceholderFromElements(elements) {
+    const paragraphAssembler = createParagraphAssembler();
+    const isHTMLElementConstructorAvailable = typeof HTMLElement === "function";
+    elements.forEach((element) => {
+        if (isHTMLElementConstructorAvailable && !(element instanceof HTMLElement)) {
+            return;
+        }
+        processElementForPlaceholder(/** @type {HTMLElement} */ (element), paragraphAssembler);
+    });
+    return paragraphAssembler;
+}
+
+/**
  * Normalizes editor text content by replacing non-breaking spaces and Windows newlines.
  * @param {string} text Text content captured from the editor snapshot.
  * @returns {string} Normalized text safe for serialization.
@@ -224,30 +319,11 @@ function buildPlaceholderText(snapshotRoot) {
     const resolvedTextNodeType = resolveNodeType("TEXT_NODE", TEXT_NODE_TYPE_FALLBACK);
     const resolvedElementNodeType = resolveNodeType("ELEMENT_NODE", ELEMENT_NODE_TYPE_FALLBACK);
     const childNodes = Array.from(snapshotRoot.childNodes);
-    /** @type {string[]} */
-    const assembledSegments = [];
-    let hasWrittenText = false;
-    let pendingEmptyParagraphs = 0;
-
-    const commitTextSegment = (segmentText) => {
-        if (hasWrittenText) {
-            const separatorCount = pendingEmptyParagraphs > 0 ? pendingEmptyParagraphs : 1;
-            assembledSegments.push(DOUBLE_NEWLINE.repeat(separatorCount));
-        }
-        assembledSegments.push(segmentText);
-        hasWrittenText = true;
-        pendingEmptyParagraphs = 0;
-    };
+    const paragraphAssembler = createParagraphAssembler();
 
     childNodes.forEach((childNode) => {
         if (childNode.nodeType === resolvedTextNodeType) {
-            const textContent = childNode.textContent || "";
-            const normalizedText = normalizeEditorText(textContent);
-            const trimmedText = normalizedText.replace(TRAILING_NEWLINE_PATTERN, "");
-            if (trimmedText.trim().length === 0) {
-                return;
-            }
-            commitTextSegment(trimmedText);
+            processTextNodeForPlaceholder(childNode, paragraphAssembler);
             return;
         }
 
@@ -256,26 +332,32 @@ function buildPlaceholderText(snapshotRoot) {
         }
 
         const element = /** @type {HTMLElement} */ (childNode);
-        if (element.tagName.toLowerCase() === "br") {
-            pendingEmptyParagraphs += 1;
-            return;
-        }
-
-        const serializedText = serializeElementTextWithSoftBreaks(element);
-        const trimmedInnerText = serializedText.replace(TRAILING_NEWLINE_PATTERN, "");
-        if (trimmedInnerText.replace(/\n/g, "").trim().length === 0) {
-            pendingEmptyParagraphs += 1;
-            return;
-        }
-        commitTextSegment(trimmedInnerText);
+        processElementForPlaceholder(element, paragraphAssembler);
     });
 
-    if (hasWrittenText) {
-        return assembledSegments.join("");
+    if (paragraphAssembler.hasWrittenSegments()) {
+        return paragraphAssembler.buildResult();
     }
 
-    const fallbackInnerText = normalizeEditorText(snapshotRoot.innerText || "");
-    const trimmedFallback = fallbackInnerText.replace(TRAILING_NEWLINE_PATTERN, "");
+    const fallbackAssembler = assemblePlaceholderFromElements(Array.from(snapshotRoot.children));
+    if (fallbackAssembler.hasWrittenSegments()) {
+        return fallbackAssembler.buildResult();
+    }
+
+    const fallbackInnerHtml = snapshotRoot.innerHTML || "";
+    if (fallbackInnerHtml.trim().length > 0) {
+        const fallbackContainer = document.createElement("div");
+        fallbackContainer.innerHTML = fallbackInnerHtml;
+        const innerHtmlAssembler = assemblePlaceholderFromElements(
+            Array.from(fallbackContainer.children)
+        );
+        if (innerHtmlAssembler.hasWrittenSegments()) {
+            return innerHtmlAssembler.buildResult();
+        }
+    }
+
+    const fallbackTextContent = normalizeEditorText(snapshotRoot.textContent || "");
+    const trimmedFallback = fallbackTextContent.replace(TRAILING_NEWLINE_PATTERN, "");
     if (trimmedFallback.trim().length === 0) {
         return "";
     }
