@@ -37,10 +37,11 @@ function normalizeEditorText(text) {
  * @returns {string} Text content with `<br>` tags replaced by newline characters.
  */
 function serializeElementTextWithSoftBreaks(element) {
-    const inertDocument = document.implementation.createHTMLDocument("element-text-serialization");
-    const clonedElement = /** @type {HTMLElement} */ (inertDocument.importNode(element, true));
+    const clonedElement = /** @type {HTMLElement} */ (element.cloneNode(true));
+    const ownerDocument = clonedElement.ownerDocument || document;
     clonedElement.querySelectorAll("br").forEach((lineBreakElement) => {
-        lineBreakElement.replaceWith(inertDocument.createTextNode(SINGLE_NEWLINE));
+        const newlineNode = ownerDocument.createTextNode(SINGLE_NEWLINE);
+        lineBreakElement.replaceWith(newlineNode);
     });
     const serializedTextContent = clonedElement.textContent || "";
     return normalizeEditorText(serializedTextContent);
@@ -262,15 +263,8 @@ export class InputPanel {
 
         sanitizeSnapshotTree(clonedEditor);
 
-        const inertDocument = document.implementation.createHTMLDocument("input-snapshot");
-        const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
-        inertDocument.body.appendChild(inertEditor);
-
-        const inertChildNodes = Array.from(inertEditor.childNodes);
-        const fallbackNodeConstructor =
-            typeof window === "undefined" ? undefined : window.Node;
-        const snapshotNodeConstructor =
-            inertEditor.ownerDocument?.defaultView?.Node ?? fallbackNodeConstructor;
+        const childNodes = Array.from(clonedEditor.childNodes);
+        const snapshotNodeConstructor = clonedEditor.ownerDocument?.defaultView?.Node;
         const resolvedTextNodeType =
             snapshotNodeConstructor && typeof snapshotNodeConstructor.TEXT_NODE === "number"
                 ? snapshotNodeConstructor.TEXT_NODE
@@ -282,7 +276,7 @@ export class InputPanel {
 
         /** @type {(string | symbol)[]} */
         const placeholderSegments = [];
-        inertChildNodes.forEach((childNode) => {
+        childNodes.forEach((childNode) => {
             if (childNode.nodeType === resolvedTextNodeType) {
                 const textContent = childNode.textContent || "";
                 const normalizedText = normalizeEditorText(textContent).replace(
