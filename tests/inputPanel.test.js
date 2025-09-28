@@ -33,13 +33,6 @@ const SOFT_BREAK_TEXT_CONTENT = Object.freeze({
     secondLine: "Soft line breaks should not create new paragraphs."
 });
 
-const EXPECTED_SNAPSHOT_TEXT = Object.freeze({
-    sequentialParagraphs: "Paragraph #1.\n\nParagraph #2.\n\nParagraph #3.",
-    inlineEmphasis: "Intro with emphasis highlighted conclusion.",
-    mixedInlineElements: "Leading strong text and trailing content.\n\nLink enriched paragraph content.",
-    softLineBreakParagraph: `${SOFT_BREAK_TEXT_CONTENT.firstLine}\n${SOFT_BREAK_TEXT_CONTENT.secondLine}`
-});
-
 const NODE_REMOVAL_EXPECTED_STATISTICS = Object.freeze({
     characters: 43,
     words: 6,
@@ -68,6 +61,14 @@ const EDITOR_SEPARATOR_REGRESSION_TEXT = Object.freeze({
     firstParagraph: "Puppeteer ensures reliable browser coverage.",
     secondParagraph: "Browser automation validates paragraph counts.",
     expectedLength: 92
+});
+
+const EXPECTED_SNAPSHOT_TEXT = Object.freeze({
+    sequentialParagraphs: "Paragraph #1.\n\nParagraph #2.\n\nParagraph #3.",
+    inlineEmphasis: "Intro with emphasis highlighted conclusion.",
+    mixedInlineElements: "Leading strong text and trailing content.\n\nLink enriched paragraph content.",
+    softLineBreakParagraph: `${SOFT_BREAK_TEXT_CONTENT.firstLine}\n${SOFT_BREAK_TEXT_CONTENT.secondLine}`,
+    doubleSpacerParagraphs: `${EDITOR_SEPARATOR_REGRESSION_TEXT.firstParagraph}\n\n\n\n${EDITOR_SEPARATOR_REGRESSION_TEXT.secondParagraph}`
 });
 
 /**
@@ -132,6 +133,28 @@ const SEQUENTIAL_PARAGRAPH_BUILDER_STEPS = Object.freeze([
     (targetEditorElement) => {
         appendParagraphWithChildren(targetEditorElement, [
             document.createTextNode(PARAGRAPH_TEXT_CONTENT.thirdParagraph)
+        ]);
+    },
+    appendEmptyParagraph
+]);
+
+const DOUBLE_SPACER_PARAGRAPH_BUILDER_STEPS = Object.freeze([
+    /**
+     * @param {HTMLDivElement} targetEditorElement
+     */
+    (targetEditorElement) => {
+        appendParagraphWithChildren(targetEditorElement, [
+            document.createTextNode(EDITOR_SEPARATOR_REGRESSION_TEXT.firstParagraph)
+        ]);
+    },
+    appendEmptyParagraph,
+    appendEmptyParagraph,
+    /**
+     * @param {HTMLDivElement} targetEditorElement
+     */
+    (targetEditorElement) => {
+        appendParagraphWithChildren(targetEditorElement, [
+            document.createTextNode(EDITOR_SEPARATOR_REGRESSION_TEXT.secondParagraph)
         ]);
     },
     appendEmptyParagraph
@@ -281,6 +304,12 @@ const NODE_CONSTRUCTOR_REGRESSION_CASES = Object.freeze([
         expectedPlainText: EXPECTED_SNAPSHOT_TEXT.sequentialParagraphs,
         expectedStatistics: NODE_REMOVAL_EXPECTED_STATISTICS,
         expectedStatisticsText: EXPECTED_STATISTICS_TEXT.nodeConstructorRemoved
+    },
+    {
+        name: "reconstructs paragraph separators with consecutive empty paragraphs when globalThis.Node constructor is removed",
+        builderSteps: DOUBLE_SPACER_PARAGRAPH_BUILDER_STEPS,
+        expectedPlaceholderText: EXPECTED_SNAPSHOT_TEXT.doubleSpacerParagraphs,
+        expectedPlainText: EXPECTED_SNAPSHOT_TEXT.doubleSpacerParagraphs
     }
 ]);
 
