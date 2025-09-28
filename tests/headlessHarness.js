@@ -61,11 +61,42 @@ function applyWindowGlobals(browserWindow) {
         cancelAnimationFrame: browserWindow.cancelAnimationFrame
     };
 
-    for (const [propertyName, propertyValue] of Object.entries(globalMappings)) {
-        if (typeof propertyValue !== "undefined") {
+    const setGlobalProperty = (propertyName, propertyValue) => {
+        if (typeof propertyValue === "undefined") {
+            return;
+        }
+
+        try {
             // @ts-ignore
             globalThis[propertyName] = propertyValue;
+            return;
+        } catch (assignmentError) {
+            const existingDescriptor = Object.getOwnPropertyDescriptor(globalThis, propertyName);
+            if (!existingDescriptor || existingDescriptor.configurable) {
+                Object.defineProperty(globalThis, propertyName, {
+                    configurable: true,
+                    writable: true,
+                    value: propertyValue
+                });
+                return;
+            }
+
+            if (
+                typeof existingDescriptor.get === "function" &&
+                typeof existingDescriptor.set !== "function" &&
+                typeof Reflect.get(globalThis, propertyName) === "object" &&
+                Reflect.get(globalThis, propertyName) !== null
+            ) {
+                Object.assign(Reflect.get(globalThis, propertyName), propertyValue);
+                return;
+            }
+
+            throw assignmentError;
         }
+    };
+
+    for (const [propertyName, propertyValue] of Object.entries(globalMappings)) {
+        setGlobalProperty(propertyName, propertyValue);
     }
 
     if (typeof browserWindow.requestAnimationFrame !== "function") {

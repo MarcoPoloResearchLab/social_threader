@@ -225,9 +225,24 @@ export class InputPanel {
         const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
         inertDocument.body.appendChild(inertEditor);
 
-        const normalizedPlaceholderText = inertEditor.innerText
-            .replace(/\u00A0/g, " ")
-            .replace(/\r\n/g, "\n");
+        const paragraphElements = Array.from(inertEditor.children);
+        const normalizedPlaceholderText = paragraphElements.length
+            ? paragraphElements
+                  .map((paragraphElement) => {
+                      const hasTrailingBreak =
+                          paragraphElement.lastChild instanceof window.HTMLBRElement;
+                      const rawText = (paragraphElement.innerText || "")
+                          .replace(/\u00A0/g, " ")
+                          .replace(/\r\n/g, "\n");
+                      const sanitizedText = hasTrailingBreak ? rawText.replace(/\n$/, "") : rawText;
+                      return { text: sanitizedText, hasTrailingBreak };
+                  })
+                  .reduce((accumulatedText, segment, index, segments) => {
+                      const separator = index < segments.length - 1 ? (segment.hasTrailingBreak ? "\n" : "\n\n") : "";
+                      return accumulatedText + segment.text + separator;
+                  }, "")
+            : inertEditor.innerText.replace(/\u00A0/g, " ").replace(/\r\n/g, "\n");
+
         const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
         const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
 
