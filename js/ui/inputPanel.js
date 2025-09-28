@@ -17,7 +17,6 @@ const FONT_INCREMENT = 0.05;
 const SINGLE_NEWLINE = "\n";
 /** @type {string} */
 const DOUBLE_NEWLINE = "\n\n";
-const PLACEHOLDER_SEPARATOR_FLAG = Symbol("placeholderSeparatorFlag");
 const TRAILING_NEWLINE_PATTERN = /\n+$/u;
 const TEXT_NODE_TYPE_FALLBACK = 3;
 const ELEMENT_NODE_TYPE_FALLBACK = 1;
@@ -45,15 +44,6 @@ function serializeElementTextWithSoftBreaks(element) {
     });
     const serializedTextContent = clonedElement.textContent || "";
     return normalizeEditorText(serializedTextContent);
-}
-
-/**
- * Determines whether text is empty or contains only newline characters once normalized.
- * @param {string} normalizedText Text that has already passed through normalizeEditorText.
- * @returns {boolean} True when the text contains no visible characters.
- */
-function isEmptyOrNewlineOnly(normalizedText) {
-    return normalizedText.replace(/\n/g, "").trim().length === 0;
 }
 
 /**
@@ -210,6 +200,75 @@ function extractNonImageClipboardNodes(htmlContent) {
 }
 
 /**
+ * Builds a normalized placeholder string from the sanitized editor snapshot.
+ * @param {HTMLElement} snapshotRoot Root element cloned from the editor.
+ * @returns {string} Placeholder text with paragraphs separated by double newlines.
+ */
+function buildPlaceholderText(snapshotRoot) {
+    const snapshotNodeConstructor = snapshotRoot.ownerDocument?.defaultView?.Node;
+    const resolvedTextNodeType =
+        snapshotNodeConstructor && typeof snapshotNodeConstructor.TEXT_NODE === "number"
+            ? snapshotNodeConstructor.TEXT_NODE
+            : TEXT_NODE_TYPE_FALLBACK;
+    const resolvedElementNodeType =
+        snapshotNodeConstructor && typeof snapshotNodeConstructor.ELEMENT_NODE === "number"
+            ? snapshotNodeConstructor.ELEMENT_NODE
+            : ELEMENT_NODE_TYPE_FALLBACK;
+
+    const childNodes = Array.from(snapshotRoot.childNodes);
+    /** @type {string[]} */
+    const assembledSegments = [];
+    let hasWrittenText = false;
+    let pendingSeparatorCount = 0;
+
+    const commitTextSegment = (segmentText) => {
+        if (hasWrittenText) {
+            const separatorCount = Math.max(1, pendingSeparatorCount);
+            assembledSegments.push(DOUBLE_NEWLINE.repeat(separatorCount));
+        }
+        assembledSegments.push(segmentText);
+        hasWrittenText = true;
+        pendingSeparatorCount = 0;
+    };
+
+    childNodes.forEach((childNode) => {
+        if (childNode.nodeType === resolvedTextNodeType) {
+            const textContent = childNode.textContent || "";
+            const normalizedText = normalizeEditorText(textContent);
+            const trimmedText = normalizedText.replace(TRAILING_NEWLINE_PATTERN, "");
+            if (trimmedText.trim().length === 0) {
+                if (normalizedText.includes("\n")) {
+                    pendingSeparatorCount += 1;
+                }
+                return;
+            }
+            commitTextSegment(trimmedText);
+            return;
+        }
+
+        if (childNode.nodeType !== resolvedElementNodeType) {
+            return;
+        }
+
+        const element = /** @type {HTMLElement} */ (childNode);
+        if (element.tagName.toLowerCase() === "br") {
+            pendingSeparatorCount = Math.max(1, pendingSeparatorCount);
+            return;
+        }
+
+        const serializedText = serializeElementTextWithSoftBreaks(element);
+        const trimmedInnerText = serializedText.replace(TRAILING_NEWLINE_PATTERN, "");
+        if (trimmedInnerText.replace(/\n/g, "").trim().length === 0) {
+            pendingSeparatorCount += 1;
+            return;
+        }
+        commitTextSegment(trimmedInnerText);
+    });
+
+    return assembledSegments.join("");
+}
+
+/**
  * Manages the user input editor, statistics display, and error feedback.
  */
 export class InputPanel {
@@ -263,66 +322,7 @@ export class InputPanel {
 
         sanitizeSnapshotTree(clonedEditor);
 
-        const childNodes = Array.from(clonedEditor.childNodes);
-        const snapshotNodeConstructor = clonedEditor.ownerDocument?.defaultView?.Node;
-        const resolvedTextNodeType =
-            snapshotNodeConstructor && typeof snapshotNodeConstructor.TEXT_NODE === "number"
-                ? snapshotNodeConstructor.TEXT_NODE
-                : TEXT_NODE_TYPE_FALLBACK;
-        const resolvedElementNodeType =
-            snapshotNodeConstructor && typeof snapshotNodeConstructor.ELEMENT_NODE === "number"
-                ? snapshotNodeConstructor.ELEMENT_NODE
-                : ELEMENT_NODE_TYPE_FALLBACK;
-
-        /** @type {(string | symbol)[]} */
-        const placeholderSegments = [];
-        childNodes.forEach((childNode) => {
-            if (childNode.nodeType === resolvedTextNodeType) {
-                const textContent = childNode.textContent || "";
-                const normalizedText = normalizeEditorText(textContent).replace(
-                    TRAILING_NEWLINE_PATTERN,
-                    ""
-                );
-                if (normalizedText.trim().length === 0) {
-                    return;
-                }
-                placeholderSegments.push(normalizedText);
-                return;
-            }
-
-            if (childNode.nodeType === resolvedElementNodeType) {
-                const element = /** @type {HTMLElement} */ (childNode);
-                const normalizedInnerText = serializeElementTextWithSoftBreaks(element);
-                const trimmedInnerText = normalizedInnerText.replace(
-                    TRAILING_NEWLINE_PATTERN,
-                    ""
-                );
-                if (isEmptyOrNewlineOnly(trimmedInnerText)) {
-                    placeholderSegments.push(PLACEHOLDER_SEPARATOR_FLAG);
-                    return;
-                }
-                placeholderSegments.push(trimmedInnerText);
-            }
-        });
-
-        let normalizedPlaceholderText = "";
-        let hasWrittenText = false;
-        let pendingSeparatorCount = 0;
-        placeholderSegments.forEach((segment) => {
-            if (segment === PLACEHOLDER_SEPARATOR_FLAG) {
-                pendingSeparatorCount += 1;
-                return;
-            }
-
-            const segmentText = /** @type {string} */ (segment);
-            if (hasWrittenText) {
-                const separatorCount = Math.max(1, pendingSeparatorCount);
-                normalizedPlaceholderText += DOUBLE_NEWLINE.repeat(separatorCount);
-            }
-            normalizedPlaceholderText += segmentText;
-            hasWrittenText = true;
-            pendingSeparatorCount = 0;
-        });
+        const normalizedPlaceholderText = buildPlaceholderText(clonedEditor);
         const plainText = richTextHelpers.extractPlainText(normalizedPlaceholderText, imageRecords);
 
         return {
