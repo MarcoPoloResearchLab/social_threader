@@ -206,6 +206,7 @@ export class InputPanel {
      */
     getDocumentSnapshot() {
         const clonedEditor = /** @type {HTMLDivElement} */ (this.editorElement.cloneNode(true));
+        clonedEditor.removeAttribute("id");
         const imageRecords = [];
         const imageElements = Array.from(clonedEditor.querySelectorAll("img"));
 
