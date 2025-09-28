@@ -99,6 +99,31 @@ function appendEmptyParagraph(targetEditorElement) {
 }
 
 /**
+ * Overrides cloneNode to return a lightweight markup snapshot, forcing fallback serialization paths.
+ * @param {HTMLDivElement} editorElement Editor element whose clone behavior should be modified.
+ * @returns {() => void} Cleanup function restoring the original cloneNode implementation.
+ */
+function overrideCloneNodeWithMarkupSnapshot(editorElement) {
+    const originalCloneNode = editorElement.cloneNode.bind(editorElement);
+    editorElement.cloneNode = () => {
+        const serializedMarkup = editorElement.innerHTML;
+        const serializedText = editorElement.textContent || "";
+        return {
+            innerHTML: serializedMarkup,
+            textContent: serializedText,
+            childNodes: [],
+            children: [],
+            querySelectorAll() {
+                return [];
+            }
+        };
+    };
+    return () => {
+        editorElement.cloneNode = originalCloneNode;
+    };
+}
+
+/**
  * Executes each builder step to populate the editor element with test content.
  * @param {HTMLDivElement} targetEditorElement Editor element receiving constructed nodes.
  * @param {Array<(targetEditorElement: HTMLDivElement) => void>} builderSteps Ordered builder callbacks.
@@ -296,6 +321,18 @@ const DOCUMENT_CASES = [
     }
 ];
 
+/**
+ * @typedef {Object} NodeConstructorRegressionCaseDefinition
+ * @property {string} name Test case description.
+ * @property {Array<(targetEditorElement: HTMLDivElement) => void>} builderSteps Ordered builder callbacks.
+ * @property {string} expectedPlaceholderText Expected serialized placeholder output.
+ * @property {string} expectedPlainText Expected plain text output after placeholder normalization.
+ * @property {import("../js/types.d.js").ChunkStatistics=} expectedStatistics Optional statistics used for assertions.
+ * @property {string=} expectedStatisticsText Optional formatted statistics text.
+ * @property {(editorElement: HTMLDivElement) => (void | (() => void))=} applyCloneOverride Optional hook to override cloneNode behavior.
+ */
+
+/** @type {NodeConstructorRegressionCaseDefinition[]} */
 const NODE_CONSTRUCTOR_REGRESSION_CASES = Object.freeze([
     {
         name: "maintains placeholder serialization when globalThis.Node constructor is removed",
@@ -310,6 +347,13 @@ const NODE_CONSTRUCTOR_REGRESSION_CASES = Object.freeze([
         builderSteps: DOUBLE_SPACER_PARAGRAPH_BUILDER_STEPS,
         expectedPlaceholderText: EXPECTED_SNAPSHOT_TEXT.doubleSpacerParagraphs,
         expectedPlainText: EXPECTED_SNAPSHOT_TEXT.doubleSpacerParagraphs
+    },
+    {
+        name: "restores double newline separators from serialized markup when globalThis.Node constructor is removed",
+        builderSteps: DOUBLE_SPACER_PARAGRAPH_BUILDER_STEPS,
+        expectedPlaceholderText: EXPECTED_SNAPSHOT_TEXT.doubleSpacerParagraphs,
+        expectedPlainText: EXPECTED_SNAPSHOT_TEXT.doubleSpacerParagraphs,
+        applyCloneOverride: overrideCloneNodeWithMarkupSnapshot
     }
 ]);
 
@@ -370,8 +414,15 @@ export async function runInputPanelTests(runTest) {
             const fixture = createInputPanelFixture();
             const { inputPanel, editorElement, statsElement, cleanup } = fixture;
             const originalNodeConstructor = globalThis.Node;
+            let restoreCloneOverride = null;
             try {
                 populateEditorFromSteps(editorElement, regressionCase.builderSteps);
+                if (typeof regressionCase.applyCloneOverride === "function") {
+                    const cleanupCallback = regressionCase.applyCloneOverride(editorElement);
+                    if (typeof cleanupCallback === "function") {
+                        restoreCloneOverride = cleanupCallback;
+                    }
+                }
                 delete globalThis.Node;
                 const snapshot = inputPanel.getDocumentSnapshot();
                 assertEqual(
@@ -396,6 +447,9 @@ export async function runInputPanelTests(runTest) {
                     );
                 }
             } finally {
+                if (restoreCloneOverride) {
+                    restoreCloneOverride();
+                }
                 if (typeof originalNodeConstructor === "undefined") {
                     delete globalThis.Node;
                 } else {
