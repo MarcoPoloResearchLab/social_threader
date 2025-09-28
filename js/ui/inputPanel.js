@@ -20,7 +20,6 @@ const DOUBLE_NEWLINE = "\n\n";
 const TRAILING_NEWLINE_PATTERN = /\n+$/u;
 const TEXT_NODE_TYPE_FALLBACK = 3;
 const ELEMENT_NODE_TYPE_FALLBACK = 1;
-const MULTIPLE_NEWLINE_PATTERN = /\n{3,}/g;
 
 /**
  * @typedef {Object} ParagraphAssembler
@@ -115,6 +114,34 @@ function assemblePlaceholderFromElements(elements) {
         processElementForPlaceholder(/** @type {HTMLElement} */ (element), paragraphAssembler);
     });
     return paragraphAssembler;
+}
+
+/**
+ * Populates a paragraph assembler from a collection of nodes, handling text and element types.
+ * @param {Node[]} nodes Ordered list of nodes sourced from the snapshot tree.
+ * @param {ParagraphAssembler} paragraphAssembler Accumulator tracking paragraph boundaries.
+ * @param {number} textNodeType Numeric constant describing text nodes.
+ * @param {number} elementNodeType Numeric constant describing element nodes.
+ * @returns {void}
+ */
+function populateParagraphAssemblerFromNodes(nodes, paragraphAssembler, textNodeType, elementNodeType) {
+    const isHTMLElementConstructorAvailable = typeof HTMLElement === "function";
+    nodes.forEach((node) => {
+        if (node.nodeType === textNodeType) {
+            processTextNodeForPlaceholder(node, paragraphAssembler);
+            return;
+        }
+
+        if (node.nodeType !== elementNodeType) {
+            return;
+        }
+
+        if (isHTMLElementConstructorAvailable && !(node instanceof HTMLElement)) {
+            return;
+        }
+
+        processElementForPlaceholder(/** @type {HTMLElement} */ (node), paragraphAssembler);
+    });
 }
 
 /**
@@ -318,28 +345,21 @@ function extractNonImageClipboardNodes(htmlContent) {
 function buildPlaceholderText(snapshotRoot) {
     const resolvedTextNodeType = resolveNodeType("TEXT_NODE", TEXT_NODE_TYPE_FALLBACK);
     const resolvedElementNodeType = resolveNodeType("ELEMENT_NODE", ELEMENT_NODE_TYPE_FALLBACK);
-    const childNodes = Array.from(snapshotRoot.childNodes);
+    const childNodes = Array.from(snapshotRoot.childNodes || []);
     const paragraphAssembler = createParagraphAssembler();
 
-    childNodes.forEach((childNode) => {
-        if (childNode.nodeType === resolvedTextNodeType) {
-            processTextNodeForPlaceholder(childNode, paragraphAssembler);
-            return;
-        }
-
-        if (childNode.nodeType !== resolvedElementNodeType) {
-            return;
-        }
-
-        const element = /** @type {HTMLElement} */ (childNode);
-        processElementForPlaceholder(element, paragraphAssembler);
-    });
+    populateParagraphAssemblerFromNodes(
+        childNodes,
+        paragraphAssembler,
+        resolvedTextNodeType,
+        resolvedElementNodeType
+    );
 
     if (paragraphAssembler.hasWrittenSegments()) {
         return paragraphAssembler.buildResult();
     }
 
-    const fallbackAssembler = assemblePlaceholderFromElements(Array.from(snapshotRoot.children));
+    const fallbackAssembler = assemblePlaceholderFromElements(Array.from(snapshotRoot.children || []));
     if (fallbackAssembler.hasWrittenSegments()) {
         return fallbackAssembler.buildResult();
     }
@@ -354,15 +374,21 @@ function buildPlaceholderText(snapshotRoot) {
         if (innerHtmlAssembler.hasWrittenSegments()) {
             return innerHtmlAssembler.buildResult();
         }
+
+        const fallbackNodes = Array.from(fallbackContainer.childNodes);
+        const fallbackNodeAssembler = createParagraphAssembler();
+        populateParagraphAssemblerFromNodes(
+            fallbackNodes,
+            fallbackNodeAssembler,
+            resolvedTextNodeType,
+            resolvedElementNodeType
+        );
+        if (fallbackNodeAssembler.hasWrittenSegments()) {
+            return fallbackNodeAssembler.buildResult();
+        }
     }
 
-    const fallbackTextContent = normalizeEditorText(snapshotRoot.textContent || "");
-    const trimmedFallback = fallbackTextContent.replace(TRAILING_NEWLINE_PATTERN, "");
-    if (trimmedFallback.trim().length === 0) {
-        return "";
-    }
-
-    return trimmedFallback.replace(MULTIPLE_NEWLINE_PATTERN, DOUBLE_NEWLINE);
+    return "";
 }
 
 /**
