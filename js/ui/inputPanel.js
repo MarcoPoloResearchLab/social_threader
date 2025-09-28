@@ -20,6 +20,7 @@ const DOUBLE_NEWLINE = "\n\n";
 const TRAILING_NEWLINE_PATTERN = /\n+$/u;
 const TEXT_NODE_TYPE_FALLBACK = 3;
 const ELEMENT_NODE_TYPE_FALLBACK = 1;
+const MULTIPLE_NEWLINE_PATTERN = /\n{3,}/g;
 
 /**
  * Normalizes editor text content by replacing non-breaking spaces and Windows newlines.
@@ -28,6 +29,21 @@ const ELEMENT_NODE_TYPE_FALLBACK = 1;
  */
 function normalizeEditorText(text) {
     return text.replace(/\u00A0/g, " ").replace(/\r\n/g, "\n");
+}
+
+/**
+ * Resolves the numeric node type constant in a resilient manner.
+ * @param {"TEXT_NODE" | "ELEMENT_NODE"} propertyName Node constant property to read.
+ * @param {number} fallbackValue Default value used when the DOM constructor is unavailable.
+ * @returns {number} Node type constant.
+ */
+function resolveNodeType(propertyName, fallbackValue) {
+    if (typeof Node !== "function") {
+        return fallbackValue;
+    }
+
+    const resolvedValue = Node[propertyName];
+    return typeof resolvedValue === "number" ? resolvedValue : fallbackValue;
 }
 
 /**
@@ -205,16 +221,8 @@ function extractNonImageClipboardNodes(htmlContent) {
  * @returns {string} Placeholder text with paragraphs separated by double newlines.
  */
 function buildPlaceholderText(snapshotRoot) {
-    const snapshotNodeConstructor = snapshotRoot.ownerDocument?.defaultView?.Node;
-    const resolvedTextNodeType =
-        snapshotNodeConstructor && typeof snapshotNodeConstructor.TEXT_NODE === "number"
-            ? snapshotNodeConstructor.TEXT_NODE
-            : TEXT_NODE_TYPE_FALLBACK;
-    const resolvedElementNodeType =
-        snapshotNodeConstructor && typeof snapshotNodeConstructor.ELEMENT_NODE === "number"
-            ? snapshotNodeConstructor.ELEMENT_NODE
-            : ELEMENT_NODE_TYPE_FALLBACK;
-
+    const resolvedTextNodeType = resolveNodeType("TEXT_NODE", TEXT_NODE_TYPE_FALLBACK);
+    const resolvedElementNodeType = resolveNodeType("ELEMENT_NODE", ELEMENT_NODE_TYPE_FALLBACK);
     const childNodes = Array.from(snapshotRoot.childNodes);
     /** @type {string[]} */
     const assembledSegments = [];
@@ -262,7 +270,17 @@ function buildPlaceholderText(snapshotRoot) {
         commitTextSegment(trimmedInnerText);
     });
 
-    return assembledSegments.join("");
+    if (hasWrittenText) {
+        return assembledSegments.join("");
+    }
+
+    const fallbackInnerText = normalizeEditorText(snapshotRoot.innerText || "");
+    const trimmedFallback = fallbackInnerText.replace(TRAILING_NEWLINE_PATTERN, "");
+    if (trimmedFallback.trim().length === 0) {
+        return "";
+    }
+
+    return trimmedFallback.replace(MULTIPLE_NEWLINE_PATTERN, DOUBLE_NEWLINE);
 }
 
 /**
