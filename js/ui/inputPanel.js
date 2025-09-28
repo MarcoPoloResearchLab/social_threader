@@ -219,16 +219,16 @@ function buildPlaceholderText(snapshotRoot) {
     /** @type {string[]} */
     const assembledSegments = [];
     let hasWrittenText = false;
-    let pendingSeparatorCount = 0;
+    let pendingEmptyParagraphs = 0;
 
     const commitTextSegment = (segmentText) => {
         if (hasWrittenText) {
-            const separatorCount = Math.max(1, pendingSeparatorCount);
+            const separatorCount = pendingEmptyParagraphs > 0 ? pendingEmptyParagraphs : 1;
             assembledSegments.push(DOUBLE_NEWLINE.repeat(separatorCount));
         }
         assembledSegments.push(segmentText);
         hasWrittenText = true;
-        pendingSeparatorCount = 0;
+        pendingEmptyParagraphs = 0;
     };
 
     childNodes.forEach((childNode) => {
@@ -237,9 +237,6 @@ function buildPlaceholderText(snapshotRoot) {
             const normalizedText = normalizeEditorText(textContent);
             const trimmedText = normalizedText.replace(TRAILING_NEWLINE_PATTERN, "");
             if (trimmedText.trim().length === 0) {
-                if (normalizedText.includes("\n")) {
-                    pendingSeparatorCount += 1;
-                }
                 return;
             }
             commitTextSegment(trimmedText);
@@ -252,14 +249,14 @@ function buildPlaceholderText(snapshotRoot) {
 
         const element = /** @type {HTMLElement} */ (childNode);
         if (element.tagName.toLowerCase() === "br") {
-            pendingSeparatorCount = Math.max(1, pendingSeparatorCount);
+            pendingEmptyParagraphs += 1;
             return;
         }
 
         const serializedText = serializeElementTextWithSoftBreaks(element);
         const trimmedInnerText = serializedText.replace(TRAILING_NEWLINE_PATTERN, "");
         if (trimmedInnerText.replace(/\n/g, "").trim().length === 0) {
-            pendingSeparatorCount += 1;
+            pendingEmptyParagraphs += 1;
             return;
         }
         commitTextSegment(trimmedInnerText);
