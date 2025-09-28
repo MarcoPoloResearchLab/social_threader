@@ -238,11 +238,15 @@ export class InputPanel {
         } finally {
             measurementContainer.remove();
         }
-        const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
-        const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);
+        const condensedBreaks = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n");
+        const hasSubstantiveContent = condensedBreaks.trim().length > 0;
+        const preparedPlaceholderText = hasSubstantiveContent
+            ? condensedBreaks.replace(/^[^\S\n]+/, "").replace(/[^\S\n]+$/, "")
+            : "";
+        const plainText = richTextHelpers.extractPlainText(preparedPlaceholderText, imageRecords);
 
         return {
-            placeholderText: trimmedPlaceholderText,
+            placeholderText: preparedPlaceholderText,
             plainText,
             images: imageRecords
         };
