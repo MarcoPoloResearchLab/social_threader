@@ -51,22 +51,34 @@ const STRICT_NON_TERMINATING_ABBREVIATIONS = Object.freeze(
 
 const FLEXIBLE_ABBREVIATIONS = Object.freeze(
     new Set([
+        "a.m.",
         "approx.",
         "appt.",
+        "apr.",
+        "aug.",
         "ave.",
         "corp.",
+        "dec.",
+        "e.g.",
         "etc.",
         "fig.",
+        "feb.",
+        "jan.",
         "inc.",
-        "vs.",
         "i.e.",
-        "e.g.",
-        "u.s.",
-        "u.k.",
-        "a.m.",
-        "p.m.",
+        "mar.",
+        "jul.",
+        "jun.",
         "no.",
-        "vol."
+        "nov.",
+        "oct.",
+        "p.m.",
+        "sep.",
+        "sept.",
+        "u.k.",
+        "u.s.",
+        "vol.",
+        "vs."
     ])
 );
 
@@ -271,20 +283,15 @@ function splitIntoWordsPreservingPunctuation(textString) {
     /** @type {string[]} */
     const wordsArray = [];
     let currentWord = "";
-    let insideQuote = false;
 
     for (let index = 0; index < normalizedText.length; index += 1) {
         const character = normalizedText[index];
-        if (character === " " && !insideQuote) {
+        if (character === " ") {
             if (currentWord.length > 0) {
                 wordsArray.push(currentWord);
                 currentWord = "";
             }
             continue;
-        }
-
-        if (character === '"') {
-            insideQuote = !insideQuote;
         }
 
         currentWord += character;
@@ -312,7 +319,16 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
         return false;
     }
 
+    const nextToken = typeof nextWord === "string" ? nextWord : "";
+    const nextLead = getFirstSignificantCharacter(nextToken.trim());
+
     if (ELLIPSIS_PATTERN.test(strippedWord)) {
+        if (nextLead.length === 0) {
+            return true;
+        }
+        if (/[a-z]/i.test(nextLead) && nextLead.toLowerCase() === nextLead) {
+            return false;
+        }
         return true;
     }
 
@@ -330,10 +346,11 @@ function isSentenceEnd(word, nextWord, currentSentenceLength) {
     }
 
     if (abbreviationType === "flexible") {
-        const nextToken = typeof nextWord === "string" ? nextWord : "";
-        const nextLead = getFirstSignificantCharacter(nextToken.trim());
         if (nextLead.length === 0) {
             return true;
+        }
+        if (/\d/.test(nextLead)) {
+            return false;
         }
         if (/[a-z]/i.test(nextLead)) {
             if (nextLead.toLowerCase() === nextLead) {
