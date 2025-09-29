@@ -15,7 +15,10 @@ import {
     TOGGLE_IDENTIFIERS,
     DEFAULT_LENGTHS,
     TEXT_CONTENT,
-    CLASS_NAMES
+    CLASS_NAMES,
+    CHUNK_CONTAINER_STATE_CLASSES,
+    COPY_BUTTON_STATE_CLASSES,
+    CHUNK_ATTRIBUTE_NAMES
 } from "../js/constants.js";
 import { assertEqual } from "./assert.js";
 
@@ -820,12 +823,22 @@ export async function runIntegrationTests(runTest) {
                         "image copy button should remain in the default state when copying fails"
                     );
                     assertEqual(
-                        imageCopyButton.classList.contains("success"),
+                        imageCopyButton.classList.contains(COPY_BUTTON_STATE_CLASSES.SUCCESS),
                         false,
                         "image copy button should not apply the success styling"
                     );
                     assertEqual(
-                        imageContainer.hasAttribute("data-copied-order"),
+                        imageCopyButton.classList.contains(COPY_BUTTON_STATE_CLASSES.ERROR),
+                        true,
+                        "image copy button should highlight the failure state"
+                    );
+                    assertEqual(
+                        imageContainer.classList.contains(CHUNK_CONTAINER_STATE_CLASSES.ERROR),
+                        true,
+                        "image chunk should surface an inline copy error"
+                    );
+                    assertEqual(
+                        imageContainer.hasAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER),
                         false,
                         "image chunk should not record a copy order when copying fails"
                     );
