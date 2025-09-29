@@ -66,6 +66,20 @@ export const CLASS_NAMES = Object.freeze({
     ACTIVE: "active"
 });
 
+export const CHUNK_CONTAINER_STATE_CLASSES = Object.freeze({
+    COPIED: "copied",
+    ERROR: "copyError"
+});
+
+export const COPY_BUTTON_STATE_CLASSES = Object.freeze({
+    SUCCESS: "success",
+    ERROR: "error"
+});
+
+export const CHUNK_ATTRIBUTE_NAMES = Object.freeze({
+    COPY_ORDER: "data-copied-order"
+});
+
 /** @type {Readonly<Record<string, number>>} */
 export const DEFAULT_LENGTHS = Object.freeze({
     THREADS: 500,
