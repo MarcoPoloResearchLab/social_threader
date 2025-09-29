@@ -140,9 +140,28 @@ export const HTML_TEMPLATES = Object.freeze({
 });
 
 /** @type {Readonly<Record<string, string>>} */
+export const CLIPBOARD_PRESENTATION_STYLES = Object.freeze({
+    ATTACHMENT: "attachment"
+});
+
+/** @type {Readonly<Record<string, string>>} */
 export const PLACEHOLDER_TOKENS = Object.freeze({
     IMAGE_PREFIX: "[[IMAGE:",
     IMAGE_SUFFIX: "]]"
+});
+
+/** @type {Readonly<Record<string, string>>} */
+export const USER_AGENT_TOKENS = Object.freeze({
+    SAFARI: "Safari",
+    CHROME: "Chrome",
+    CHROMIUM: "Chromium",
+    IOS_CHROME: "CriOS",
+    IOS_FIREFOX: "FxiOS"
+});
+
+/** @type {Readonly<Record<string, string>>} */
+export const NAVIGATOR_VENDOR_VALUES = Object.freeze({
+    APPLE: "Apple Computer, Inc."
 });
 
 export const TEST_MODE_CONFIG = Object.freeze({

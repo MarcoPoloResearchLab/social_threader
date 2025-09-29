@@ -18,7 +18,10 @@ import {
     CLASS_NAMES,
     CHUNK_CONTAINER_STATE_CLASSES,
     COPY_BUTTON_STATE_CLASSES,
-    CHUNK_ATTRIBUTE_NAMES
+    CHUNK_ATTRIBUTE_NAMES,
+    CLIPBOARD_PRESENTATION_STYLES,
+    USER_AGENT_TOKENS,
+    NAVIGATOR_VENDOR_VALUES
 } from "../js/constants.js";
 import { assertEqual } from "./assert.js";
 
@@ -71,10 +74,14 @@ const nativeClipboardItemConstructor =
 class ClipboardItemStub extends (nativeClipboardItemConstructor ?? class {}) {
     /**
      * @param {Record<string, Blob>} itemData
+     * @param {{ presentationStyle?: string } | undefined} options
      */
-    constructor(itemData) {
-        super(itemData);
+    constructor(itemData, options) {
+        super(itemData, options);
+        /** @type {Record<string, Blob>} */
         this.items = itemData;
+        /** @type {{ presentationStyle?: string } | null} */
+        this.constructorOptions = options ?? null;
     }
 
     /**
@@ -98,6 +105,9 @@ const SIMULATED_IMAGE_BINARY_CONTENT = "fake";
 const SIMULATED_IMAGE_BASE64_CONTENT = "ZmFrZQ==";
 const SIMULATED_IMAGE_MIME_TYPE = "image/png";
 const SIMULATED_FILE_READER_DELAY_MS = 150;
+const SIMULATED_SAFARI_USER_AGENT =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 " +
+    `${USER_AGENT_TOKENS.SAFARI}/605.1.15`;
 
 /**
  * Simulates an image paste event to populate the editor with an inline image.
@@ -164,6 +174,55 @@ function waitForAnimationFrame() {
     return new Promise((resolve) => {
         window.requestAnimationFrame(() => resolve());
     });
+}
+
+/**
+ * Overrides navigator identity fields for the duration of a test scenario.
+ * @param {{ userAgent: string; vendor: string }} identityOverrides Desired navigator properties.
+ * @returns {() => void} Function that restores the previous navigator state.
+ */
+function overrideNavigatorIdentity(identityOverrides) {
+    const previousUserAgentValue = navigator.userAgent;
+    const previousVendorValue = navigator.vendor;
+    const previousUserAgentDescriptor = Object.getOwnPropertyDescriptor(navigator, "userAgent");
+    const previousVendorDescriptor = Object.getOwnPropertyDescriptor(navigator, "vendor");
+
+    Object.defineProperty(navigator, "userAgent", {
+        configurable: true,
+        get() {
+            return identityOverrides.userAgent;
+        }
+    });
+    Object.defineProperty(navigator, "vendor", {
+        configurable: true,
+        get() {
+            return identityOverrides.vendor;
+        }
+    });
+
+    return () => {
+        if (previousUserAgentDescriptor) {
+            Object.defineProperty(navigator, "userAgent", previousUserAgentDescriptor);
+        } else {
+            Object.defineProperty(navigator, "userAgent", {
+                configurable: true,
+                get() {
+                    return previousUserAgentValue;
+                }
+            });
+        }
+
+        if (previousVendorDescriptor) {
+            Object.defineProperty(navigator, "vendor", previousVendorDescriptor);
+        } else {
+            Object.defineProperty(navigator, "vendor", {
+                configurable: true,
+                get() {
+                    return previousVendorValue;
+                }
+            });
+        }
+    };
 }
 
 /**
@@ -727,45 +786,147 @@ export async function runIntegrationTests(runTest) {
                     const imageCopyButton = /** @type {HTMLButtonElement} */ (
                         imageContainer.querySelector(".copyButton")
                     );
-                    imageCopyButton.click();
-                    await Promise.resolve();
+                    const originalUserAgent = navigator.userAgent;
+                    const originalVendor = navigator.vendor;
+                    const imageCopyScenarios = [
+                        {
+                            label: "default browser retains HTML clipboard fragment",
+                            userAgent: originalUserAgent,
+                            vendor: originalVendor,
+                            expectHtml: true,
+                            expectedPresentationStyle: null
+                        },
+                        {
+                            label: "Safari attachment clipboard branch",
+                            userAgent: SIMULATED_SAFARI_USER_AGENT,
+                            vendor: NAVIGATOR_VENDOR_VALUES.APPLE,
+                            expectHtml: false,
+                            expectedPresentationStyle: CLIPBOARD_PRESENTATION_STYLES.ATTACHMENT
+                        }
+                    ];
 
-                    assertEqual(clipboardWriteCalls.length, 1, "image chunk copy should trigger clipboard write");
-                    clipboardItems = clipboardWriteCalls[0];
-                    assertEqual(clipboardItems.length, 1, "clipboard payload should contain a single item");
-                    clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
-                    assertEqual(
-                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
-                        true,
-                        "image clipboard item should include plain text"
-                    );
-                    assertEqual(
-                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/html"),
-                        true,
-                        "image clipboard item should include HTML"
-                    );
-                    plainTextBlob = clipboardItem.items["text/plain"];
-                    plainTextContent = await plainTextBlob.text();
-                    assertEqual(plainTextContent.length, 0, "image clipboard plain text should be empty");
-                    assertEqual(
-                        Object.prototype.hasOwnProperty.call(
-                            clipboardItem.items,
-                            SIMULATED_IMAGE_MIME_TYPE
-                        ),
-                        true,
-                        "image clipboard item should embed the PNG payload"
-                    );
-                    const pastedImageBlob = clipboardItem.items[SIMULATED_IMAGE_MIME_TYPE];
-                    const pastedImageBuffer = await pastedImageBlob.arrayBuffer();
-                    const decodedImage = new TextDecoder().decode(new Uint8Array(pastedImageBuffer));
-                    assertEqual(
-                        decodedImage,
-                        SIMULATED_IMAGE_BINARY_CONTENT,
-                        "image clipboard blob should match the original data"
-                    );
-                    htmlBlob = clipboardItem.items["text/html"];
-                    htmlContent = await htmlBlob.text();
-                    assertEqual(/<img/i.test(htmlContent), true, "copied HTML should include the pasted image");
+                    for (const scenario of imageCopyScenarios) {
+                        const restoreIdentity = overrideNavigatorIdentity({
+                            userAgent: scenario.userAgent,
+                            vendor: scenario.vendor
+                        });
+                        try {
+                            const scenarioLabel = `${scenario.label}: `;
+                            imageCopyButton.disabled = false;
+                            imageCopyButton.textContent = TEXT_CONTENT.COPY_BUTTON_LABEL;
+                            imageCopyButton.classList.remove(COPY_BUTTON_STATE_CLASSES.SUCCESS);
+                            imageContainer.classList.remove(CHUNK_CONTAINER_STATE_CLASSES.COPIED);
+                            if (imageContainer.hasAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER)) {
+                                imageContainer.removeAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER);
+                            }
+                            assertEqual(
+                                typeof navigator.clipboard.write,
+                                "function",
+                                `${scenarioLabel}clipboard write API should remain available`
+                            );
+                            assertEqual(
+                                typeof window.ClipboardItem,
+                                "function",
+                                `${scenarioLabel}ClipboardItem should remain available`
+                            );
+                            assertEqual(
+                                imageCopyButton.disabled,
+                                false,
+                                `${scenarioLabel}copy button should be enabled before triggering copy`
+                            );
+                            clipboardWriteCalls.length = 0;
+                            imageCopyButton.click();
+                            await Promise.resolve();
+
+                            assertEqual(
+                                clipboardWriteCalls.length,
+                                1,
+                                `${scenarioLabel}image chunk copy should trigger clipboard write`
+                            );
+                            const clipboardItems = clipboardWriteCalls[0];
+                            assertEqual(
+                                Array.isArray(clipboardItems),
+                                true,
+                                `${scenarioLabel}clipboard payload should be an array`
+                            );
+                            assertEqual(
+                                clipboardItems.length,
+                                1,
+                                `${scenarioLabel}clipboard payload should contain a single item`
+                            );
+                            const clipboardItem = /** @type {{
+                                items: Record<string, Blob>;
+                                constructorOptions: { presentationStyle?: string } | null;
+                            }} */ (clipboardItems[0]);
+                            assertEqual(
+                                Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
+                                true,
+                                `${scenarioLabel}image clipboard item should include plain text`
+                            );
+                            const plainTextBlob = clipboardItem.items["text/plain"];
+                            const plainTextContent = await plainTextBlob.text();
+                            assertEqual(
+                                plainTextContent.length,
+                                0,
+                                `${scenarioLabel}image clipboard plain text should be empty`
+                            );
+
+                            const hasHtmlContent = Object.prototype.hasOwnProperty.call(
+                                clipboardItem.items,
+                                "text/html"
+                            );
+                            assertEqual(
+                                hasHtmlContent,
+                                scenario.expectHtml,
+                                `${scenarioLabel}HTML clipboard payload expectation should match scenario`
+                            );
+
+                            if (scenario.expectHtml) {
+                                const htmlBlob = clipboardItem.items["text/html"];
+                                const htmlContent = await htmlBlob.text();
+                                assertEqual(
+                                    /<img/i.test(htmlContent),
+                                    true,
+                                    `${scenarioLabel}copied HTML should include the pasted image`
+                                );
+                                assertEqual(
+                                    clipboardItem.constructorOptions,
+                                    null,
+                                    `${scenarioLabel}default browsers should not request attachment presentation`
+                                );
+                            } else {
+                                assertEqual(
+                                    clipboardItem.constructorOptions !== null,
+                                    true,
+                                    `${scenarioLabel}Safari path should capture constructor options`
+                                );
+                                assertEqual(
+                                    clipboardItem.constructorOptions?.presentationStyle,
+                                    scenario.expectedPresentationStyle,
+                                    `${scenarioLabel}Safari path should request attachment presentation`
+                                );
+                            }
+
+                            assertEqual(
+                                Object.prototype.hasOwnProperty.call(
+                                    clipboardItem.items,
+                                    SIMULATED_IMAGE_MIME_TYPE
+                                ),
+                                true,
+                                `${scenarioLabel}image clipboard item should embed the PNG payload`
+                            );
+                            const pastedImageBlob = clipboardItem.items[SIMULATED_IMAGE_MIME_TYPE];
+                            const pastedImageBuffer = await pastedImageBlob.arrayBuffer();
+                            const decodedImage = new TextDecoder().decode(new Uint8Array(pastedImageBuffer));
+                            assertEqual(
+                                decodedImage,
+                                SIMULATED_IMAGE_BINARY_CONTENT,
+                                `${scenarioLabel}image clipboard blob should match the original data`
+                            );
+                        } finally {
+                            restoreIdentity();
+                        }
+                    }
                 } finally {
                     restoreFileReader();
                     navigator.clipboard.write = originalClipboardWrite;
