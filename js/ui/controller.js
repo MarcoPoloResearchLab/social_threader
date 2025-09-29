@@ -266,9 +266,20 @@ export class ThreaderController {
         const markSuccess = () => {
             this.state.copySequenceNumber += 1;
             this.chunkListView.markChunkAsCopied(containerElement, buttonElement, this.state.copySequenceNumber);
+            this.inputPanel.clearError();
+        };
+
+        const handleImageCopyUnsupported = () => {
+            this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_IMAGE_UNSUPPORTED));
+            this.inputPanel.showError(TEXT_CONTENT.ERROR_IMAGE_COPY_UNSUPPORTED);
         };
 
         const attemptTextCopy = () => {
+            if (chunkContent.variant === "image") {
+                handleImageCopyUnsupported();
+                return;
+            }
+
             if (typeof clipboardInterface.writeText === "function") {
                 clipboardInterface.writeText(chunkContent.plainText)
                     .then(markSuccess)

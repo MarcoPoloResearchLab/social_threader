@@ -18,6 +18,8 @@ export const TEXT_CONTENT = Object.freeze({
     IMAGE_PLAIN_TEXT_PLACEHOLDER: "[Image]",
     ERROR_NO_TEXT: "Please enter some text to split.",
     ERROR_INVALID_CUSTOM: "Please enter a valid positive number for custom size.",
+    ERROR_IMAGE_COPY_UNSUPPORTED:
+        "Safari cannot copy images without ClipboardItem support. Please try a different browser or update Safari.",
     INPUT_STATS_TEMPLATE: "Characters: {characters} | Words: {words} | Sentences: {sentences} | Paragraphs: {paragraphs}",
     CHUNK_STATS_TEMPLATE: "Characters: {characters} | Words: {words} | Sentences: {sentences}",
     ENUMERATION_TEMPLATE: "{text} ({current}/{total})",
@@ -38,7 +40,8 @@ export const LOG_MESSAGES = Object.freeze({
     IMAGE_READ_FAILURE: "Unable to read file as data URL",
     IMAGE_READ_ERROR: "Failed to read file",
     TEST_HARNESS_IMPORT_FAILURE: "Failed to load browser test harness",
-    TEST_HARNESS_INITIALIZATION_FAILURE: "Browser test harness encountered an initialization error"
+    TEST_HARNESS_INITIALIZATION_FAILURE: "Browser test harness encountered an initialization error",
+    CLIPBOARD_IMAGE_UNSUPPORTED: "Image clipboard copy is not supported without ClipboardItem"
 });
 
 /** @type {Readonly<Record<string, string>>} */
