@@ -124,4 +124,20 @@ export class ChunkListView {
             buttonElement.disabled = false;
         }, 2000);
     }
+
+    /**
+     * Marks a chunk as having encountered a copy error.
+     * @param {HTMLDivElement} containerElement Container representing the chunk.
+     * @param {HTMLButtonElement} buttonElement Button element used to trigger the copy action.
+     * @returns {void}
+     */
+    markChunkCopyError(containerElement, buttonElement) {
+        containerElement.removeAttribute("data-copied-order");
+        containerElement.classList.remove("copied");
+        containerElement.classList.add("copyError");
+        buttonElement.textContent = TEXT_CONTENT.COPY_BUTTON_IMAGE_UNSUPPORTED_LABEL;
+        buttonElement.classList.remove("success");
+        buttonElement.classList.add("error");
+        buttonElement.disabled = true;
+    }
 }

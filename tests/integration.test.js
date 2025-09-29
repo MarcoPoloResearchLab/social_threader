@@ -91,6 +91,100 @@ Object.defineProperty(window, "ClipboardItem", {
     writable: true
 });
 
+const SAMPLE_CLIPBOARD_TEXT = "Sample text for clipboard.";
+const SAMPLE_IMAGE_BLOB_CONTENT = "fake";
+const SAMPLE_IMAGE_MIME_TYPE = "image/png";
+const SAMPLE_IMAGE_BASE64_CONTENT = "ZmFrZQ==";
+
+/**
+ * Prepares a deterministic clipboard paste event for an image payload.
+ * @returns {{ pasteEvent: Event; restoreFileReader: () => void }}
+ */
+function createImagePasteSetup() {
+    const originalFileReader = window.FileReader;
+
+    class DeterministicFileReader {
+        constructor() {
+            /** @type {((this: DeterministicFileReader, ev: Event) => void) | null} */
+            this.onload = null;
+            /** @type {((this: DeterministicFileReader, ev: ProgressEvent<FileReader>) => void) | null} */
+            this.onerror = null;
+            /** @type {string | ArrayBuffer | null} */
+            this.result = null;
+        }
+
+        /**
+         * @param {Blob} blob
+         * @returns {void}
+         */
+        readAsDataURL(blob) {
+            this.result = `data:${blob.type};base64,${SAMPLE_IMAGE_BASE64_CONTENT}`;
+            if (typeof this.onload === "function") {
+                this.onload.call(this, new Event("load"));
+            }
+        }
+    }
+
+    // @ts-ignore
+    window.FileReader = DeterministicFileReader;
+
+    const imageBlob = new Blob([SAMPLE_IMAGE_BLOB_CONTENT], { type: SAMPLE_IMAGE_MIME_TYPE });
+    const pasteEvent = new Event("paste");
+    Object.defineProperty(pasteEvent, "clipboardData", {
+        value: {
+            items: [
+                {
+                    kind: "file",
+                    type: SAMPLE_IMAGE_MIME_TYPE,
+                    getAsFile() {
+                        return imageBlob;
+                    }
+                }
+            ]
+        }
+    });
+
+    return {
+        pasteEvent,
+        restoreFileReader() {
+            // @ts-ignore
+            window.FileReader = originalFileReader;
+        }
+    };
+}
+
+/**
+ * Renders thread output that includes a text chunk and an image chunk.
+ * @param {{ editorElement: HTMLDivElement; presetTwitter: HTMLButtonElement; resultsElement: HTMLElement }} elements
+ * @returns {Promise<{ textContainer: HTMLDivElement; imageContainer: HTMLDivElement; restoreFileReader: () => void }>}
+ */
+async function renderThreadWithSampleImage(elements) {
+    elements.editorElement.textContent = SAMPLE_CLIPBOARD_TEXT;
+    elements.editorElement.dispatchEvent(new Event("input"));
+    elements.presetTwitter.click();
+    await waitForAnimationFrame();
+
+    const { pasteEvent, restoreFileReader } = createImagePasteSetup();
+    elements.editorElement.dispatchEvent(pasteEvent);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await waitForAnimationFrame();
+
+    const chunkContainers = Array.from(elements.resultsElement.querySelectorAll(".chunkContainer"));
+    const textContainer = chunkContainers.find((container) => !container.classList.contains("imageChunk"));
+    const imageContainer = chunkContainers.find((container) => container.classList.contains("imageChunk"));
+
+    if (!textContainer || !imageContainer) {
+        restoreFileReader();
+        throw new Error("Expected both text and image chunks to be rendered");
+    }
+
+    return {
+        textContainer,
+        imageContainer,
+        restoreFileReader
+    };
+}
+
 /**
  * @returns {Promise<void>}
  */
@@ -590,150 +684,161 @@ export async function runIntegrationTests(runTest) {
                     return Promise.resolve();
                 };
 
-                const originalFileReader = window.FileReader;
+                try {
+                    let restoreFileReader = () => {};
+                    try {
+                        const { textContainer, imageContainer, restoreFileReader: restoreHelper } =
+                            await renderThreadWithSampleImage(elements);
+                        restoreFileReader = restoreHelper;
+
+                        const renderedImage = elements.resultsElement.querySelector(".chunkContent img");
+                        assertEqual(
+                            renderedImage instanceof HTMLImageElement,
+                            true,
+                            "chunk should include the pasted image preview"
+                        );
+
+                        const textCopyButton = /** @type {HTMLButtonElement} */ (
+                            textContainer.querySelector(".copyButton")
+                        );
+                        textCopyButton.click();
+                        await Promise.resolve();
+
+                        assertEqual(clipboardWriteCalls.length, 1, "clipboard write should be invoked once");
+                        let clipboardItems = clipboardWriteCalls[0];
+                        assertEqual(Array.isArray(clipboardItems), true, "clipboard payload should be an array");
+                        assertEqual(clipboardItems.length, 1, "clipboard payload should contain a single item");
+                        let clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
+                        assertEqual(
+                            Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
+                            true,
+                            "text clipboard item should contain plain text"
+                        );
+                        assertEqual(
+                            Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/html"),
+                            true,
+                            "text clipboard item should contain HTML"
+                        );
+                        let plainTextBlob = clipboardItem.items["text/plain"];
+                        let plainTextContent = await plainTextBlob.text();
+                        assertEqual(
+                            plainTextContent.includes(TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER),
+                            false,
+                            "text chunk plain text should not inject an image placeholder"
+                        );
+                        let htmlBlob = clipboardItem.items["text/html"];
+                        let htmlContent = await htmlBlob.text();
+                        assertEqual(/<img/i.test(htmlContent), false, "text chunk HTML should not inline the image");
+
+                        clipboardWriteCalls.length = 0;
+
+                        const imageCopyButton = /** @type {HTMLButtonElement} */ (
+                            imageContainer.querySelector(".copyButton")
+                        );
+                        imageCopyButton.click();
+                        await Promise.resolve();
+
+                        assertEqual(clipboardWriteCalls.length, 1, "image chunk copy should trigger clipboard write");
+                        clipboardItems = clipboardWriteCalls[0];
+                        assertEqual(clipboardItems.length, 1, "clipboard payload should contain a single item");
+                        clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
+                        assertEqual(
+                            Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
+                            true,
+                            "image clipboard item should include plain text"
+                        );
+                        assertEqual(
+                            Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/html"),
+                            true,
+                            "image clipboard item should include HTML"
+                        );
+                        plainTextBlob = clipboardItem.items["text/plain"];
+                        plainTextContent = await plainTextBlob.text();
+                        assertEqual(plainTextContent.length, 0, "image clipboard plain text should be empty");
+                        assertEqual(
+                            Object.prototype.hasOwnProperty.call(clipboardItem.items, "image/png"),
+                            true,
+                            "image clipboard item should embed the PNG payload"
+                        );
+                        const pastedImageBlob = clipboardItem.items[SAMPLE_IMAGE_MIME_TYPE];
+                        const pastedImageBuffer = await pastedImageBlob.arrayBuffer();
+                        const decodedImage = new TextDecoder().decode(new Uint8Array(pastedImageBuffer));
+                        assertEqual(
+                            decodedImage,
+                            SAMPLE_IMAGE_BLOB_CONTENT,
+                            "image clipboard blob should match the original data"
+                        );
+                        htmlBlob = clipboardItem.items["text/html"];
+                        htmlContent = await htmlBlob.text();
+                        assertEqual(/<img/i.test(htmlContent), true, "copied HTML should include the pasted image");
+                    } finally {
+                        restoreFileReader();
+                    }
+                } finally {
+                    navigator.clipboard.write = originalClipboardWrite;
+                    cleanup();
+                }
+            }
+        },
+        {
+            name: "image copy surfaces an error when clipboard items are unsupported",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                const originalClipboardItemConstructor = window.ClipboardItem;
+                const originalWriteText = navigator.clipboard.writeText;
+                /** @type {string[]} */
+                const attemptedPlainTextCopies = [];
+                navigator.clipboard.writeText = (text) => {
+                    attemptedPlainTextCopies.push(text);
+                    return Promise.resolve();
+                };
+                // @ts-ignore
+                window.ClipboardItem = undefined;
 
                 try {
-                    const sampleText = "Sample text for clipboard.";
-                    elements.editorElement.textContent = sampleText;
-                    elements.editorElement.dispatchEvent(new Event("input"));
-                    elements.presetTwitter.click();
-                    await waitForAnimationFrame();
+                    let restoreFileReader = () => {};
+                    try {
+                        const { imageContainer, restoreFileReader: restoreHelper } =
+                            await renderThreadWithSampleImage(elements);
+                        restoreFileReader = restoreHelper;
 
-                    class FileReaderStub {
-                        constructor() {
-                            /** @type {((this: FileReaderStub, ev: Event) => void) | null} */
-                            this.onload = null;
-                            /** @type {((this: FileReaderStub, ev: ProgressEvent<FileReader>) => void) | null} */
-                            this.onerror = null;
-                            this.result = null;
-                        }
+                        const imageCopyButton = /** @type {HTMLButtonElement} */ (
+                            imageContainer.querySelector(".copyButton")
+                        );
+                        imageCopyButton.click();
+                        await Promise.resolve();
 
-                        /**
-                         * @param {Blob} blob
-                         * @returns {void}
-                         */
-                        readAsDataURL(blob) {
-                            this.result = `data:${blob.type};base64,ZmFrZQ==`;
-                            if (typeof this.onload === "function") {
-                                this.onload.call(this, new Event("load"));
-                            }
-                        }
+                        assertEqual(
+                            imageContainer.classList.contains("copyError"),
+                            true,
+                            "image chunk should show copy error state"
+                        );
+                        assertEqual(
+                            imageCopyButton.textContent,
+                            TEXT_CONTENT.COPY_BUTTON_IMAGE_UNSUPPORTED_LABEL,
+                            "image copy button should surface unsupported label"
+                        );
+                        assertEqual(
+                            imageCopyButton.classList.contains("error"),
+                            true,
+                            "image copy button should use the error styling"
+                        );
+                        assertEqual(
+                            imageCopyButton.disabled,
+                            true,
+                            "image copy button should be disabled after error"
+                        );
+                        assertEqual(
+                            attemptedPlainTextCopies.length,
+                            0,
+                            "image chunks should not trigger a plain text fallback when unsupported"
+                        );
+                    } finally {
+                        restoreFileReader();
                     }
-                    // @ts-ignore
-                    window.FileReader = FileReaderStub;
-
-                    const imageBlob = new Blob(["fake"], { type: "image/png" });
-                    const pasteEvent = new Event("paste");
-                    Object.defineProperty(pasteEvent, "clipboardData", {
-                        value: {
-                            items: [
-                                {
-                                    kind: "file",
-                                    type: "image/png",
-                                    getAsFile() {
-                                        return imageBlob;
-                                    }
-                                }
-                            ]
-                        }
-                    });
-                    elements.editorElement.dispatchEvent(pasteEvent);
-                    await new Promise((resolve) => setTimeout(resolve, 150));
-                    await waitForAnimationFrame();
-
-                    const renderedImage = elements.resultsElement.querySelector(".chunkContent img");
-                    assertEqual(
-                        renderedImage instanceof HTMLImageElement,
-                        true,
-                        "chunk should include the pasted image preview"
-                    );
-
-                    const chunkContainers = Array.from(
-                        elements.resultsElement.querySelectorAll(".chunkContainer")
-                    );
-                    const textContainer = chunkContainers.find((container) =>
-                        !container.classList.contains("imageChunk")
-                    );
-                    const imageContainer = chunkContainers.find((container) =>
-                        container.classList.contains("imageChunk")
-                    );
-
-                    if (!textContainer || !imageContainer) {
-                        throw new Error("Expected both text and image chunks to be rendered");
-                    }
-
-                    const textCopyButton = /** @type {HTMLButtonElement} */ (
-                        textContainer.querySelector(".copyButton")
-                    );
-                    textCopyButton.click();
-                    await Promise.resolve();
-
-                    assertEqual(clipboardWriteCalls.length, 1, "clipboard write should be invoked once");
-                    let clipboardItems = clipboardWriteCalls[0];
-                    assertEqual(Array.isArray(clipboardItems), true, "clipboard payload should be an array");
-                    assertEqual(clipboardItems.length, 1, "clipboard payload should contain a single item");
-                    let clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
-                    assertEqual(
-                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
-                        true,
-                        "text clipboard item should contain plain text"
-                    );
-                    assertEqual(
-                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/html"),
-                        true,
-                        "text clipboard item should contain HTML"
-                    );
-                    let plainTextBlob = clipboardItem.items["text/plain"];
-                    let plainTextContent = await plainTextBlob.text();
-                    assertEqual(
-                        plainTextContent.includes(TEXT_CONTENT.IMAGE_PLAIN_TEXT_PLACEHOLDER),
-                        false,
-                        "text chunk plain text should not inject an image placeholder"
-                    );
-                    let htmlBlob = clipboardItem.items["text/html"];
-                    let htmlContent = await htmlBlob.text();
-                    assertEqual(/<img/i.test(htmlContent), false, "text chunk HTML should not inline the image");
-
-                    clipboardWriteCalls.length = 0;
-
-                    const imageCopyButton = /** @type {HTMLButtonElement} */ (
-                        imageContainer.querySelector(".copyButton")
-                    );
-                    imageCopyButton.click();
-                    await Promise.resolve();
-
-                    assertEqual(clipboardWriteCalls.length, 1, "image chunk copy should trigger clipboard write");
-                    clipboardItems = clipboardWriteCalls[0];
-                    assertEqual(clipboardItems.length, 1, "clipboard payload should contain a single item");
-                    clipboardItem = /** @type {{ items: Record<string, Blob> }} */ (clipboardItems[0]);
-                    assertEqual(
-                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/plain"),
-                        true,
-                        "image clipboard item should include plain text"
-                    );
-                    assertEqual(
-                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "text/html"),
-                        true,
-                        "image clipboard item should include HTML"
-                    );
-                    plainTextBlob = clipboardItem.items["text/plain"];
-                    plainTextContent = await plainTextBlob.text();
-                    assertEqual(plainTextContent.length, 0, "image clipboard plain text should be empty");
-                    assertEqual(
-                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "image/png"),
-                        true,
-                        "image clipboard item should embed the PNG payload"
-                    );
-                    const pastedImageBlob = clipboardItem.items["image/png"];
-                    const pastedImageBuffer = await pastedImageBlob.arrayBuffer();
-                    const decodedImage = new TextDecoder().decode(new Uint8Array(pastedImageBuffer));
-                    assertEqual(decodedImage, "fake", "image clipboard blob should match the original data");
-                    htmlBlob = clipboardItem.items["text/html"];
-                    htmlContent = await htmlBlob.text();
-                    assertEqual(/<img/i.test(htmlContent), true, "copied HTML should include the pasted image");
                 } finally {
-                    window.FileReader = originalFileReader;
-                    navigator.clipboard.write = originalClipboardWrite;
+                    window.ClipboardItem = originalClipboardItemConstructor;
+                    navigator.clipboard.writeText = originalWriteText;
                     cleanup();
                 }
             }

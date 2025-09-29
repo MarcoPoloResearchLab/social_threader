@@ -268,6 +268,22 @@ export class ThreaderController {
             this.chunkListView.markChunkAsCopied(containerElement, buttonElement, this.state.copySequenceNumber);
         };
 
+        /**
+         * Surfaces an image-specific copy failure to the user.
+         * @param {unknown} underlyingError Optional error encountered while attempting the copy.
+         * @returns {void}
+         */
+        const markImageCopyUnsupported = (underlyingError) => {
+            let errorMessage = LOG_MESSAGES.IMAGE_COPY_UNSUPPORTED;
+            if (underlyingError instanceof Error && typeof underlyingError.message === "string" && underlyingError.message) {
+                errorMessage = `${errorMessage}: ${underlyingError.message}`;
+            } else if (underlyingError !== undefined && underlyingError !== null) {
+                errorMessage = `${errorMessage}: ${String(underlyingError)}`;
+            }
+            this.loggingHelpers.reportCopyFailure(new Error(errorMessage));
+            this.chunkListView.markChunkCopyError(containerElement, buttonElement);
+        };
+
         const attemptTextCopy = () => {
             if (typeof clipboardInterface.writeText === "function") {
                 clipboardInterface.writeText(chunkContent.plainText)
@@ -280,6 +296,11 @@ export class ThreaderController {
 
             this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_UNAVAILABLE));
         };
+
+        if (chunkContent.variant === "image" && !supportsClipboardItems) {
+            markImageCopyUnsupported(undefined);
+            return;
+        }
 
         if (supportsClipboardItems) {
             const clipboardHtml =
@@ -298,17 +319,28 @@ export class ThreaderController {
 
             if (chunkContent.variant === "image") {
                 const imagePayload = createBlobFromDataUrl(chunkContent.imageDataUrl);
-                if (imagePayload) {
-                    clipboardPayload[imagePayload.mimeType] = imagePayload.blob;
+                if (!imagePayload) {
+                    markImageCopyUnsupported(undefined);
+                    return;
                 }
+                clipboardPayload[imagePayload.mimeType] = imagePayload.blob;
             }
 
             const clipboardItems = [new clipboardItemConstructor(clipboardPayload)];
 
             clipboardInterface.write(clipboardItems).then(markSuccess).catch((error) => {
+                if (chunkContent.variant === "image") {
+                    markImageCopyUnsupported(error);
+                    return;
+                }
                 this.loggingHelpers.reportCopyFailure(error);
                 attemptTextCopy();
             });
+            return;
+        }
+
+        if (chunkContent.variant === "image") {
+            markImageCopyUnsupported(undefined);
             return;
         }
 

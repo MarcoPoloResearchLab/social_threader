@@ -14,6 +14,7 @@ export const TEXT_CONTENT = Object.freeze({
     CUSTOM_BUTTON_TEMPLATE: "Custom ({VALUE})",
     COPY_BUTTON_LABEL: "Copy",
     COPY_BUTTON_SUCCESS_LABEL: "Copied!",
+    COPY_BUTTON_IMAGE_UNSUPPORTED_LABEL: "Browser cannot copy images",
     PASTED_IMAGE_ALT: "Pasted image",
     IMAGE_PLAIN_TEXT_PLACEHOLDER: "[Image]",
     ERROR_NO_TEXT: "Please enter some text to split.",
@@ -34,6 +35,7 @@ export const TEXT_CONTENT = Object.freeze({
 /** @type {Readonly<Record<string, string>>} */
 export const LOG_MESSAGES = Object.freeze({
     COPY_FAILURE: "Failed to copy chunk to clipboard",
+    IMAGE_COPY_UNSUPPORTED: "Clipboard does not support copying image chunks",
     CLIPBOARD_UNAVAILABLE: "Clipboard API is not available",
     IMAGE_READ_FAILURE: "Unable to read file as data URL",
     IMAGE_READ_ERROR: "Failed to read file",

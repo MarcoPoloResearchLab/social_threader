@@ -266,6 +266,25 @@ button:hover {
     cursor: default;
 }
 
+.copyButton.error {
+    background-color: #dc3545;
+    cursor: not-allowed;
+}
+
+.copyButton.error:hover {
+    background-color: #c82333;
+}
+
+.chunkContainer.copyError::before {
+    content: "!";
+    background-color: #dc3545;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+}
+
 .chunkContainer.copied::before {
     content: attr(data-copied-order);
     background-color: #28a745;
