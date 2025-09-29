@@ -3,7 +3,15 @@
  * @fileoverview Coordinates the UI views with the chunking service.
  */
 
-import { TEXT_CONTENT, TOGGLE_IDENTIFIERS, LOG_MESSAGES, HTML_TEMPLATES } from "../constants.js";
+import {
+    TEXT_CONTENT,
+    TOGGLE_IDENTIFIERS,
+    LOG_MESSAGES,
+    HTML_TEMPLATES,
+    USER_AGENT_TOKENS,
+    NAVIGATOR_VENDOR_VALUES,
+    CLIPBOARD_PRESENTATION_STYLES
+} from "../constants.js";
 import { templateHelpers } from "../utils/templates.js";
 import { richTextHelpers } from "../core/richText.js";
 
@@ -41,6 +49,33 @@ function createBlobFromDataUrl(dataUrl) {
     } catch (error) {
         return null;
     }
+}
+
+/**
+ * Determines whether the current browser environment matches Safari (desktop or iOS).
+ * @returns {boolean}
+ */
+function isSafariEnvironment() {
+    const navigatorVendor = typeof window.navigator.vendor === "string" ? window.navigator.vendor : "";
+    const navigatorUserAgent = typeof window.navigator.userAgent === "string" ? window.navigator.userAgent : "";
+
+    const isAppleVendor = navigatorVendor.includes(NAVIGATOR_VENDOR_VALUES.APPLE);
+    if (!isAppleVendor) {
+        return false;
+    }
+
+    if (!navigatorUserAgent.includes(USER_AGENT_TOKENS.SAFARI)) {
+        return false;
+    }
+
+    const excludedTokens = [
+        USER_AGENT_TOKENS.CHROME,
+        USER_AGENT_TOKENS.CHROMIUM,
+        USER_AGENT_TOKENS.IOS_CHROME,
+        USER_AGENT_TOKENS.IOS_FIREFOX
+    ];
+
+    return excludedTokens.every((token) => !navigatorUserAgent.includes(token));
 }
 
 /**
@@ -303,19 +338,26 @@ export class ThreaderController {
             return;
         }
 
-        const clipboardHtml =
-            typeof chunkContent.clipboardHtml === "string"
-                ? chunkContent.clipboardHtml
-                : chunkContent.htmlContent;
-        const htmlFragment = templateHelpers.interpolate(HTML_TEMPLATES.CLIPBOARD_WRAPPER, {
-            CONTENT: clipboardHtml
-        });
+        const safariEnvironment = isSafariEnvironment();
 
         /** @type {Record<string, Blob>} */
         const clipboardPayload = {
-            "text/plain": new Blob([chunkContent.plainText], { type: "text/plain" }),
-            "text/html": new Blob([htmlFragment], { type: "text/html" })
+            "text/plain": new Blob([chunkContent.plainText], { type: "text/plain" })
         };
+
+        const shouldIncludeHtmlRepresentation =
+            chunkContent.variant !== "image" || !safariEnvironment;
+
+        if (shouldIncludeHtmlRepresentation) {
+            const clipboardHtml =
+                typeof chunkContent.clipboardHtml === "string"
+                    ? chunkContent.clipboardHtml
+                    : chunkContent.htmlContent;
+            const htmlFragment = templateHelpers.interpolate(HTML_TEMPLATES.CLIPBOARD_WRAPPER, {
+                CONTENT: clipboardHtml
+            });
+            clipboardPayload["text/html"] = new Blob([htmlFragment], { type: "text/html" });
+        }
 
         if (chunkContent.variant === "image") {
             const imagePayload = createBlobFromDataUrl(chunkContent.imageDataUrl);
@@ -326,7 +368,16 @@ export class ThreaderController {
             clipboardPayload[imagePayload.mimeType] = imagePayload.blob;
         }
 
-        const clipboardItems = [new clipboardItemConstructor(clipboardPayload)];
+        const clipboardItemOptions =
+            chunkContent.variant === "image" && safariEnvironment
+                ? { presentationStyle: CLIPBOARD_PRESENTATION_STYLES.ATTACHMENT }
+                : undefined;
+
+        const clipboardItem =
+            clipboardItemOptions !== undefined
+                ? new clipboardItemConstructor(clipboardPayload, clipboardItemOptions)
+                : new clipboardItemConstructor(clipboardPayload);
+        const clipboardItems = [clipboardItem];
 
         clipboardInterface.write(clipboardItems).then(markSuccess).catch((error) => {
             this.loggingHelpers.reportCopyFailure(error);
