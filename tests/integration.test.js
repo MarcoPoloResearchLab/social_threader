@@ -15,7 +15,10 @@ import {
     TOGGLE_IDENTIFIERS,
     DEFAULT_LENGTHS,
     TEXT_CONTENT,
-    CLASS_NAMES
+    CLASS_NAMES,
+    CHUNK_CONTAINER_STATE_CLASSES,
+    COPY_BUTTON_STATE_CLASSES,
+    CHUNK_ATTRIBUTE_NAMES
 } from "../js/constants.js";
 import { assertEqual } from "./assert.js";
 
@@ -90,6 +93,69 @@ Object.defineProperty(window, "ClipboardItem", {
     configurable: true,
     writable: true
 });
+
+const SIMULATED_IMAGE_BINARY_CONTENT = "fake";
+const SIMULATED_IMAGE_BASE64_CONTENT = "ZmFrZQ==";
+const SIMULATED_IMAGE_MIME_TYPE = "image/png";
+const SIMULATED_FILE_READER_DELAY_MS = 150;
+
+/**
+ * Simulates an image paste event to populate the editor with an inline image.
+ * @param {HTMLDivElement} editorElement Rich text editor element that should receive the image.
+ * @returns {Promise<{ imageBlob: Blob, restore: () => void }>} Handles for restoring globals and inspecting the blob.
+ */
+async function simulateImagePaste(editorElement) {
+    const originalFileReader = window.FileReader;
+
+    class FileReaderStub {
+        constructor() {
+            /** @type {((this: FileReaderStub, ev: Event) => void) | null} */
+            this.onload = null;
+            /** @type {((this: FileReaderStub, ev: ProgressEvent<FileReader>) => void) | null} */
+            this.onerror = null;
+            /** @type {string | null} */
+            this.result = null;
+        }
+
+        /**
+         * @param {Blob} blob
+         * @returns {void}
+         */
+        readAsDataURL(blob) {
+            this.result = `data:${blob.type};base64,${SIMULATED_IMAGE_BASE64_CONTENT}`;
+            if (typeof this.onload === "function") {
+                this.onload.call(this, new Event("load"));
+            }
+        }
+    }
+    // @ts-ignore
+    window.FileReader = FileReaderStub;
+
+    const imageBlob = new Blob([SIMULATED_IMAGE_BINARY_CONTENT], { type: SIMULATED_IMAGE_MIME_TYPE });
+    const pasteEvent = new Event("paste");
+    Object.defineProperty(pasteEvent, "clipboardData", {
+        value: {
+            items: [
+                {
+                    kind: "file",
+                    type: SIMULATED_IMAGE_MIME_TYPE,
+                    getAsFile() {
+                        return imageBlob;
+                    }
+                }
+            ]
+        }
+    });
+    editorElement.dispatchEvent(pasteEvent);
+    await new Promise((resolve) => setTimeout(resolve, SIMULATED_FILE_READER_DELAY_MS));
+
+    return {
+        imageBlob,
+        restore() {
+            window.FileReader = originalFileReader;
+        }
+    };
+}
 
 /**
  * @returns {Promise<void>}
@@ -590,7 +656,7 @@ export async function runIntegrationTests(runTest) {
                     return Promise.resolve();
                 };
 
-                const originalFileReader = window.FileReader;
+                let restoreFileReader = () => {};
 
                 try {
                     const sampleText = "Sample text for clipboard.";
@@ -599,46 +665,8 @@ export async function runIntegrationTests(runTest) {
                     elements.presetTwitter.click();
                     await waitForAnimationFrame();
 
-                    class FileReaderStub {
-                        constructor() {
-                            /** @type {((this: FileReaderStub, ev: Event) => void) | null} */
-                            this.onload = null;
-                            /** @type {((this: FileReaderStub, ev: ProgressEvent<FileReader>) => void) | null} */
-                            this.onerror = null;
-                            this.result = null;
-                        }
-
-                        /**
-                         * @param {Blob} blob
-                         * @returns {void}
-                         */
-                        readAsDataURL(blob) {
-                            this.result = `data:${blob.type};base64,ZmFrZQ==`;
-                            if (typeof this.onload === "function") {
-                                this.onload.call(this, new Event("load"));
-                            }
-                        }
-                    }
-                    // @ts-ignore
-                    window.FileReader = FileReaderStub;
-
-                    const imageBlob = new Blob(["fake"], { type: "image/png" });
-                    const pasteEvent = new Event("paste");
-                    Object.defineProperty(pasteEvent, "clipboardData", {
-                        value: {
-                            items: [
-                                {
-                                    kind: "file",
-                                    type: "image/png",
-                                    getAsFile() {
-                                        return imageBlob;
-                                    }
-                                }
-                            ]
-                        }
-                    });
-                    elements.editorElement.dispatchEvent(pasteEvent);
-                    await new Promise((resolve) => setTimeout(resolve, 150));
+                    const pasteResult = await simulateImagePaste(elements.editorElement);
+                    restoreFileReader = pasteResult.restore;
                     await waitForAnimationFrame();
 
                     const renderedImage = elements.resultsElement.querySelector(".chunkContent img");
@@ -720,20 +748,104 @@ export async function runIntegrationTests(runTest) {
                     plainTextContent = await plainTextBlob.text();
                     assertEqual(plainTextContent.length, 0, "image clipboard plain text should be empty");
                     assertEqual(
-                        Object.prototype.hasOwnProperty.call(clipboardItem.items, "image/png"),
+                        Object.prototype.hasOwnProperty.call(
+                            clipboardItem.items,
+                            SIMULATED_IMAGE_MIME_TYPE
+                        ),
                         true,
                         "image clipboard item should embed the PNG payload"
                     );
-                    const pastedImageBlob = clipboardItem.items["image/png"];
+                    const pastedImageBlob = clipboardItem.items[SIMULATED_IMAGE_MIME_TYPE];
                     const pastedImageBuffer = await pastedImageBlob.arrayBuffer();
                     const decodedImage = new TextDecoder().decode(new Uint8Array(pastedImageBuffer));
-                    assertEqual(decodedImage, "fake", "image clipboard blob should match the original data");
+                    assertEqual(
+                        decodedImage,
+                        SIMULATED_IMAGE_BINARY_CONTENT,
+                        "image clipboard blob should match the original data"
+                    );
                     htmlBlob = clipboardItem.items["text/html"];
                     htmlContent = await htmlBlob.text();
                     assertEqual(/<img/i.test(htmlContent), true, "copied HTML should include the pasted image");
                 } finally {
-                    window.FileReader = originalFileReader;
+                    restoreFileReader();
                     navigator.clipboard.write = originalClipboardWrite;
+                    cleanup();
+                }
+            }
+        },
+        {
+            name: "image copy surfaces an error when ClipboardItem is unavailable",
+            async execute() {
+                const { elements, cleanup } = setupControllerFixture();
+                const originalClipboardWrite = navigator.clipboard.write;
+                const originalClipboardItem = window.ClipboardItem;
+                let restoreFileReader = () => {};
+
+                try {
+                    const sampleText = "Sample text for clipboard.";
+                    elements.editorElement.textContent = sampleText;
+                    elements.editorElement.dispatchEvent(new Event("input"));
+                    elements.presetTwitter.click();
+                    await waitForAnimationFrame();
+
+                    const pasteResult = await simulateImagePaste(elements.editorElement);
+                    restoreFileReader = pasteResult.restore;
+                    await waitForAnimationFrame();
+
+                    const chunkContainers = Array.from(
+                        elements.resultsElement.querySelectorAll(".chunkContainer")
+                    );
+                    const imageContainer = chunkContainers.find((container) =>
+                        container.classList.contains("imageChunk")
+                    );
+
+                    if (!imageContainer) {
+                        throw new Error("Expected an image chunk to be rendered");
+                    }
+
+                    navigator.clipboard.write = undefined;
+                    window.ClipboardItem = undefined;
+
+                    const imageCopyButton = /** @type {HTMLButtonElement} */ (
+                        imageContainer.querySelector(".copyButton")
+                    );
+                    imageCopyButton.click();
+                    await Promise.resolve();
+
+                    assertEqual(
+                        elements.errorElement.textContent,
+                        TEXT_CONTENT.ERROR_IMAGE_COPY_UNSUPPORTED,
+                        "image copy fallback should inform the user about ClipboardItem requirements"
+                    );
+                    assertEqual(
+                        imageCopyButton.textContent,
+                        TEXT_CONTENT.COPY_BUTTON_LABEL,
+                        "image copy button should remain in the default state when copying fails"
+                    );
+                    assertEqual(
+                        imageCopyButton.classList.contains(COPY_BUTTON_STATE_CLASSES.SUCCESS),
+                        false,
+                        "image copy button should not apply the success styling"
+                    );
+                    assertEqual(
+                        imageCopyButton.classList.contains(COPY_BUTTON_STATE_CLASSES.ERROR),
+                        true,
+                        "image copy button should highlight the failure state"
+                    );
+                    assertEqual(
+                        imageContainer.classList.contains(CHUNK_CONTAINER_STATE_CLASSES.ERROR),
+                        true,
+                        "image chunk should surface an inline copy error"
+                    );
+                    assertEqual(
+                        imageContainer.hasAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER),
+                        false,
+                        "image chunk should not record a copy order when copying fails"
+                    );
+                } finally {
+                    navigator.clipboard.write = originalClipboardWrite;
+                    window.ClipboardItem = originalClipboardItem;
+                    restoreFileReader();
                     cleanup();
                 }
             }
@@ -742,48 +854,11 @@ export async function runIntegrationTests(runTest) {
             name: "image-only paste renders image chunks without requiring text",
             async execute() {
                 const { elements, cleanup } = setupControllerFixture();
-                const originalFileReader = window.FileReader;
+                let restoreFileReader = () => {};
 
                 try {
-                    class FileReaderStub {
-                        constructor() {
-                            /** @type {((this: FileReaderStub, ev: Event) => void) | null} */
-                            this.onload = null;
-                            /** @type {string | null} */
-                            this.result = null;
-                        }
-
-                        /**
-                         * @param {Blob} blob
-                         * @returns {void}
-                         */
-                        readAsDataURL(blob) {
-                            this.result = `data:${blob.type};base64,ZmFrZQ==`;
-                            if (typeof this.onload === "function") {
-                                this.onload.call(this, new Event("load"));
-                            }
-                        }
-                    }
-                    // @ts-ignore
-                    window.FileReader = FileReaderStub;
-
-                    const imageBlob = new Blob(["fake"], { type: "image/png" });
-                    const pasteEvent = new Event("paste");
-                    Object.defineProperty(pasteEvent, "clipboardData", {
-                        value: {
-                            items: [
-                                {
-                                    kind: "file",
-                                    type: "image/png",
-                                    getAsFile() {
-                                        return imageBlob;
-                                    }
-                                }
-                            ]
-                        }
-                    });
-                    elements.editorElement.dispatchEvent(pasteEvent);
-                    await new Promise((resolve) => setTimeout(resolve, 150));
+                    const pasteResult = await simulateImagePaste(elements.editorElement);
+                    restoreFileReader = pasteResult.restore;
                     elements.presetTwitter.click();
                     await waitForAnimationFrame();
 
@@ -813,7 +888,7 @@ export async function runIntegrationTests(runTest) {
                         "image-only paste should not trigger the missing text error"
                     );
                 } finally {
-                    window.FileReader = originalFileReader;
+                    restoreFileReader();
                     cleanup();
                 }
             }

@@ -266,9 +266,21 @@ export class ThreaderController {
         const markSuccess = () => {
             this.state.copySequenceNumber += 1;
             this.chunkListView.markChunkAsCopied(containerElement, buttonElement, this.state.copySequenceNumber);
+            this.inputPanel.clearError();
+        };
+
+        const handleImageCopyUnsupported = () => {
+            this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_IMAGE_UNSUPPORTED));
+            this.chunkListView.markChunkCopyError(containerElement, buttonElement);
+            this.inputPanel.showError(TEXT_CONTENT.ERROR_IMAGE_COPY_UNSUPPORTED);
         };
 
         const attemptTextCopy = () => {
+            if (chunkContent.variant === "image") {
+                handleImageCopyUnsupported();
+                return;
+            }
+
             if (typeof clipboardInterface.writeText === "function") {
                 clipboardInterface.writeText(chunkContent.plainText)
                     .then(markSuccess)
@@ -281,37 +293,44 @@ export class ThreaderController {
             this.loggingHelpers.reportCopyFailure(new Error(LOG_MESSAGES.CLIPBOARD_UNAVAILABLE));
         };
 
-        if (supportsClipboardItems) {
-            const clipboardHtml =
-                typeof chunkContent.clipboardHtml === "string"
-                    ? chunkContent.clipboardHtml
-                    : chunkContent.htmlContent;
-            const htmlFragment = templateHelpers.interpolate(HTML_TEMPLATES.CLIPBOARD_WRAPPER, {
-                CONTENT: clipboardHtml
-            });
-
-            /** @type {Record<string, Blob>} */
-            const clipboardPayload = {
-                "text/plain": new Blob([chunkContent.plainText], { type: "text/plain" }),
-                "text/html": new Blob([htmlFragment], { type: "text/html" })
-            };
-
+        if (!supportsClipboardItems) {
             if (chunkContent.variant === "image") {
-                const imagePayload = createBlobFromDataUrl(chunkContent.imageDataUrl);
-                if (imagePayload) {
-                    clipboardPayload[imagePayload.mimeType] = imagePayload.blob;
-                }
+                handleImageCopyUnsupported();
+                return;
             }
 
-            const clipboardItems = [new clipboardItemConstructor(clipboardPayload)];
-
-            clipboardInterface.write(clipboardItems).then(markSuccess).catch((error) => {
-                this.loggingHelpers.reportCopyFailure(error);
-                attemptTextCopy();
-            });
+            attemptTextCopy();
             return;
         }
 
-        attemptTextCopy();
+        const clipboardHtml =
+            typeof chunkContent.clipboardHtml === "string"
+                ? chunkContent.clipboardHtml
+                : chunkContent.htmlContent;
+        const htmlFragment = templateHelpers.interpolate(HTML_TEMPLATES.CLIPBOARD_WRAPPER, {
+            CONTENT: clipboardHtml
+        });
+
+        /** @type {Record<string, Blob>} */
+        const clipboardPayload = {
+            "text/plain": new Blob([chunkContent.plainText], { type: "text/plain" }),
+            "text/html": new Blob([htmlFragment], { type: "text/html" })
+        };
+
+        if (chunkContent.variant === "image") {
+            const imagePayload = createBlobFromDataUrl(chunkContent.imageDataUrl);
+            if (!imagePayload) {
+                handleImageCopyUnsupported();
+                return;
+            }
+            clipboardPayload[imagePayload.mimeType] = imagePayload.blob;
+        }
+
+        const clipboardItems = [new clipboardItemConstructor(clipboardPayload)];
+
+        clipboardInterface.write(clipboardItems).then(markSuccess).catch((error) => {
+            this.loggingHelpers.reportCopyFailure(error);
+            attemptTextCopy();
+        });
     }
 }

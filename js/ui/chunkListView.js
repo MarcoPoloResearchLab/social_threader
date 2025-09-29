@@ -3,7 +3,12 @@
  * @fileoverview Renders computed chunks and handles copy interactions.
  */
 
-import { TEXT_CONTENT } from "../constants.js";
+import {
+    TEXT_CONTENT,
+    CHUNK_CONTAINER_STATE_CLASSES,
+    COPY_BUTTON_STATE_CLASSES,
+    CHUNK_ATTRIBUTE_NAMES
+} from "../constants.js";
 import { templateHelpers } from "../utils/templates.js";
 
 /**
@@ -112,16 +117,36 @@ export class ChunkListView {
      * @returns {void}
      */
     markChunkAsCopied(containerElement, buttonElement, copyOrder) {
-        containerElement.setAttribute("data-copied-order", String(copyOrder));
-        containerElement.classList.add("copied");
+        containerElement.setAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER, String(copyOrder));
+        containerElement.classList.remove(CHUNK_CONTAINER_STATE_CLASSES.ERROR);
+        containerElement.classList.add(CHUNK_CONTAINER_STATE_CLASSES.COPIED);
         buttonElement.textContent = TEXT_CONTENT.COPY_BUTTON_SUCCESS_LABEL;
-        buttonElement.classList.add("success");
+        buttonElement.classList.remove(COPY_BUTTON_STATE_CLASSES.ERROR);
+        buttonElement.classList.add(COPY_BUTTON_STATE_CLASSES.SUCCESS);
         buttonElement.disabled = true;
 
         window.setTimeout(() => {
             buttonElement.textContent = TEXT_CONTENT.COPY_BUTTON_LABEL;
-            buttonElement.classList.remove("success");
+            buttonElement.classList.remove(COPY_BUTTON_STATE_CLASSES.SUCCESS);
             buttonElement.disabled = false;
         }, 2000);
+    }
+
+    /**
+     * Highlights a chunk when a copy request fails.
+     * @param {HTMLDivElement} containerElement Container representing the chunk.
+     * @param {HTMLButtonElement} buttonElement Button element used to trigger the copy action.
+     * @returns {void}
+     */
+    markChunkCopyError(containerElement, buttonElement) {
+        containerElement.classList.remove(CHUNK_CONTAINER_STATE_CLASSES.COPIED);
+        containerElement.classList.add(CHUNK_CONTAINER_STATE_CLASSES.ERROR);
+        if (containerElement.hasAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER)) {
+            containerElement.removeAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER);
+        }
+        buttonElement.textContent = TEXT_CONTENT.COPY_BUTTON_LABEL;
+        buttonElement.classList.remove(COPY_BUTTON_STATE_CLASSES.SUCCESS);
+        buttonElement.classList.add(COPY_BUTTON_STATE_CLASSES.ERROR);
+        buttonElement.disabled = false;
     }
 }

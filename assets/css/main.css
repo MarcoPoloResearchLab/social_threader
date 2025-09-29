@@ -10,7 +10,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    font-family: Arial, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     background-color: #fff;
     color: #000;
 }
@@ -48,6 +48,7 @@ body {
     width: 100%;
     padding: 10px;
     font-size: 14px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     resize: none;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -218,7 +219,7 @@ button:hover {
 
 .chunkContainer .chunkContent {
     width: 100%;
-    font-family: Arial, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     font-size: 14px;
     padding: 10px;
     border: 1px solid #ccc;
@@ -228,6 +229,11 @@ button:hover {
     white-space: pre-wrap;
     word-wrap: break-word;
     min-height: 40px;
+}
+
+.left-pane .richTextInput *,
+.chunkContainer .chunkContent * {
+    font-family: inherit !important;
 }
 
 .chunkContainer .chunkContent img {
@@ -266,9 +272,24 @@ button:hover {
     cursor: default;
 }
 
+.copyButton.error {
+    background-color: #dc3545;
+}
+
 .chunkContainer.copied::before {
     content: attr(data-copied-order);
     background-color: #28a745;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+}
+
+.chunkContainer.copyError::before {
+    content: "!";
+    background-color: #dc3545;
+    border-color: #dc3545;
     color: #fff;
     display: flex;
     justify-content: center;
