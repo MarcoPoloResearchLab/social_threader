@@ -168,6 +168,82 @@ function extractNonImageClipboardNodes(htmlContent) {
 }
 
 /**
+ * Normalizes block text by converting non-breaking spaces and carriage returns.
+ * @param {string} blockText Raw text extracted from the editor.
+ * @returns {string}
+ */
+function normalizeBlockText(blockText) {
+    return blockText.replace(/\u00A0/g, " ").replace(/\r\n/g, "\n");
+}
+
+/**
+ * Determines whether the provided element represents a blank paragraph (only breaks).
+ * @param {HTMLElement} paragraphElement Element node under evaluation.
+ * @returns {boolean}
+ */
+function isBlankParagraphElement(paragraphElement) {
+    if (paragraphElement.childNodes.length === 0) {
+        return true;
+    }
+    const childNodes = Array.from(paragraphElement.childNodes);
+    return childNodes.every((childNode) => childNode instanceof window.HTMLBRElement);
+}
+
+/**
+ * Collects normalized paragraph text values from the provided editor node.
+ * @param {HTMLDivElement} editorElement Editor element prepared for serialization.
+ * @returns {string[]}
+ */
+function collectParagraphTexts(editorElement) {
+    /** @type {string[]} */
+    const paragraphTexts = [];
+    const childNodes = Array.from(editorElement.childNodes);
+
+    childNodes.forEach((childNode) => {
+        if (childNode.nodeType === window.Node.TEXT_NODE) {
+            const normalizedText = normalizeBlockText(childNode.textContent || "");
+            if (normalizedText.trim().length === 0) {
+                return;
+            }
+            paragraphTexts.push(normalizedText.trim());
+            return;
+        }
+
+        if (!(childNode instanceof window.HTMLElement)) {
+            return;
+        }
+
+        if (childNode.tagName === "DIV") {
+            if (isBlankParagraphElement(childNode)) {
+                paragraphTexts.push("");
+                return;
+            }
+            const hasTrailingBreak = childNode.lastChild instanceof window.HTMLBRElement;
+            let textContent = normalizeBlockText(childNode.innerText || "");
+            if (hasTrailingBreak) {
+                textContent = textContent.replace(/\n$/, "");
+            }
+            const trimmedContent = textContent.trim();
+            paragraphTexts.push(trimmedContent.length > 0 ? trimmedContent : "");
+            return;
+        }
+
+        if (childNode instanceof window.HTMLBRElement) {
+            paragraphTexts.push("");
+            return;
+        }
+
+        const fallbackText = normalizeBlockText(childNode.innerText || "");
+        if (fallbackText.trim().length === 0) {
+            return;
+        }
+        paragraphTexts.push(fallbackText.trim());
+    });
+
+    return paragraphTexts;
+}
+
+/**
  * Manages the user input editor, statistics display, and error feedback.
  */
 export class InputPanel {
@@ -225,23 +301,10 @@ export class InputPanel {
         const inertEditor = /** @type {HTMLDivElement} */ (inertDocument.importNode(clonedEditor, true));
         inertDocument.body.appendChild(inertEditor);
 
-        const paragraphElements = Array.from(inertEditor.children);
-        const normalizedPlaceholderText = paragraphElements.length
-            ? paragraphElements
-                  .map((paragraphElement) => {
-                      const hasTrailingBreak =
-                          paragraphElement.lastChild instanceof window.HTMLBRElement;
-                      const rawText = (paragraphElement.innerText || "")
-                          .replace(/\u00A0/g, " ")
-                          .replace(/\r\n/g, "\n");
-                      const sanitizedText = hasTrailingBreak ? rawText.replace(/\n$/, "") : rawText;
-                      return { text: sanitizedText, hasTrailingBreak };
-                  })
-                  .reduce((accumulatedText, segment, index, segments) => {
-                      const separator = index < segments.length - 1 ? (segment.hasTrailingBreak ? "\n" : "\n\n") : "";
-                      return accumulatedText + segment.text + separator;
-                  }, "")
-            : inertEditor.innerText.replace(/\u00A0/g, " ").replace(/\r\n/g, "\n");
+        const paragraphTexts = collectParagraphTexts(inertEditor);
+        const normalizedPlaceholderText = paragraphTexts.length > 0
+            ? paragraphTexts.join("\n")
+            : normalizeBlockText(inertEditor.innerText || "");
 
         const trimmedPlaceholderText = normalizedPlaceholderText.replace(/\n{3,}/g, "\n\n").trim();
         const plainText = richTextHelpers.extractPlainText(trimmedPlaceholderText, imageRecords);

@@ -123,6 +123,36 @@ const DOCUMENT_CASES = [
         ]
     },
     {
+        name: "captures typed paragraphs when leading text nodes are present",
+        expectedText: EXPECTED_SNAPSHOT_TEXT.sequentialParagraphs,
+        builderSteps: [
+            /**
+             * @param {HTMLDivElement} targetEditorElement
+             */
+            (targetEditorElement) => {
+                targetEditorElement.appendChild(
+                    document.createTextNode(PARAGRAPH_TEXT_CONTENT.firstParagraph)
+                );
+            },
+            /**
+             * @param {HTMLDivElement} targetEditorElement
+             */
+            (targetEditorElement) => {
+                const secondParagraph = document.createElement("div");
+                secondParagraph.textContent = PARAGRAPH_TEXT_CONTENT.secondParagraph;
+                targetEditorElement.appendChild(secondParagraph);
+            },
+            /**
+             * @param {HTMLDivElement} targetEditorElement
+             */
+            (targetEditorElement) => {
+                const thirdParagraph = document.createElement("div");
+                thirdParagraph.textContent = PARAGRAPH_TEXT_CONTENT.thirdParagraph;
+                targetEditorElement.appendChild(thirdParagraph);
+            }
+        ]
+    },
+    {
         name: "captures inline formatting within paragraph boundaries",
         expectedText: EXPECTED_SNAPSHOT_TEXT.inlineEmphasis,
         builderSteps: [

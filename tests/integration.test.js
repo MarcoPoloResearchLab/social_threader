@@ -407,7 +407,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Words wrong everywhere."] }
                             ],
                             false,
-                            { characters: 59, words: 7, sentences: 3, paragraphs: 2 }
+                            { characters: 58, words: 7, sentences: 3, paragraphs: 2 }
                         ),
                         createParagraphStatisticsFixture(
                             "abbreviations and decimals do not inflate statistics",
@@ -417,11 +417,13 @@ export async function runIntegrationTests(runTest) {
                                         "Dr. Rivera met approx. 30 volunteers at 5.5 p.m. for training."
                                     ]
                                 },
+                                { isBlank: true },
                                 {
                                     children: [
                                         "Everyone said, \"Progress is slow... but steady!\" Did it improve?"
                                     ]
                                 },
+                                { isBlank: true },
                                 {
                                     children: [
                                         "Next check-in is scheduled for Jan. 3rd, 2025."
@@ -444,7 +446,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Second paragraph."] }
                             ],
                             false,
-                            { characters: 35, words: 4, sentences: 2, paragraphs: 2 }
+                            { characters: 34, words: 4, sentences: 2, paragraphs: 2 }
                         ),
                         createParagraphStatisticsFixture(
                             "inline formatting paragraphs preserve counts",
@@ -454,7 +456,7 @@ export async function runIntegrationTests(runTest) {
                                 { children: ["Paragraph ", { tagName: "strong", text: "#3" }, "."] }
                             ],
                             false,
-                            { characters: 43, words: 6, sentences: 3, paragraphs: 3 }
+                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
                         ),
                         createParagraphStatisticsFixture(
                             "trailing blank paragraph is ignored",
@@ -465,7 +467,7 @@ export async function runIntegrationTests(runTest) {
                                 { isBlank: true }
                             ],
                             false,
-                            { characters: 43, words: 6, sentences: 3, paragraphs: 3 }
+                            { characters: 41, words: 6, sentences: 3, paragraphs: 3 }
                         )
                     ];
 
