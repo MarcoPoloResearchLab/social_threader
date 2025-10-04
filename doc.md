@@ -24,6 +24,11 @@ Implements the chunking algorithm, sentence detection, and statistics gathering 
 - `chunkListView.js` – Renders chunk results and coordinates copy affordances.
 - `controller.js` – Orchestrates state changes and delegates to the above view models.
 
+### Rich Media Lifecycle
+Images pasted or dropped into the editor are intercepted by `InputPanel`. The file payloads are converted to base64 data URLs, rendered as sanitized `<img>` elements, and tracked as `{ placeholderToken, dataUrl, altText }` records inside the document snapshot (`inputPanel.js:283`). During snapshot creation the images are replaced with deterministic placeholder tokens so the chunker can treat them as inline markers while preserving ordering.
+
+When the controller assembles chunks it passes the snapshot’s image records to `richTextHelpers.buildChunkContents`, ensuring every image chunk carries both the HTML snippet and the original data URL. Copy requests (`controller.js:290`) rebuild a `ClipboardItem` that always includes plain-text fallbacks, optional HTML wrappers, and—in the image case—a `Blob` reconstructed from the stored data URL. Browsers without rich clipboard support seamlessly fall back to text-only copies, while capable environments receive the full image payload.
+
 ### Utilities
 - `utils/logging.js` – Centralized logging adapter and helpers.
 - `utils/templates.js` – Lightweight string interpolation helper.
