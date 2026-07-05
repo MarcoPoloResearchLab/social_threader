@@ -1,0 +1,34 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+if {$argc < 1} {
+  puts stderr "usage: expo-run.expect <command> \[args...\]"
+  exit 2
+}
+
+spawn -noecho {*}$argv
+set child_id $spawn_id
+
+trap {
+  if {[info exists child_id]} {
+    catch {close -i $child_id}
+  }
+  exit 130
+} SIGINT
+
+expect {
+  -re {Install the recommended Expo Go version\?} {
+    send -- "Y\r"
+    exp_continue
+  }
+  -re {Use port [0-9]+ instead\?} {
+    send -- "n\r"
+    exp_continue
+  }
+  eof {
+    set wait_result [wait]
+    set exit_code [lindex $wait_result 3]
+    exit $exit_code
+  }
+}
