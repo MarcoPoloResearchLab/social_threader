@@ -3,6 +3,8 @@ shelf/
 .idea/
 *.iml
 node_modules/
+.expo/
+mobile/src/shared-web/
 test-results/
 # Managed by gix gitignore workflow
 .env
