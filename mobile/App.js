@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
-import * as Sharing from "expo-sharing";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
@@ -42,12 +41,8 @@ import {
 const IMAGE_PICKER_OPTIONS = Object.freeze({
   mediaTypes: ImagePicker.MediaTypeOptions.Images,
   allowsMultipleSelection: false,
+  base64: true,
   quality: 1
-});
-
-const IMAGE_SHARE_OPTIONS = Object.freeze({
-  mimeType: "image/*",
-  UTI: "public.image"
 });
 
 const SAFE_AREA_INITIAL_METRICS = Object.freeze({
@@ -58,8 +53,7 @@ const SAFE_AREA_INITIAL_METRICS = Object.freeze({
 const defaultDependencies = Object.freeze({
   clipboard: Clipboard,
   imagePicker: ImagePicker,
-  share: Share.share,
-  shareFile: Sharing.shareAsync
+  share: Share.share
 });
 
 const DependenciesContext = createContext(defaultDependencies);
@@ -86,6 +80,14 @@ function useDependencies() {
   return useContext(DependenciesContext);
 }
 
+/**
+ * @param {string} textValue Source text entered by the user.
+ * @returns {boolean} Whether text-specific options should be available.
+ */
+function hasTextContent(textValue) {
+  return textValue.trim().length > 0;
+}
+
 function ThreaderScreen() {
   const dependencies = useDependencies();
   const defaultPreset = defaultPresetSelection();
@@ -101,7 +103,8 @@ function ThreaderScreen() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const inputStatistics = useMemo(() => calculateInputStatistics(sourceText), [sourceText]);
-  const paragraphToggleEnabled = canBreakOnParagraphs(inputStatistics);
+  const textOptionTogglesEnabled = hasTextContent(sourceText);
+  const paragraphToggleEnabled = textOptionTogglesEnabled && canBreakOnParagraphs(inputStatistics);
   const displayedInputStatistics = formatInputStatistics(inputStatistics);
   const chunks = useMemo(
     () =>
@@ -109,8 +112,8 @@ function ThreaderScreen() {
         sourceText,
         imageRecords,
         maximumLength,
-        breakOnSentences,
-        enumerate,
+        breakOnSentences: textOptionTogglesEnabled && breakOnSentences,
+        enumerate: textOptionTogglesEnabled && enumerate,
         breakOnParagraphs: paragraphToggleEnabled && breakOnParagraphs
       }),
     [
@@ -120,14 +123,20 @@ function ThreaderScreen() {
       imageRecords,
       maximumLength,
       paragraphToggleEnabled,
-      sourceText
+      sourceText,
+      textOptionTogglesEnabled
     ]
   );
 
   const handleSourceTextChange = (nextSourceText) => {
     setSourceText(nextSourceText);
     const nextStatistics = calculateInputStatistics(nextSourceText);
-    if (!canBreakOnParagraphs(nextStatistics)) {
+    const nextTextOptionTogglesEnabled = hasTextContent(nextSourceText);
+    if (!nextTextOptionTogglesEnabled) {
+      setBreakOnParagraphs(false);
+      setBreakOnSentences(false);
+      setEnumerate(false);
+    } else if (!canBreakOnParagraphs(nextStatistics)) {
       setBreakOnParagraphs(false);
     }
     setErrorMessage("");
@@ -186,13 +195,13 @@ function ThreaderScreen() {
   const handleCopyChunkPress = async (chunk) => {
     try {
       if (chunk.variant === "image") {
-        await dependencies.shareFile(chunk.imageUri, IMAGE_SHARE_OPTIONS);
+        await dependencies.clipboard.setImageAsync(chunk.imageBase64);
       } else {
         await dependencies.clipboard.setStringAsync(chunk.plainText);
       }
       markChunkCopied(chunk.id);
     } catch (caughtError) {
-      setErrorMessage(chunk.variant === "image" ? MOBILE_COPY.ERROR_SHARE_FAILED : MOBILE_COPY.ERROR_COPY_FAILED);
+      setErrorMessage(MOBILE_COPY.ERROR_COPY_FAILED);
     }
   };
 
@@ -260,7 +269,14 @@ function ThreaderScreen() {
           ))}
         </View>
 
-        <View style={styles.customRow}>
+        <View testID={MOBILE_TEST_IDS.CUSTOM_ROW} style={styles.customRow}>
+          <ControlButton
+            label={MOBILE_COPY.CUSTOM_BUTTON_LABEL}
+            accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.CUSTOM_APPLY}
+            active={activePresetIdentifier === null}
+            onPress={handleCustomApplyPress}
+            style={styles.customButton}
+          />
           <TextInput
             testID={MOBILE_TEST_IDS.CUSTOM_LENGTH_INPUT}
             value={customLengthText}
@@ -268,13 +284,6 @@ function ThreaderScreen() {
             keyboardType="number-pad"
             placeholder={MOBILE_COPY.CUSTOM_LENGTH_PLACEHOLDER}
             style={styles.customInput}
-          />
-          <ControlButton
-            label={MOBILE_COPY.CUSTOM_BUTTON_LABEL}
-            accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.CUSTOM_APPLY}
-            active={activePresetIdentifier === null}
-            onPress={handleCustomApplyPress}
-            style={styles.customButton}
           />
         </View>
 
@@ -289,13 +298,15 @@ function ThreaderScreen() {
           <ToggleRow
             label={MOBILE_COPY.SENTENCE_TOGGLE_LABEL}
             accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.BREAK_ON_SENTENCES}
-            value={breakOnSentences}
+            value={textOptionTogglesEnabled && breakOnSentences}
+            disabled={!textOptionTogglesEnabled}
             onValueChange={setBreakOnSentences}
           />
           <ToggleRow
             label={MOBILE_COPY.ENUMERATION_TOGGLE_LABEL}
             accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.ENUMERATE}
-            value={enumerate}
+            value={textOptionTogglesEnabled && enumerate}
+            disabled={!textOptionTogglesEnabled}
             onValueChange={setEnumerate}
           />
         </View>

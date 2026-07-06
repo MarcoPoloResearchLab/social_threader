@@ -29,6 +29,6 @@ make submit-android
 
 `make build-ios` and `make build-android` use the `production` EAS profile. Android production builds emit an App Bundle.
 
-`make run-ios` starts Expo through `scripts/expo-run.expect` so known Expo prompts do not block local startup: Expo Go version upgrades are accepted automatically, while unexpected port changes are rejected.
+`make run-ios` starts Metro through `scripts/ios-run.mjs`, selects an available Expo port before startup, and then runs Expo through `scripts/expo-run.expect` so known Expo prompts do not block local startup: Expo Go version upgrades are accepted automatically, while unexpected port changes are rejected.
 
 `make run-android` starts Metro through `scripts/android-run.mjs`, waits for Metro, starts an Android AVD if no device is attached, installs an Expo Go build compatible with the Expo SDK when needed, configures `adb reverse`, opens Expo Go at `exp://127.0.0.1:<port>/--/`, and verifies that the Social Threader UI rendered. Override the Metro port with `MOBILE_PORT=8082 make run-ios` or `MOBILE_PORT=8082 make run-android`.

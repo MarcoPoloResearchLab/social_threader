@@ -21,20 +21,23 @@ const easJson = readJson("eas.json");
 assertEqual(packageJson.main, "expo/AppEntry", "mobile package must use Expo AppEntry");
 assertIncludes(packageJson.scripts?.check || "", "npm run test:coverage", "mobile check must run coverage");
 assertIncludes(packageJson.scripts?.check || "", "expo install --check", "mobile check must validate Expo dependency alignment");
+assertIncludes(packageJson.scripts?.ios || "", "scripts/ios-run.mjs", "iOS local run must use the prompt-safe Expo launcher");
 assertIncludes(packageJson.scripts?.android || "", "scripts/android-run.mjs", "Android local run must use the adb reverse launcher");
 assertEqual(packageJson.dependencies?.expo, "~56.0.14", "mobile package must use the Kamu-aligned Expo SDK");
 assertEqual(packageJson.dependencies?.react, "19.2.3", "mobile package must use the Expo SDK React version");
 assertEqual(packageJson.dependencies?.["react-native"], "0.85.3", "mobile package must use the Expo SDK React Native version");
-assertEqual(packageJson.dependencies?.["expo-sharing"], "~56.0.20", "mobile package must use Expo SDK sharing for native image shares");
+assertEqual(packageJson.dependencies?.["expo-clipboard"], "~56.0.4", "mobile package must use Expo SDK clipboard for native image copies");
+assertEqual(packageJson.dependencies?.["expo-sharing"], undefined, "mobile package must not keep the old native image sharing dependency");
 assertEqual(packageJson.dependencies?.playwright, undefined, "mobile package must not introduce Playwright");
 assertEqual(packageJson.devDependencies?.playwright, undefined, "mobile dev package must not introduce Playwright");
+assertExecutable("scripts/ios-run.mjs", "iOS local-run launcher must be executable");
 assertExecutable("scripts/expo-run.expect", "Expo local-run prompt wrapper must be executable");
 assertExecutable("scripts/android-run.mjs", "Android local-run launcher must be executable");
 assertSharedWebCopies();
 assertEqual(appJson.expo?.name, "Social Threader", "native app name must be stable");
 assertEqual(appJson.expo?.scheme, "socialthreader", "native URL scheme must be stable");
 assertNoPlugin(appJson.expo?.plugins, "expo-clipboard", "expo-clipboard must not be registered as a config plugin");
-assertHasPlugin(appJson.expo?.plugins, "expo-sharing", "expo-sharing must be registered for native image sharing");
+assertNoPlugin(appJson.expo?.plugins, "expo-sharing", "expo-sharing must not be registered for clipboard-based image copies");
 assertPluginOption(
   appJson.expo?.plugins,
   "expo-image-picker",

@@ -17,6 +17,15 @@ const EMPTY_STRING = "";
 const SHARE_SEPARATOR = "\n\n";
 const FIRST_ARRAY_INDEX = 0;
 const MINIMUM_POSITIVE_LENGTH = 1;
+const BASE64_DATA_SEPARATOR = ",";
+
+/**
+ * @typedef {Object} MobileImageRecord
+ * @property {string} placeholderToken Token used to identify the image position.
+ * @property {string} dataUrl URI used to render the image preview.
+ * @property {string} altText Accessible description associated with the image.
+ * @property {string} clipboardBase64 Base64 image payload without a data URI prefix.
+ */
 
 /**
  * Replaces uppercase template tokens with provided values.
@@ -90,14 +99,29 @@ export function canBreakOnParagraphs(statistics) {
 }
 
 /**
+ * Normalizes a base64 image value for Expo Clipboard.
+ * @param {string | null | undefined} rawBase64 Raw base64 value from an image picker asset.
+ * @returns {string} Base64 payload without a data URI prefix.
+ */
+function normalizeClipboardBase64(rawBase64) {
+  const trimmedBase64 = typeof rawBase64 === "string" ? rawBase64.trim() : EMPTY_STRING;
+  const separatorIndex = trimmedBase64.indexOf(BASE64_DATA_SEPARATOR);
+  if (separatorIndex === -1) {
+    return trimmedBase64;
+  }
+  return trimmedBase64.slice(separatorIndex + BASE64_DATA_SEPARATOR.length).trim();
+}
+
+/**
  * Creates a mobile image record from an Expo image-picker asset.
- * @param {{ uri?: string; fileName?: string | null; assetId?: string | null } | null | undefined} imageAsset Expo image asset.
+ * @param {{ uri?: string; fileName?: string | null; assetId?: string | null; base64?: string | null } | null | undefined} imageAsset Expo image asset.
  * @param {number} imageIndex Zero-based image index.
- * @returns {import("./shared-web/types.d.js").RichTextImage | null}
+ * @returns {MobileImageRecord | null}
  */
 export function createImageRecord(imageAsset, imageIndex) {
   const imageUri = typeof imageAsset?.uri === "string" ? imageAsset.uri.trim() : EMPTY_STRING;
-  if (imageUri.length === 0) {
+  const clipboardBase64 = normalizeClipboardBase64(imageAsset?.base64);
+  if (imageUri.length === 0 || clipboardBase64.length === 0) {
     return null;
   }
 
@@ -109,7 +133,8 @@ export function createImageRecord(imageAsset, imageIndex) {
   return {
     placeholderToken: richTextHelpers.createPlaceholderToken(imageIndex),
     dataUrl: imageUri,
-    altText: rawAltText
+    altText: rawAltText,
+    clipboardBase64
   };
 }
 
@@ -117,12 +142,12 @@ export function createImageRecord(imageAsset, imageIndex) {
  * Builds renderable thread chunks for mobile.
  * @param {Object} params Builder parameters.
  * @param {string} params.sourceText User-entered text.
- * @param {import("./shared-web/types.d.js").RichTextImage[]} params.imageRecords Attached image records.
+ * @param {MobileImageRecord[]} params.imageRecords Attached image records.
  * @param {number} params.maximumLength Selected maximum text length.
  * @param {boolean} params.breakOnSentences Whether sentence boundaries are preferred.
  * @param {boolean} params.enumerate Whether chunks should be enumerated.
  * @param {boolean} params.breakOnParagraphs Whether paragraphs should be split first.
- * @returns {Array<{ id: string; variant: "text"; plainText: string; statisticsText: string } | { id: string; variant: "image"; imageUri: string; altText: string; plainText: string }>}
+ * @returns {Array<{ id: string; variant: "text"; plainText: string; statisticsText: string } | { id: string; variant: "image"; imageUri: string; imageBase64: string; altText: string; plainText: string }>}
  */
 export function buildMobileChunks({
   sourceText,
@@ -153,6 +178,7 @@ export function buildMobileChunks({
     id: `image-${imageIndex}`,
     variant: "image",
     imageUri: imageRecord.dataUrl,
+    imageBase64: imageRecord.clipboardBase64,
     altText: imageRecord.altText,
     plainText: EMPTY_STRING
   }));
@@ -163,7 +189,7 @@ export function buildMobileChunks({
 /**
  * Determines whether the current document contains content.
  * @param {string} sourceText User-entered text.
- * @param {import("./shared-web/types.d.js").RichTextImage[]} imageRecords Attached image records.
+ * @param {MobileImageRecord[]} imageRecords Attached image records.
  * @returns {boolean}
  */
 export function hasThreadContent(sourceText, imageRecords) {
@@ -205,8 +231,8 @@ export function defaultPresetSelection() {
 
 /**
  * Selects the first image picker asset.
- * @param {{ canceled?: boolean; assets?: Array<{ uri?: string; fileName?: string | null; assetId?: string | null }> } | null | undefined} pickerResult Image picker result.
- * @returns {{ uri?: string; fileName?: string | null; assetId?: string | null } | null}
+ * @param {{ canceled?: boolean; assets?: Array<{ uri?: string; fileName?: string | null; assetId?: string | null; base64?: string | null }> } | null | undefined} pickerResult Image picker result.
+ * @returns {{ uri?: string; fileName?: string | null; assetId?: string | null; base64?: string | null } | null}
  */
 export function firstSelectedImageAsset(pickerResult) {
   if (!pickerResult || pickerResult.canceled) {

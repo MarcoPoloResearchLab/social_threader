@@ -18,6 +18,8 @@ import {
   PRESET_IDENTIFIERS
 } from "../src/constants";
 
+const IMAGE_CLIPBOARD_BASE64 = "ZmFrZQ==";
+
 describe("mobile threading model", () => {
   it("parses positive lengths and rejects invalid values", () => {
     expect(parsePositiveLength("280")).toBe(280);
@@ -36,7 +38,10 @@ describe("mobile threading model", () => {
   });
 
   it("builds text and image chunks using shared chunking behavior", () => {
-    const imageRecord = createImageRecord({ uri: "file:///tmp/image.png", fileName: "draft.png" }, 0);
+    const imageRecord = createImageRecord(
+      { uri: "file:///tmp/image.png", fileName: "draft.png", base64: IMAGE_CLIPBOARD_BASE64 },
+      0
+    );
     const chunks = buildMobileChunks({
       sourceText: "Alpha bravo charlie delta echo.",
       imageRecords: [imageRecord],
@@ -57,21 +62,34 @@ describe("mobile threading model", () => {
     ]);
     expect(chunks[0].plainText).toBe("Alpha (1/6)");
     expect(chunks[6].imageUri).toBe("file:///tmp/image.png");
+    expect(chunks[6].imageBase64).toBe(IMAGE_CLIPBOARD_BASE64);
     expect(chunks[6].altText).toBe("draft.png");
   });
 
   it("creates image records and handles empty assets", () => {
-    expect(createImageRecord({ uri: "  " }, 0)).toBeNull();
+    expect(createImageRecord({ uri: "  ", base64: IMAGE_CLIPBOARD_BASE64 }, 0)).toBeNull();
+    expect(createImageRecord({ uri: "file:///tmp/image.png" }, 0)).toBeNull();
     expect(createImageRecord(null, 0)).toBeNull();
-    const imageRecord = createImageRecord({ uri: "file:///tmp/image.png" }, 2);
+    const imageRecord = createImageRecord(
+      { uri: "file:///tmp/image.png", base64: `data:image/png;base64,${IMAGE_CLIPBOARD_BASE64}` },
+      2
+    );
     expect(imageRecord.placeholderToken).toBe("[[IMAGE:2]]");
     expect(imageRecord.altText).toBe(MOBILE_COPY.ATTACHED_IMAGE_ALT);
+    expect(imageRecord.clipboardBase64).toBe(IMAGE_CLIPBOARD_BASE64);
   });
 
   it("creates share messages and content flags", () => {
     expect(hasThreadContent("", [])).toBe(false);
     expect(hasThreadContent("  Alpha  ", [])).toBe(true);
-    expect(hasThreadContent("", [{ placeholderToken: "[[IMAGE:0]]", dataUrl: "file:///image.png", altText: "Image" }])).toBe(true);
+    expect(hasThreadContent("", [
+      {
+        placeholderToken: "[[IMAGE:0]]",
+        dataUrl: "file:///image.png",
+        altText: "Image",
+        clipboardBase64: IMAGE_CLIPBOARD_BASE64
+      }
+    ])).toBe(true);
     expect(createThreadShareMessage([
       { variant: "text", plainText: "Alpha" },
       { variant: "image", plainText: "" },
@@ -87,11 +105,18 @@ describe("mobile threading model", () => {
     expect(presetLengthForIdentifier(PRESET_IDENTIFIERS.BLUESKY)).toBe(DEFAULT_LENGTHS.BLUESKY);
     expect(presetLengthForIdentifier("missing")).toBeNull();
     expect(firstSelectedImageAsset(null)).toBeNull();
-    expect(firstSelectedImageAsset({ canceled: true, assets: [{ uri: "file:///cancelled.png" }] })).toBeNull();
+    expect(firstSelectedImageAsset({
+      canceled: true,
+      assets: [{ uri: "file:///cancelled.png", base64: IMAGE_CLIPBOARD_BASE64 }]
+    })).toBeNull();
     expect(firstSelectedImageAsset({ canceled: false })).toBeNull();
     expect(firstSelectedImageAsset({ canceled: false, assets: [] })).toBeNull();
-    expect(firstSelectedImageAsset({ canceled: false, assets: [{ uri: "file:///selected.png" }] })).toEqual({
-      uri: "file:///selected.png"
+    expect(firstSelectedImageAsset({
+      canceled: false,
+      assets: [{ uri: "file:///selected.png", base64: IMAGE_CLIPBOARD_BASE64 }]
+    })).toEqual({
+      uri: "file:///selected.png",
+      base64: IMAGE_CLIPBOARD_BASE64
     });
   });
 

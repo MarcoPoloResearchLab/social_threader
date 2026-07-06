@@ -94,7 +94,7 @@ function ThreadChunkCard({ chunk, onCopyPress, onRemoveImagePress }) {
         </>
       )}
       <ControlButton
-        label={chunk.variant === "image" ? MOBILE_COPY.SHARE_BUTTON_LABEL : MOBILE_COPY.COPY_BUTTON_LABEL}
+        label={MOBILE_COPY.COPY_BUTTON_LABEL}
         accessibilityLabel={`${MOBILE_COPY.COPY_BUTTON_LABEL} ${chunk.id}`}
         onPress={onCopyPress}
       />

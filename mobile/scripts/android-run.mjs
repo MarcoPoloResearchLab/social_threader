@@ -3,11 +3,15 @@ import { spawn } from "node:child_process";
 import process from "node:process";
 
 import { launchAndroidExpoGo } from "./lib/android-device.mjs";
+import {
+  createExpoEnvironment,
+  resolvePortSearchLimit,
+  resolveRequestedPort,
+  toShellCommand
+} from "./lib/expo-local-run.mjs";
 import { waitForMetroReady } from "./lib/metro.mjs";
 import { findAvailablePort, parsePort } from "./lib/ports.mjs";
 
-const DEFAULT_PORT = 8081;
-const DEFAULT_SEARCH_LIMIT = 40;
 const ANDROID_LAUNCH_FAILURE_SHUTDOWN_MS = 3_000;
 
 main().catch((error) => {
@@ -17,16 +21,11 @@ main().catch((error) => {
 
 async function main() {
   const parsedArgs = parseArgs(process.argv.slice(2));
-  const requestedPort =
-    parsedArgs.port
-    || parsePort(process.env.SOCIAL_THREADER_MOBILE_PORT)
-    || parsePort(process.env.EXPO_PORT)
-    || parsePort(process.env.RCT_METRO_PORT)
-    || DEFAULT_PORT;
-  const searchLimit = parsePort(process.env.SOCIAL_THREADER_MOBILE_PORT_SEARCH_LIMIT) || DEFAULT_SEARCH_LIMIT;
+  const requestedPort = resolveRequestedPort(parsedArgs.port);
+  const searchLimit = resolvePortSearchLimit();
   const port = await findAvailablePort(requestedPort, searchLimit);
   const expoArgs = normalizeExpoArgs(parsedArgs.expoArgs, port);
-  const commandText = `npx --no-install ${expoArgs.map(shellQuote).join(" ")}`;
+  const commandText = toShellCommand("npx", ["--no-install", ...expoArgs]);
 
   if (port !== requestedPort) {
     console.log(`Social Threader mobile: port ${requestedPort} is busy; using ${port}.`);
@@ -40,7 +39,7 @@ async function main() {
   }
 
   const child = spawn("npx", ["--no-install", ...expoArgs], {
-    env: createExpoEnvironment(port),
+    env: createExpoEnvironment(port, { REACT_NATIVE_PACKAGER_HOSTNAME: "127.0.0.1" }),
     shell: process.platform === "win32",
     stdio: "inherit"
   });
@@ -112,29 +111,6 @@ function normalizeExpoArgs(expoArgs, port) {
   return normalizedArgs;
 }
 
-function createExpoEnvironment(port) {
-  const childEnvironment = {
-    ...process.env,
-    EXPO_NO_TELEMETRY: "1",
-    EXPO_PACKAGER_PORT: String(port),
-    RCT_METRO_PORT: String(port),
-    REACT_NATIVE_PACKAGER_HOSTNAME: "127.0.0.1",
-    SOCIAL_THREADER_MOBILE_PORT: String(port)
-  };
-  childEnvironment.NODE_OPTIONS = appendNodeOption(process.env.NODE_OPTIONS, "--dns-result-order=ipv4first");
-  delete childEnvironment.FORCE_COLOR;
-  delete childEnvironment.NO_COLOR;
-  return childEnvironment;
-}
-
-function appendNodeOption(currentValue, option) {
-  const existingValue = String(currentValue || "").trim();
-  if (existingValue.split(/\s+/).includes(option)) {
-    return existingValue;
-  }
-  return existingValue ? `${existingValue} ${option}` : option;
-}
-
 function printAndroidLaunchCommands(port, commandText) {
   console.log("adb devices");
   console.log(`adb reverse tcp:${port} tcp:${port}`);
@@ -154,9 +130,4 @@ function stopChildForFailure(child) {
   }, ANDROID_LAUNCH_FAILURE_SHUTDOWN_MS);
   timer.unref();
   return timer;
-}
-
-function shellQuote(value) {
-  if (/^[A-Za-z0-9_./:=@-]+$/.test(value)) return value;
-  return `'${value.replaceAll("'", "'\\''")}'`;
 }

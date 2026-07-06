@@ -1,4 +1,6 @@
 jest.mock("expo-clipboard", () => ({
+  getImageAsync: jest.fn(() => Promise.resolve(null)),
+  setImageAsync: jest.fn(() => Promise.resolve()),
   setStringAsync: jest.fn(() => Promise.resolve(true))
 }));
 
@@ -7,10 +9,6 @@ jest.mock("expo-image-picker", () => ({
     Images: "Images"
   },
   launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] }))
-}));
-
-jest.mock("expo-sharing", () => ({
-  shareAsync: jest.fn(() => Promise.resolve())
 }));
 
 global.window = global.window || {};

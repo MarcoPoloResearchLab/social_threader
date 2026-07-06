@@ -11,6 +11,13 @@ import {
   PRESET_IDENTIFIERS
 } from "../src/constants";
 
+const IMAGE_CLIPBOARD_BASE64 = "ZmFrZQ==";
+const IMAGE_CLIPBOARD_DATA_URL = `data:image/png;base64,${IMAGE_CLIPBOARD_BASE64}`;
+const IMAGE_CLIPBOARD_SIZE = Object.freeze({
+  width: 1,
+  height: 1
+});
+
 describe("Social Threader mobile app", () => {
   it("renders default Twitter chunks, toggles options, copies text, shares the thread, and clears state", async () => {
     const dependencies = createDependencies();
@@ -82,6 +89,36 @@ describe("Social Threader mobile app", () => {
     expect(disabledParagraphSwitch.props.disabled).toBe(true);
   });
 
+  it("disables text option toggles when source text is empty", () => {
+    const component = renderApp(createDependencies());
+    const textOptionLabels = [
+      MOBILE_ACCESSIBILITY_LABELS.BREAK_ON_PARAGRAPHS,
+      MOBILE_ACCESSIBILITY_LABELS.BREAK_ON_SENTENCES,
+      MOBILE_ACCESSIBILITY_LABELS.ENUMERATE
+    ];
+
+    textOptionLabels.forEach((accessibilityLabel) => {
+      const disabledSwitch = findSwitch(component, accessibilityLabel);
+      expect(disabledSwitch.props.disabled).toBe(true);
+      expect(disabledSwitch.props.accessibilityState.checked).toBe(false);
+    });
+
+    changeText(component, MOBILE_TEST_IDS.SOURCE_INPUT, "First paragraph.\n\nSecond paragraph.");
+    textOptionLabels.forEach((accessibilityLabel) => {
+      expect(findSwitch(component, accessibilityLabel).props.disabled).toBe(false);
+    });
+    toggle(component, MOBILE_ACCESSIBILITY_LABELS.BREAK_ON_PARAGRAPHS, true);
+    toggle(component, MOBILE_ACCESSIBILITY_LABELS.BREAK_ON_SENTENCES, true);
+    toggle(component, MOBILE_ACCESSIBILITY_LABELS.ENUMERATE, true);
+
+    changeText(component, MOBILE_TEST_IDS.SOURCE_INPUT, "");
+    textOptionLabels.forEach((accessibilityLabel) => {
+      const disabledSwitch = findSwitch(component, accessibilityLabel);
+      expect(disabledSwitch.props.disabled).toBe(true);
+      expect(disabledSwitch.props.accessibilityState.checked).toBe(false);
+    });
+  });
+
   it("surfaces empty and invalid custom input errors", () => {
     const component = renderApp(createDependencies());
 
@@ -102,21 +139,44 @@ describe("Social Threader mobile app", () => {
     expect(findText(component, MOBILE_COPY.ERROR_NO_CONTENT)).toBeTruthy();
   });
 
-  it("handles attaching, sharing, and removing an image chunk", async () => {
+  it("positions the custom size input to the right of the custom button", () => {
+    const component = renderApp(createDependencies());
+    const customRow = findByTestID(component, MOBILE_TEST_IDS.CUSTOM_ROW);
+    const customButton = customRow.findAll((node) => (
+      node.props?.accessibilityRole === "button"
+      && node.props?.accessibilityLabel === MOBILE_ACCESSIBILITY_LABELS.CUSTOM_APPLY
+    ))[0];
+    const customInput = customRow.findAll((node) => (
+      node.props?.testID === MOBILE_TEST_IDS.CUSTOM_LENGTH_INPUT
+    ))[0];
+    const customRowDescendants = customRow.findAll(() => true);
+    const customButtonIndex = customRowDescendants.indexOf(customButton);
+    const customInputIndex = customRowDescendants.indexOf(customInput);
+
+    expect(customButtonIndex).toBeGreaterThanOrEqual(0);
+    expect(customInputIndex).toBeGreaterThan(customButtonIndex);
+  });
+
+  it("handles attaching, copying, pasting, and removing an image chunk", async () => {
     const dependencies = createDependencies();
     dependencies.imagePicker.launchImageLibraryAsync.mockResolvedValueOnce({
       canceled: false,
-      assets: [{ uri: "file:///tmp/share.png", fileName: "share.png" }]
+      assets: [{ uri: "file:///tmp/share.png", fileName: "share.png", base64: IMAGE_CLIPBOARD_BASE64 }]
     });
     const component = renderApp(dependencies);
 
     await pressAsync(component, MOBILE_COPY.ATTACH_IMAGE_LABEL);
+    expect(dependencies.imagePicker.launchImageLibraryAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ base64: true })
+    );
     expect(findText(component, MOBILE_COPY.IMAGE_CHUNK_LABEL)).toBeTruthy();
 
     await pressAsync(component, "Copy image-0");
-    expect(dependencies.shareFile).toHaveBeenCalledWith("file:///tmp/share.png", {
-      mimeType: "image/*",
-      UTI: "public.image"
+    expect(dependencies.clipboard.setImageAsync).toHaveBeenCalledWith(IMAGE_CLIPBOARD_BASE64);
+    const pastedImage = await dependencies.clipboard.getImageAsync({ format: "png" });
+    expect(pastedImage).toEqual({
+      data: IMAGE_CLIPBOARD_DATA_URL,
+      size: IMAGE_CLIPBOARD_SIZE
     });
     expect(findMarkerOrder(component, "image-0", 1)).toBeTruthy();
 
@@ -128,7 +188,8 @@ describe("Social Threader mobile app", () => {
     const dependencies = createDependencies();
     dependencies.imagePicker.launchImageLibraryAsync
       .mockResolvedValueOnce({ canceled: true, assets: [] })
-      .mockResolvedValueOnce({ canceled: false, assets: [{ uri: "" }] });
+      .mockResolvedValueOnce({ canceled: false, assets: [{ uri: "" }] })
+      .mockResolvedValueOnce({ canceled: false, assets: [{ uri: "file:///tmp/no-base64.png" }] });
     const component = renderApp(dependencies);
 
     await pressAsync(component, MOBILE_COPY.ATTACH_IMAGE_LABEL);
@@ -136,15 +197,21 @@ describe("Social Threader mobile app", () => {
 
     await pressAsync(component, MOBILE_COPY.ATTACH_IMAGE_LABEL);
     expect(findText(component, MOBILE_COPY.ERROR_IMAGE_PICK_FAILED)).toBeTruthy();
+
+    await pressAsync(component, MOBILE_COPY.ATTACH_IMAGE_LABEL);
+    expect(findText(component, MOBILE_COPY.ERROR_IMAGE_PICK_FAILED)).toBeTruthy();
   });
 
-  it("reports image picker, copy, and share failures", async () => {
+  it("reports image picker, text copy, image copy, and share failures", async () => {
     const dependencies = createDependencies();
     dependencies.imagePicker.launchImageLibraryAsync
       .mockRejectedValueOnce(new Error("picker_down"))
-      .mockResolvedValueOnce({ canceled: false, assets: [{ uri: "file:///tmp/image.png", fileName: "image.png" }] });
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: "file:///tmp/image.png", fileName: "image.png", base64: IMAGE_CLIPBOARD_BASE64 }]
+      });
     dependencies.clipboard.setStringAsync.mockRejectedValueOnce(new Error("clipboard_down"));
-    dependencies.shareFile.mockRejectedValueOnce(new Error("share_down"));
+    dependencies.clipboard.setImageAsync.mockRejectedValueOnce(new Error("image_clipboard_down"));
     const component = renderApp(dependencies);
 
     await pressAsync(component, MOBILE_COPY.ATTACH_IMAGE_LABEL);
@@ -156,7 +223,7 @@ describe("Social Threader mobile app", () => {
 
     await pressAsync(component, MOBILE_COPY.ATTACH_IMAGE_LABEL);
     await pressAsync(component, "Copy image-0");
-    expect(findText(component, MOBILE_COPY.ERROR_SHARE_FAILED)).toBeTruthy();
+    expect(findText(component, MOBILE_COPY.ERROR_COPY_FAILED)).toBeTruthy();
   });
 
   it("reports share thread failures and empty share attempts", async () => {
@@ -179,9 +246,19 @@ describe("Social Threader mobile app", () => {
 });
 
 function createDependencies() {
+  let copiedImageBase64 = "";
   return {
     clipboard: {
-      setStringAsync: jest.fn(() => Promise.resolve(true))
+      setStringAsync: jest.fn(() => Promise.resolve(true)),
+      setImageAsync: jest.fn((imageBase64) => {
+        copiedImageBase64 = imageBase64;
+        return Promise.resolve();
+      }),
+      getImageAsync: jest.fn(() => Promise.resolve(
+        copiedImageBase64.length > 0
+          ? { data: `data:image/png;base64,${copiedImageBase64}`, size: IMAGE_CLIPBOARD_SIZE }
+          : null
+      ))
     },
     imagePicker: {
       MediaTypeOptions: {
@@ -189,8 +266,7 @@ function createDependencies() {
       },
       launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] }))
     },
-    share: jest.fn(() => Promise.resolve({ action: "sharedAction" })),
-    shareFile: jest.fn(() => Promise.resolve())
+    share: jest.fn(() => Promise.resolve({ action: "sharedAction" }))
   };
 }
 

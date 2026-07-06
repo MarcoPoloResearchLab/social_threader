@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { LAYOUT_VALUES, MOBILE_TEST_IDS } from "./constants.js";
 
-export function ToggleRow({ label, accessibilityLabel, value, onValueChange, disabled = false }) {
+export function ToggleRow({ label, accessibilityLabel, value, onValueChange, disabled }) {
   return (
     <View style={[styles.toggleRow, disabled && styles.toggleRowDisabled]}>
       <Text style={styles.toggleLabel}>{label}</Text>
