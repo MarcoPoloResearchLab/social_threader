@@ -32,7 +32,7 @@ mobile-check: mobile-install
 	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) run check
 
 run-ios: mobile-install
-	@cd "$(MOBILE_DIR)" && SOCIAL_THREADER_MOBILE_PORT="$(MOBILE_PORT)" $(MOBILE_EXPECT) scripts/expo-run.expect $(MOBILE_NPM) run ios -- --port "$(MOBILE_PORT)" --clear
+	@cd "$(MOBILE_DIR)" && SOCIAL_THREADER_MOBILE_EXPECT="$(MOBILE_EXPECT)" SOCIAL_THREADER_MOBILE_PORT="$(MOBILE_PORT)" $(MOBILE_NPM) run ios -- --port "$(MOBILE_PORT)" --clear
 
 run-android: mobile-install
 	@cd "$(MOBILE_DIR)" && ANDROID_HOME="$(ANDROID_HOME)" ANDROID_SDK_ROOT="$(ANDROID_SDK_ROOT)" SOCIAL_THREADER_MOBILE_PORT="$(MOBILE_PORT)" PATH="$(ANDROID_TOOL_PATH):$$PATH" $(MOBILE_NPM) run android -- --port "$(MOBILE_PORT)" --localhost --clear
