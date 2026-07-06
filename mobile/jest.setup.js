@@ -9,5 +9,9 @@ jest.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] }))
 }));
 
+jest.mock("expo-sharing", () => ({
+  shareAsync: jest.fn(() => Promise.resolve())
+}));
+
 global.window = global.window || {};
 global.window.dispatchEvent = global.window.dispatchEvent || jest.fn();

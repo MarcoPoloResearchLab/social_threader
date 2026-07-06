@@ -25,6 +25,7 @@ assertIncludes(packageJson.scripts?.android || "", "scripts/android-run.mjs", "A
 assertEqual(packageJson.dependencies?.expo, "~56.0.14", "mobile package must use the Kamu-aligned Expo SDK");
 assertEqual(packageJson.dependencies?.react, "19.2.3", "mobile package must use the Expo SDK React version");
 assertEqual(packageJson.dependencies?.["react-native"], "0.85.3", "mobile package must use the Expo SDK React Native version");
+assertEqual(packageJson.dependencies?.["expo-sharing"], "~56.0.20", "mobile package must use Expo SDK sharing for native image shares");
 assertEqual(packageJson.dependencies?.playwright, undefined, "mobile package must not introduce Playwright");
 assertEqual(packageJson.devDependencies?.playwright, undefined, "mobile dev package must not introduce Playwright");
 assertExecutable("scripts/expo-run.expect", "Expo local-run prompt wrapper must be executable");
@@ -33,6 +34,14 @@ assertSharedWebCopies();
 assertEqual(appJson.expo?.name, "Social Threader", "native app name must be stable");
 assertEqual(appJson.expo?.scheme, "socialthreader", "native URL scheme must be stable");
 assertNoPlugin(appJson.expo?.plugins, "expo-clipboard", "expo-clipboard must not be registered as a config plugin");
+assertHasPlugin(appJson.expo?.plugins, "expo-sharing", "expo-sharing must be registered for native image sharing");
+assertPluginOption(
+  appJson.expo?.plugins,
+  "expo-image-picker",
+  "microphonePermission",
+  false,
+  "expo-image-picker must not request microphone access for library-only image picking"
+);
 assertProjectFile(appJson.expo?.icon, "Expo icon must be stored inside mobile/");
 assertProjectFile(appJson.expo?.splash?.image, "Expo splash image must be stored inside mobile/");
 assertEqual(appJson.expo?.ios?.bundleIdentifier, "com.mprlab.socialthreader", "iOS bundle id must be explicit");
@@ -111,4 +120,29 @@ function assertNoPlugin(plugins, pluginName, message) {
   if (hasPlugin) {
     throw new Error(message);
   }
+}
+
+function assertHasPlugin(plugins, pluginName, message) {
+  const pluginDefinition = findPluginDefinition(plugins, pluginName);
+  if (!pluginDefinition) {
+    throw new Error(message);
+  }
+}
+
+function assertPluginOption(plugins, pluginName, optionName, expectedValue, message) {
+  const pluginDefinition = findPluginDefinition(plugins, pluginName);
+  const options = Array.isArray(pluginDefinition) ? pluginDefinition[1] : null;
+  if (!options || options[optionName] !== expectedValue) {
+    throw new Error(`${message}: got ${options ? options[optionName] : undefined}`);
+  }
+}
+
+function findPluginDefinition(plugins, pluginName) {
+  const pluginList = Array.isArray(plugins) ? plugins : [];
+  return pluginList.find((pluginDefinition) => {
+    if (typeof pluginDefinition === "string") {
+      return pluginDefinition === pluginName;
+    }
+    return Array.isArray(pluginDefinition) && pluginDefinition[0] === pluginName;
+  });
 }

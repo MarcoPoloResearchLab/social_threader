@@ -16,9 +16,11 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Social Threader lets you attach selected images as thread chunks."
+          "photosPermission": "Social Threader lets you attach selected images as thread chunks.",
+          "microphonePermission": false
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "ios": {
       "supportsTablet": true,

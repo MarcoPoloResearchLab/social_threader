@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
+import * as Sharing from "expo-sharing";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
@@ -44,6 +45,11 @@ const IMAGE_PICKER_OPTIONS = Object.freeze({
   quality: 1
 });
 
+const IMAGE_SHARE_OPTIONS = Object.freeze({
+  mimeType: "image/*",
+  UTI: "public.image"
+});
+
 const SAFE_AREA_INITIAL_METRICS = Object.freeze({
   frame: Object.freeze({ x: 0, y: 0, width: 0, height: 0 }),
   insets: Object.freeze({ top: 0, left: 0, right: 0, bottom: 0 })
@@ -52,7 +58,8 @@ const SAFE_AREA_INITIAL_METRICS = Object.freeze({
 const defaultDependencies = Object.freeze({
   clipboard: Clipboard,
   imagePicker: ImagePicker,
-  share: Share.share
+  share: Share.share,
+  shareFile: Sharing.shareAsync
 });
 
 const DependenciesContext = createContext(defaultDependencies);
@@ -179,10 +186,7 @@ function ThreaderScreen() {
   const handleCopyChunkPress = async (chunk) => {
     try {
       if (chunk.variant === "image") {
-        await dependencies.share({
-          url: chunk.imageUri,
-          message: chunk.altText
-        });
+        await dependencies.shareFile(chunk.imageUri, IMAGE_SHARE_OPTIONS);
       } else {
         await dependencies.clipboard.setStringAsync(chunk.plainText);
       }

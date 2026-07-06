@@ -25,6 +25,7 @@
     "expo": "~56.0.14",
     "expo-clipboard": "~56.0.4",
     "expo-image-picker": "~56.0.19",
+    "expo-sharing": "~56.0.20",
     "expo-status-bar": "^56.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

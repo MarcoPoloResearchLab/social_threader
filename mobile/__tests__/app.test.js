@@ -114,9 +114,9 @@ describe("Social Threader mobile app", () => {
     expect(findText(component, MOBILE_COPY.IMAGE_CHUNK_LABEL)).toBeTruthy();
 
     await pressAsync(component, "Copy image-0");
-    expect(dependencies.share).toHaveBeenCalledWith({
-      url: "file:///tmp/share.png",
-      message: "share.png"
+    expect(dependencies.shareFile).toHaveBeenCalledWith("file:///tmp/share.png", {
+      mimeType: "image/*",
+      UTI: "public.image"
     });
     expect(findMarkerOrder(component, "image-0", 1)).toBeTruthy();
 
@@ -144,7 +144,7 @@ describe("Social Threader mobile app", () => {
       .mockRejectedValueOnce(new Error("picker_down"))
       .mockResolvedValueOnce({ canceled: false, assets: [{ uri: "file:///tmp/image.png", fileName: "image.png" }] });
     dependencies.clipboard.setStringAsync.mockRejectedValueOnce(new Error("clipboard_down"));
-    dependencies.share.mockRejectedValueOnce(new Error("share_down"));
+    dependencies.shareFile.mockRejectedValueOnce(new Error("share_down"));
     const component = renderApp(dependencies);
 
     await pressAsync(component, MOBILE_COPY.ATTACH_IMAGE_LABEL);
@@ -189,7 +189,8 @@ function createDependencies() {
       },
       launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] }))
     },
-    share: jest.fn(() => Promise.resolve({ action: "sharedAction" }))
+    share: jest.fn(() => Promise.resolve({ action: "sharedAction" })),
+    shareFile: jest.fn(() => Promise.resolve())
   };
 }
 
