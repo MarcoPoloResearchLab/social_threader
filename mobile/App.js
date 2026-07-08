@@ -37,7 +37,8 @@ import {
   formatInputStatistics,
   hasThreadContent,
   parsePositiveLength,
-  presetLengthForIdentifier
+  presetLengthForIdentifier,
+  updateImageRecordOffsets
 } from "./src/threaderModel.js";
 
 const IMAGE_PICKER_OPTIONS = Object.freeze({
@@ -136,6 +137,9 @@ function ThreaderScreen() {
   };
 
   const handleSourceTextChange = (nextSourceText) => {
+    setImageRecords((currentImageRecords) =>
+      updateImageRecordOffsets(sourceText, nextSourceText, currentImageRecords)
+    );
     setSourceText(nextSourceText);
     resetCopiedChunkOrders();
     const nextStatistics = calculateInputStatistics(nextSourceText);
@@ -177,7 +181,7 @@ function ThreaderScreen() {
       if (!selectedImageAsset) {
         return;
       }
-      const imageRecord = createImageRecord(selectedImageAsset, imageRecords.length);
+      const imageRecord = createImageRecord(selectedImageAsset, imageRecords.length, sourceText.length);
       if (!imageRecord) {
         setErrorMessage(MOBILE_COPY.ERROR_IMAGE_PICK_FAILED);
         return;

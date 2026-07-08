@@ -208,6 +208,28 @@ describe("Social Threader mobile app", () => {
     expect(findText(component, MOBILE_COPY.IMAGE_CHUNK_LABEL)).toBeNull();
   });
 
+  it("keeps image chunks anchored when text is added after attachment", async () => {
+    const dependencies = createDependencies();
+    dependencies.imagePicker.launchImageLibraryAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: "file:///tmp/anchored.png", fileName: "anchored.png", base64: IMAGE_CLIPBOARD_BASE64 }]
+    });
+    const component = renderApp(dependencies);
+
+    changeText(component, MOBILE_TEST_IDS.SOURCE_INPUT, "Alpha");
+    await pressAsync(component, MOBILE_COPY.ATTACH_IMAGE_LABEL);
+    changeText(component, MOBILE_TEST_IDS.SOURCE_INPUT, "Alpha bravo");
+
+    expect(findText(component, "Alpha")).toBeTruthy();
+    expect(findText(component, MOBILE_COPY.IMAGE_CHUNK_LABEL)).toBeTruthy();
+    expect(findText(component, "bravo")).toBeTruthy();
+
+    await pressAsync(component, MOBILE_COPY.SHARE_THREAD_LABEL);
+    expect(dependencies.share).toHaveBeenCalledWith({
+      message: `Alpha\n\n${MOBILE_COPY.IMAGE_PLAIN_TEXT_PLACEHOLDER}\n\nbravo`
+    });
+  });
+
   it("ignores cancelled image picker results and reports invalid image assets", async () => {
     const dependencies = createDependencies();
     dependencies.imagePicker.launchImageLibraryAsync

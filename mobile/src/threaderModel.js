@@ -6,6 +6,10 @@
 import { chunkingService } from "./shared-web/core/chunking.js";
 import { richTextHelpers } from "./shared-web/core/richText.js";
 import {
+  APPEND_TO_END_OFFSET,
+  buildContentSegments
+} from "./imageAnchors.js";
+import {
   DEFAULT_LENGTHS,
   MOBILE_COPY,
   PRESET_CONFIG,
@@ -19,12 +23,19 @@ const FIRST_ARRAY_INDEX = 0;
 const MINIMUM_POSITIVE_LENGTH = 1;
 const BASE64_DATA_SEPARATOR = ",";
 
+export { updateImageRecordOffsets } from "./imageAnchors.js";
+
 /**
  * @typedef {Object} MobileImageRecord
  * @property {string} placeholderToken Token used to identify the image position.
  * @property {string} dataUrl URI used to render the image preview.
  * @property {string} altText Accessible description associated with the image.
  * @property {string} clipboardBase64 Base64 image payload without a data URI prefix.
+ * @property {number} sourceOffset Source-text offset where the image was attached.
+ */
+
+/**
+ * @typedef {{ id: string; variant: "text"; plainText: string; statisticsText: string } | { id: string; variant: "image"; imageUri: string; imageBase64: string; altText: string; plainText: string }} MobileRenderableChunk
  */
 
 /**
@@ -116,9 +127,10 @@ function normalizeClipboardBase64(rawBase64) {
  * Creates a mobile image record from an Expo image-picker asset.
  * @param {{ uri?: string; fileName?: string | null; assetId?: string | null; base64?: string | null } | null | undefined} imageAsset Expo image asset.
  * @param {number} imageIndex Zero-based image index.
+ * @param {number} [sourceOffset] Source-text offset where the image was attached.
  * @returns {MobileImageRecord | null}
  */
-export function createImageRecord(imageAsset, imageIndex) {
+export function createImageRecord(imageAsset, imageIndex, sourceOffset = APPEND_TO_END_OFFSET) {
   const imageUri = typeof imageAsset?.uri === "string" ? imageAsset.uri.trim() : EMPTY_STRING;
   const clipboardBase64 = normalizeClipboardBase64(imageAsset?.base64);
   if (imageUri.length === 0 || clipboardBase64.length === 0) {
@@ -134,8 +146,89 @@ export function createImageRecord(imageAsset, imageIndex) {
     placeholderToken: richTextHelpers.createPlaceholderToken(imageIndex),
     dataUrl: imageUri,
     altText: rawAltText,
-    clipboardBase64
+    clipboardBase64,
+    sourceOffset
   };
+}
+
+function createImageChunk(imageRecord, imageIndex) {
+  return {
+    id: `image-${imageIndex}`,
+    variant: "image",
+    imageUri: imageRecord.dataUrl,
+    imageBase64: imageRecord.clipboardBase64,
+    altText: imageRecord.altText,
+    plainText: EMPTY_STRING
+  };
+}
+
+function createTextChunk(chunkText, chunkIndex) {
+  const statistics = chunkingService.calculateStatistics(chunkText);
+  return {
+    id: `text-${chunkIndex}`,
+    variant: "text",
+    plainText: chunkText,
+    statisticsText: formatChunkStatistics(statistics)
+  };
+}
+
+function enumerateTextChunk(chunkText, chunkIndex, totalChunks) {
+  return interpolateMobileTemplate(MOBILE_COPY.ENUMERATION_TEMPLATE, {
+    text: chunkText,
+    current: chunkIndex + 1,
+    total: totalChunks
+  });
+}
+
+function applyTextEnumeration(chunks) {
+  const totalTextChunks = chunks.filter((chunk) => chunk.variant === "text").length;
+  let textChunkIndex = 0;
+  return chunks.map((chunk) => {
+    if (chunk.variant === "image") {
+      return chunk;
+    }
+    const enumeratedText = enumerateTextChunk(chunk.plainText, textChunkIndex, totalTextChunks);
+    textChunkIndex += 1;
+    return createTextChunk(enumeratedText, Number.parseInt(chunk.id.replace("text-", ""), 10));
+  });
+}
+
+function getEnumerationOverhead(totalChunks) {
+  return enumerateTextChunk(EMPTY_STRING, totalChunks - 1, totalChunks).length;
+}
+
+function countTextChunks(chunks) {
+  return chunks.filter((chunk) => chunk.variant === "text").length;
+}
+
+function buildMobileChunksForMaximumLength({
+  sourceText,
+  imageRecords,
+  maximumLength,
+  breakOnSentences,
+  breakOnParagraphs
+}) {
+  const chunks = [];
+  let textChunkIndex = 0;
+
+  buildContentSegments(sourceText, imageRecords).forEach((segment) => {
+    if (segment.variant === "image") {
+      chunks.push(createImageChunk(segment.imageRecord, segment.imageIndex));
+      return;
+    }
+    const textChunks = chunkingService.getChunks(segment.sourceText, {
+      maximumLength,
+      breakOnSentences,
+      enumerate: false,
+      breakOnParagraphs
+    });
+    textChunks.forEach((chunkText) => {
+      chunks.push(createTextChunk(chunkText, textChunkIndex));
+      textChunkIndex += 1;
+    });
+  });
+
+  return chunks;
 }
 
 /**
@@ -147,7 +240,7 @@ export function createImageRecord(imageAsset, imageIndex) {
  * @param {boolean} params.breakOnSentences Whether sentence boundaries are preferred.
  * @param {boolean} params.enumerate Whether chunks should be enumerated.
  * @param {boolean} params.breakOnParagraphs Whether paragraphs should be split first.
- * @returns {Array<{ id: string; variant: "text"; plainText: string; statisticsText: string } | { id: string; variant: "image"; imageUri: string; imageBase64: string; altText: string; plainText: string }>}
+ * @returns {MobileRenderableChunk[]}
  */
 export function buildMobileChunks({
   sourceText,
@@ -157,33 +250,42 @@ export function buildMobileChunks({
   enumerate,
   breakOnParagraphs
 }) {
-  const textChunks = chunkingService.getChunks(sourceText, {
-    maximumLength,
-    breakOnSentences,
-    enumerate,
-    breakOnParagraphs
-  });
+  if (!enumerate) {
+    return buildMobileChunksForMaximumLength({
+      sourceText,
+      imageRecords,
+      maximumLength,
+      breakOnSentences,
+      breakOnParagraphs
+    });
+  }
 
-  const renderableTextChunks = textChunks.map((chunkText, chunkIndex) => {
-    const statistics = chunkingService.calculateStatistics(chunkText);
-    return {
-      id: `text-${chunkIndex}`,
-      variant: "text",
-      plainText: chunkText,
-      statisticsText: formatChunkStatistics(statistics)
-    };
-  });
+  let effectiveMaximumLength = Math.max(MINIMUM_POSITIVE_LENGTH, maximumLength);
+  let chunks = [];
 
-  const renderableImageChunks = imageRecords.map((imageRecord, imageIndex) => ({
-    id: `image-${imageIndex}`,
-    variant: "image",
-    imageUri: imageRecord.dataUrl,
-    imageBase64: imageRecord.clipboardBase64,
-    altText: imageRecord.altText,
-    plainText: EMPTY_STRING
-  }));
+  while (true) {
+    chunks = buildMobileChunksForMaximumLength({
+      sourceText,
+      imageRecords,
+      maximumLength: effectiveMaximumLength,
+      breakOnSentences,
+      breakOnParagraphs
+    });
+    const totalTextChunks = countTextChunks(chunks);
+    if (totalTextChunks === 0) {
+      return chunks;
+    }
+    const nextEffectiveMaximumLength = Math.max(
+      MINIMUM_POSITIVE_LENGTH,
+      maximumLength - getEnumerationOverhead(totalTextChunks)
+    );
+    if (nextEffectiveMaximumLength === effectiveMaximumLength) {
+      break;
+    }
+    effectiveMaximumLength = nextEffectiveMaximumLength;
+  }
 
-  return [...renderableTextChunks, ...renderableImageChunks];
+  return applyTextEnumeration(chunks);
 }
 
 /**
