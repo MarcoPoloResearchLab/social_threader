@@ -4,7 +4,6 @@ shelf/
 *.iml
 node_modules/
 .expo/
-mobile/src/shared-web/
 configs/AuthKey_*.p8
 configs/*service-account*.json
 configs/google-play*.json
