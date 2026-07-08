@@ -23,6 +23,7 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
   - One-click copying for each chunk
   - Visual thread preview
   - Responsive design for mobile and desktop
+  - Native iOS and Android app under `mobile/`
 
 - **Advanced Features**
   - Optional post enumeration (e.g., 1/5, 2/5, etc.)
@@ -55,6 +56,28 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 - Copied image chunks include the PNG data, HTML markup, and accessible alt text so screenshots can be reposted without manual downloads.
 - When the browser cannot perform a rich clipboard write, the app falls back to copying plain text so text-only chunks continue to work on restrictive browsers.
 
+## Mobile App
+
+The universal mobile app lives in `mobile/` and is built with Expo and React Native. It reuses the existing Social Threader chunking engine, adds native clipboard/share/image-picker flows, and targets both iOS and Android from one codebase.
+
+Run the mobile app locally:
+
+```bash
+make mobile-install
+make run-ios
+make run-android
+```
+
+Run the full mobile verification gate:
+
+```bash
+make mobile-check
+```
+
+Mobile test coverage is enforced at 100% for statements, branches, functions, and lines.
+
+`make run-android` starts Metro on localhost, prepares the Android emulator with Expo Go when needed, configures `adb reverse`, and opens Expo Go at the matching `127.0.0.1` URL so the Android emulator can download the local bundle without interactive Expo prompts.
+
 ## Technical Details
 
 ### Architecture
@@ -75,12 +98,14 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
 - Run `npm install` to install the Happy DOM harness along with the Puppeteer regression runner.
 - Execute `npm test` to run the Happy DOM harness (`npm run test:headless`) followed by the Puppeteer browser suite (`npm run test:browser`). The command mirrors the sequence executed in CI so local runs surface the same failures.
 - The Puppeteer suite (`tests/puppeteerSuite.js`) opens `index.html`, injects rich text markup, and verifies the live statistics rendered in the UI.
+- Execute `make mobile-check` to run the Expo/Jest mobile suite with 100% coverage thresholds, validate Expo app config, confirm dependency compatibility with `expo install --check`, and bundle the iOS app once through Metro.
 - Continue to use the `?test=true` query flag in a manual browser session to view the in-browser harness reporter.
 
 ### Continuous Integration
 
 - `.github/workflows/browser-tests.yml` runs on pull requests and pushes that modify application code or test tooling. The single job executes the Happy DOM harness first and then the Chromium-only Puppeteer suite, matching the default `npm test` flow.
 - The workflow caches the Chromium download used by Puppeteer and executes the same commands developers run locally for consistent feedback.
+- The same workflow also runs the mobile job from `mobile/package-lock.json` and executes `npm run check` inside `mobile/`.
 
 ## Local Installation
 

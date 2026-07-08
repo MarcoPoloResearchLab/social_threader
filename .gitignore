@@ -3,6 +3,10 @@ shelf/
 .idea/
 *.iml
 node_modules/
+.expo/
+configs/AuthKey_*.p8
+configs/*service-account*.json
+configs/google-play*.json
 test-results/
 # Managed by gix gitignore workflow
 .env

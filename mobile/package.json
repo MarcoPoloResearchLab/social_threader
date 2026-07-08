@@ -1,0 +1,40 @@
+{
+  "name": "social-threader-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Universal iOS and Android app for Social Threader.",
+  "main": "expo/AppEntry",
+  "scripts": {
+    "sync-shared": "node scripts/sync-shared-web.mjs",
+    "prestart": "npm run sync-shared",
+    "start": "expo start",
+    "preandroid": "npm run sync-shared",
+    "android": "node scripts/android-run.mjs",
+    "preios": "npm run sync-shared",
+    "ios": "node scripts/ios-run.mjs",
+    "preweb": "npm run sync-shared",
+    "web": "expo start --web",
+    "pretest": "npm run sync-shared",
+    "test": "jest --watchman=false --runInBand",
+    "pretest:coverage": "npm run sync-shared",
+    "test:coverage": "jest --watchman=false --runInBand --coverage",
+    "bundle:check": "node scripts/validate-bundle.mjs",
+    "check": "npm run sync-shared && npm run test:coverage && node scripts/validate-config.mjs && npx --no-install expo config --type public >/dev/null && npx --no-install expo install --check && npm run bundle:check"
+  },
+  "dependencies": {
+    "expo": "~56.0.15",
+    "expo-clipboard": "~56.0.4",
+    "expo-image-picker": "~56.0.20",
+    "expo-status-bar": "^56.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "babel-preset-expo": "^56.0.0",
+    "jest-expo": "^56.0.5",
+    "react-test-renderer": "19.2.3"
+  }
+}

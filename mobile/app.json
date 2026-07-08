@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Social Threader",
+    "slug": "social-threader-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "socialthreader",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Social Threader lets you attach selected images as thread chunks.",
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mprlab.socialthreader",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.mprlab.socialthreader",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
