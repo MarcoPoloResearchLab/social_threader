@@ -24,7 +24,8 @@ export const MOBILE_COPY = Object.freeze({
   ATTACH_IMAGE_LABEL: "Attach image",
   REMOVE_IMAGE_LABEL: "Remove",
   CLEAR_BUTTON_LABEL: "Clear",
-  BUILT_BY_LINE: "Built by Marco Polo Research Lab",
+  BUILT_BY_PREFIX: "Built by ",
+  MPR_LAB_NAME: "Marco Polo Research Lab",
   PARAGRAPH_TOGGLE_LABEL: "Paragraphs",
   SENTENCE_TOGGLE_LABEL: "Sentences",
   ENUMERATION_TOGGLE_LABEL: "Enumerate",
@@ -33,6 +34,7 @@ export const MOBILE_COPY = Object.freeze({
   ERROR_COPY_FAILED: "Unable to copy this chunk.",
   ERROR_SHARE_FAILED: "Unable to open the share sheet.",
   ERROR_IMAGE_PICK_FAILED: "Unable to attach that image.",
+  ERROR_OPEN_MPR_LAB_FAILED: "Unable to open Marco Polo Research Lab.",
   ATTACHED_IMAGE_ALT: "Attached image",
   IMAGE_CHUNK_LABEL: "Image chunk",
   TIMELINE_MARKER_PENDING_TEMPLATE: "Chunk {CHUNKID} not copied",
@@ -57,7 +59,8 @@ export const MOBILE_TEST_IDS = Object.freeze({
   SHARE_THREAD_BUTTON: "share-thread-button",
   ATTACH_IMAGE_BUTTON: "attach-image-button",
   CLEAR_BUTTON: "clear-button",
-  BUILT_BY_LINE: "built-by-line"
+  BUILT_BY_LINE: "built-by-line",
+  BUILT_BY_LINK: "built-by-link"
 });
 
 export const MOBILE_ACCESSIBILITY_LABELS = Object.freeze({
@@ -67,7 +70,12 @@ export const MOBILE_ACCESSIBILITY_LABELS = Object.freeze({
   CUSTOM_APPLY: "Apply custom size",
   BREAK_ON_PARAGRAPHS: MOBILE_COPY.PARAGRAPH_TOGGLE_LABEL,
   BREAK_ON_SENTENCES: MOBILE_COPY.SENTENCE_TOGGLE_LABEL,
-  ENUMERATE: MOBILE_COPY.ENUMERATION_TOGGLE_LABEL
+  ENUMERATE: MOBILE_COPY.ENUMERATION_TOGGLE_LABEL,
+  MPR_LAB_LINK: "Open Marco Polo Research Lab"
+});
+
+export const MOBILE_EXTERNAL_URLS = Object.freeze({
+  MPR_LAB: "https://mprlab.com"
 });
 
 export const LAYOUT_VALUES = Object.freeze({

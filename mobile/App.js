@@ -1,6 +1,7 @@
 // @ts-check
 import React, { createContext, useContext, useMemo, useState } from "react";
 import {
+  Linking,
   ScrollView,
   Share,
   Text,
@@ -16,6 +17,7 @@ import {
   DEFAULT_LENGTHS,
   MOBILE_ACCESSIBILITY_LABELS,
   MOBILE_COPY,
+  MOBILE_EXTERNAL_URLS,
   MOBILE_TEST_IDS,
   PRESET_CONFIG,
   PRESET_IDENTIFIERS
@@ -53,6 +55,7 @@ const SAFE_AREA_INITIAL_METRICS = Object.freeze({
 const defaultDependencies = Object.freeze({
   clipboard: Clipboard,
   imagePicker: ImagePicker,
+  linking: Linking,
   share: Share.share
 });
 
@@ -237,6 +240,15 @@ function ThreaderScreen() {
     setErrorMessage("");
   };
 
+  const handleBuiltByLinkPress = async () => {
+    try {
+      await dependencies.linking.openURL(MOBILE_EXTERNAL_URLS.MPR_LAB);
+      setErrorMessage("");
+    } catch (caughtError) {
+      setErrorMessage(MOBILE_COPY.ERROR_OPEN_MPR_LAB_FAILED);
+    }
+  };
+
   const handleRemoveImagePress = (imageIndex) => {
     setImageRecords((currentImageRecords) =>
       currentImageRecords.filter((_imageRecord, currentIndex) => currentIndex !== imageIndex)
@@ -371,7 +383,16 @@ function ThreaderScreen() {
 
         <View style={styles.footer}>
           <Text testID={MOBILE_TEST_IDS.BUILT_BY_LINE} style={styles.builtByLine}>
-            {MOBILE_COPY.BUILT_BY_LINE}
+            {MOBILE_COPY.BUILT_BY_PREFIX}
+            <Text
+              testID={MOBILE_TEST_IDS.BUILT_BY_LINK}
+              accessibilityRole="link"
+              accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.MPR_LAB_LINK}
+              style={styles.builtByLink}
+              onPress={handleBuiltByLinkPress}
+            >
+              {MOBILE_COPY.MPR_LAB_NAME}
+            </Text>
           </Text>
         </View>
       </ScrollView>

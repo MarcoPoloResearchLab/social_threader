@@ -76,6 +76,10 @@ export const screenStyles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center"
   },
+  builtByLink: {
+    color: "#2563eb",
+    textDecorationLine: "underline"
+  },
   errorText: {
     color: "#b91c1c",
     fontSize: LAYOUT_VALUES.SMALL_FONT_SIZE

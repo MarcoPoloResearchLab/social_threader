@@ -5,6 +5,7 @@ import App from "../App";
 import {
   MOBILE_ACCESSIBILITY_LABELS,
   MOBILE_COPY,
+  MOBILE_EXTERNAL_URLS,
   MOBILE_TEST_IDS,
   LAYOUT_VALUES,
   PRESET_CONFIG,
@@ -267,14 +268,24 @@ describe("Social Threader mobile app", () => {
     expect(component.root.findByProps({ testID: MOBILE_TEST_IDS.SOURCE_INPUT })).toBeTruthy();
   });
 
-  it("renders the Marco Polo Research Lab builder credit as quiet mobile metadata", () => {
-    const component = renderApp(createDependencies());
+  it("renders the Marco Polo Research Lab builder credit as quiet mobile metadata", async () => {
+    const dependencies = createDependencies();
+    const component = renderApp(dependencies);
     const builtByLine = findByTestID(component, MOBILE_TEST_IDS.BUILT_BY_LINE);
+    const builtByLink = findLink(component, MOBILE_ACCESSIBILITY_LABELS.MPR_LAB_LINK);
     const builtByLineStyle = StyleSheet.flatten(builtByLine.props.style);
 
-    expect(builtByLine.props.children).toBe(MOBILE_COPY.BUILT_BY_LINE);
+    expect(builtByLine.props.children[0]).toBe(MOBILE_COPY.BUILT_BY_PREFIX);
+    expect(builtByLink.props.children).toBe(MOBILE_COPY.MPR_LAB_NAME);
     expect(builtByLineStyle.fontSize).toBe(LAYOUT_VALUES.STAT_FONT_SIZE);
     expect(builtByLineStyle.textAlign).toBe("center");
+
+    await pressLinkAsync(component, MOBILE_ACCESSIBILITY_LABELS.MPR_LAB_LINK);
+    expect(dependencies.linking.openURL).toHaveBeenCalledWith(MOBILE_EXTERNAL_URLS.MPR_LAB);
+
+    dependencies.linking.openURL.mockRejectedValueOnce(new Error("link_down"));
+    await pressLinkAsync(component, MOBILE_ACCESSIBILITY_LABELS.MPR_LAB_LINK);
+    expect(findText(component, MOBILE_COPY.ERROR_OPEN_MPR_LAB_FAILED)).toBeTruthy();
   });
 });
 
@@ -298,6 +309,9 @@ function createDependencies() {
         Images: "Images"
       },
       launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] }))
+    },
+    linking: {
+      openURL: jest.fn(() => Promise.resolve(true))
     },
     share: jest.fn(() => Promise.resolve({ action: "sharedAction" }))
   };
@@ -327,6 +341,14 @@ function findPressable(component, accessibilityLabel) {
   ))[0];
 }
 
+function findLink(component, accessibilityLabel) {
+  return component.root.findAll((node) => (
+    node.props?.accessibilityRole === "link"
+    && node.props?.accessibilityLabel === accessibilityLabel
+    && typeof node.props?.onPress === "function"
+  ))[0];
+}
+
 function pressableStyle(component, accessibilityLabel) {
   return StyleSheet.flatten(findPressable(component, accessibilityLabel).props.style);
 }
@@ -347,6 +369,13 @@ async function pressAsync(component, accessibilityLabel) {
   const pressable = findPressable(component, accessibilityLabel);
   await act(async () => {
     await pressable.props.onPress();
+  });
+}
+
+async function pressLinkAsync(component, accessibilityLabel) {
+  const link = findLink(component, accessibilityLabel);
+  await act(async () => {
+    await link.props.onPress();
   });
 }
 
