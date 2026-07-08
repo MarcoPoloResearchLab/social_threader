@@ -7,6 +7,9 @@ node_modules/
 configs/AuthKey_*.p8
 configs/*service-account*.json
 configs/google-play*.json
+configs/*keystore*.properties
+configs/*upload-key*.jks
+mobile/dist/
 test-results/
 # Managed by gix gitignore workflow
 .env

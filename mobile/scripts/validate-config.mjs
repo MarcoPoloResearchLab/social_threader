@@ -34,6 +34,8 @@ assertEqual(packageJson.devDependencies?.playwright, undefined, "mobile dev pack
 assertExecutable("scripts/ios-run.mjs", "iOS local-run launcher must be executable");
 assertExecutable("scripts/expo-run.expect", "Expo local-run prompt wrapper must be executable");
 assertExecutable("scripts/android-run.mjs", "Android local-run launcher must be executable");
+assertExecutable("scripts/build-android-bundle.mjs", "Android release bundle builder must be executable");
+assertExecutable("scripts/publish-android-play.mjs", "Android Play publisher must be executable");
 assertSharedWebCopies();
 assertEqual(appJson.expo?.name, "Social Threader", "native app name must be stable");
 assertEqual(appJson.expo?.scheme, "socialthreader", "native URL scheme must be stable");
@@ -55,7 +57,7 @@ assertNumber(appJson.expo?.android?.versionCode, "Android versionCode must be nu
 assertProjectFile(appJson.expo?.android?.adaptiveIcon?.foregroundImage, "Android adaptive icon must be stored inside mobile/");
 assertProjectFile(appJson.expo?.web?.favicon, "Web favicon must be stored inside mobile/");
 assertEqual(easJson.build?.production?.distribution, "store", "EAS production profile must target stores");
-assertEqual(easJson.build?.production?.android?.buildType, "app-bundle", "EAS Android production profile must emit AAB");
+assertEqual(easJson.build?.production?.android, undefined, "Android store publishing must not use EAS");
 
 console.log("Social Threader mobile config validation passed.");
 
