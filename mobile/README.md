@@ -27,7 +27,7 @@ make submit-ios
 make submit-android
 ```
 
-`make build-ios` and `make build-android` use the `production` EAS profile. Android production builds emit an App Bundle.
+`make build-ios` uses the `production` EAS profile. `make build-android` follows the Kamu-style local Google Play path: Expo prebuilds Android in a temporary directory, Gradle creates a signed App Bundle, and the script writes a checked build manifest beside the `.aab`.
 
 `make run-ios` starts Metro through `scripts/ios-run.mjs`, selects an available Expo port before startup, and then runs Expo through `scripts/expo-run.expect` so known Expo prompts do not block local startup: Expo Go version upgrades are accepted automatically, while unexpected port changes are rejected.
 
@@ -35,7 +35,7 @@ make submit-android
 
 ## Store Publishing Checklist
 
-Keep App Store Connect keys, Google service account JSON files, and other store credentials out of git. Local files matching `configs/AuthKey_*.p8`, `configs/*service-account*.json`, and `configs/google-play*.json` are ignored by the repository.
+Keep App Store Connect keys, Google service account JSON files, Android upload keystores, and other store credentials out of git. Local files matching `configs/AuthKey_*.p8`, `configs/*service-account*.json`, `configs/google-play*.json`, `configs/*keystore*.properties`, and `configs/*upload-key*.jks` are ignored by the repository.
 
 ### Shared preflight
 
@@ -73,8 +73,15 @@ make submit-ios MOBILE_IOS_SUBMIT_ARGS="--non-interactive --wait"
 
 ### Google Play
 
-- [ ] Create or confirm a Google Play service account with Android Publisher access for this app.
-- [ ] Add the service account key to EAS credentials with `eas credentials --platform android`, or configure `serviceAccountKeyPath` in the Android submit profile using a local ignored JSON file.
+- [ ] Create or confirm a Google Play app with package name `com.mprlab.socialthreader`.
+- [ ] Create an Android upload keystore and keep it outside git. The local builder defaults to `~/.local/share/social_threader/android-upload/keystore.properties` and `~/.local/share/social_threader/android-upload/socialthreader-upload-key.jks`.
+- [ ] Add the Play upload-key SHA-256 and Google Cloud quota project to `mobile/android-release-identity.json`, using `mobile/android-release-identity.example.json` as the template.
+- [ ] Configure Google Application Default Credentials with Android Publisher access:
+
+```sh
+gcloud auth application-default login --scopes=https://www.googleapis.com/auth/androidpublisher,https://www.googleapis.com/auth/cloud-platform
+```
+
 - [ ] Confirm the Play Console setup is complete: app content, Data safety, privacy policy, content rating, target audience, ads declaration, and testing track.
 - [ ] Build the Android App Bundle:
 
@@ -82,10 +89,11 @@ make submit-ios MOBILE_IOS_SUBMIT_ARGS="--non-interactive --wait"
 make build-android
 ```
 
-- [ ] After the EAS Android build finishes, submit it first to internal testing:
+- [ ] The first Google Play upload may need to be performed manually in Play Console. Upload `mobile/dist/social-threader-<version>-android-release.aab`, then verify the release on the internal testing track.
+- [ ] For subsequent automated internal testing uploads, submit through the Google Play Android Publisher API:
 
 ```sh
-make submit-android MOBILE_ANDROID_SUBMIT_ARGS="--non-interactive --wait"
+make submit-android
 ```
 
 - [ ] In Play Console, verify the internal-test release, then promote to production after testing.
