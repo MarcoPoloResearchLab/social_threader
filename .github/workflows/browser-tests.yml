@@ -11,6 +11,7 @@ on:
       - Makefile
       - mobile/app.json
       - mobile/eas.json
+      - mobile/scripts/**
       - package.json
       - package-lock.json
       - mobile/package.json
@@ -26,6 +27,7 @@ on:
       - Makefile
       - mobile/app.json
       - mobile/eas.json
+      - mobile/scripts/**
       - package.json
       - package-lock.json
       - mobile/package.json
