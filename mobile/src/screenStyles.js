@@ -65,6 +65,17 @@ export const screenStyles = StyleSheet.create({
   actionRow: {
     gap: LAYOUT_VALUES.CONTROL_GAP
   },
+  footer: {
+    paddingTop: LAYOUT_VALUES.FOOTER_TOP_PADDING,
+    paddingBottom: LAYOUT_VALUES.FOOTER_BOTTOM_PADDING,
+    alignItems: "center"
+  },
+  builtByLine: {
+    fontSize: LAYOUT_VALUES.STAT_FONT_SIZE,
+    color: "#6b7280",
+    fontWeight: "600",
+    textAlign: "center"
+  },
   errorText: {
     color: "#b91c1c",
     fontSize: LAYOUT_VALUES.SMALL_FONT_SIZE

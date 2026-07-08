@@ -23,10 +23,11 @@ assertIncludes(packageJson.scripts?.check || "", "npm run test:coverage", "mobil
 assertIncludes(packageJson.scripts?.check || "", "expo install --check", "mobile check must validate Expo dependency alignment");
 assertIncludes(packageJson.scripts?.ios || "", "scripts/ios-run.mjs", "iOS local run must use the prompt-safe Expo launcher");
 assertIncludes(packageJson.scripts?.android || "", "scripts/android-run.mjs", "Android local run must use the adb reverse launcher");
-assertEqual(packageJson.dependencies?.expo, "~56.0.14", "mobile package must use the Kamu-aligned Expo SDK");
+assertEqual(packageJson.dependencies?.expo, "~56.0.15", "mobile package must use the Expo SDK 56 runtime");
 assertEqual(packageJson.dependencies?.react, "19.2.3", "mobile package must use the Expo SDK React version");
 assertEqual(packageJson.dependencies?.["react-native"], "0.85.3", "mobile package must use the Expo SDK React Native version");
 assertEqual(packageJson.dependencies?.["expo-clipboard"], "~56.0.4", "mobile package must use Expo SDK clipboard for native image copies");
+assertEqual(packageJson.dependencies?.["expo-image-picker"], "~56.0.20", "mobile package must use Expo SDK image picker for native image attachments");
 assertEqual(packageJson.dependencies?.["expo-sharing"], undefined, "mobile package must not keep the old native image sharing dependency");
 assertEqual(packageJson.dependencies?.playwright, undefined, "mobile package must not introduce Playwright");
 assertEqual(packageJson.devDependencies?.playwright, undefined, "mobile dev package must not introduce Playwright");

@@ -89,6 +89,29 @@ describe("Social Threader mobile app", () => {
     expect(disabledParagraphSwitch.props.disabled).toBe(true);
   });
 
+  it("clears copied markers when chunk inputs change", async () => {
+    const component = renderApp(createDependencies());
+
+    changeText(component, MOBILE_TEST_IDS.SOURCE_INPUT, "Alpha bravo charlie delta echo.");
+    changeText(component, MOBILE_TEST_IDS.CUSTOM_LENGTH_INPUT, "12");
+    press(component, MOBILE_ACCESSIBILITY_LABELS.CUSTOM_APPLY);
+
+    await pressAsync(component, "Copy text-0");
+    expect(markerAccessibilityLabel(component, "text-0")).toBe("Chunk text-0 copied #1");
+
+    changeText(component, MOBILE_TEST_IDS.SOURCE_INPUT, "Updated text.");
+    expect(markerAccessibilityLabel(component, "text-0")).toBe("Chunk text-0 not copied");
+    expect(findMarkerOrder(component, "text-0", 1)).toBeNull();
+
+    await pressAsync(component, "Copy text-0");
+    press(component, PRESET_CONFIG[PRESET_IDENTIFIERS.THREADS].label);
+    expect(markerAccessibilityLabel(component, "text-0")).toBe("Chunk text-0 not copied");
+
+    await pressAsync(component, "Copy text-0");
+    toggle(component, MOBILE_ACCESSIBILITY_LABELS.ENUMERATE, true);
+    expect(markerAccessibilityLabel(component, "text-0")).toBe("Chunk text-0 not copied");
+  });
+
   it("disables text option toggles when source text is empty", () => {
     const component = renderApp(createDependencies());
     const textOptionLabels = [
@@ -242,6 +265,16 @@ describe("Social Threader mobile app", () => {
   it("uses default dependencies when none are injected", () => {
     const component = renderDefaultApp();
     expect(component.root.findByProps({ testID: MOBILE_TEST_IDS.SOURCE_INPUT })).toBeTruthy();
+  });
+
+  it("renders the Marco Polo Research Lab builder credit as quiet mobile metadata", () => {
+    const component = renderApp(createDependencies());
+    const builtByLine = findByTestID(component, MOBILE_TEST_IDS.BUILT_BY_LINE);
+    const builtByLineStyle = StyleSheet.flatten(builtByLine.props.style);
+
+    expect(builtByLine.props.children).toBe(MOBILE_COPY.BUILT_BY_LINE);
+    expect(builtByLineStyle.fontSize).toBe(LAYOUT_VALUES.STAT_FONT_SIZE);
+    expect(builtByLineStyle.textAlign).toBe("center");
   });
 });
 

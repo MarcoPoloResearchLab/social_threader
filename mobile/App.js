@@ -128,8 +128,13 @@ function ThreaderScreen() {
     ]
   );
 
+  const resetCopiedChunkOrders = () => {
+    setCopiedChunkOrders({});
+  };
+
   const handleSourceTextChange = (nextSourceText) => {
     setSourceText(nextSourceText);
+    resetCopiedChunkOrders();
     const nextStatistics = calculateInputStatistics(nextSourceText);
     const nextTextOptionTogglesEnabled = hasTextContent(nextSourceText);
     if (!nextTextOptionTogglesEnabled) {
@@ -146,6 +151,7 @@ function ThreaderScreen() {
     const nextLength = presetLengthForIdentifier(presetIdentifier);
     setActivePresetIdentifier(presetIdentifier);
     setMaximumLength(nextLength);
+    resetCopiedChunkOrders();
     setErrorMessage(hasThreadContent(sourceText, imageRecords) ? "" : MOBILE_COPY.ERROR_NO_CONTENT);
   };
 
@@ -157,6 +163,7 @@ function ThreaderScreen() {
     }
     setActivePresetIdentifier(null);
     setMaximumLength(customLength);
+    resetCopiedChunkOrders();
     setErrorMessage(hasThreadContent(sourceText, imageRecords) ? "" : MOBILE_COPY.ERROR_NO_CONTENT);
   };
 
@@ -173,6 +180,7 @@ function ThreaderScreen() {
         return;
       }
       setImageRecords((currentImageRecords) => [...currentImageRecords, imageRecord]);
+      resetCopiedChunkOrders();
       setErrorMessage("");
     } catch (caughtError) {
       setErrorMessage(MOBILE_COPY.ERROR_IMAGE_PICK_FAILED);
@@ -233,6 +241,22 @@ function ThreaderScreen() {
     setImageRecords((currentImageRecords) =>
       currentImageRecords.filter((_imageRecord, currentIndex) => currentIndex !== imageIndex)
     );
+    resetCopiedChunkOrders();
+  };
+
+  const handleBreakOnParagraphsChange = (nextBreakOnParagraphs) => {
+    setBreakOnParagraphs(nextBreakOnParagraphs);
+    resetCopiedChunkOrders();
+  };
+
+  const handleBreakOnSentencesChange = (nextBreakOnSentences) => {
+    setBreakOnSentences(nextBreakOnSentences);
+    resetCopiedChunkOrders();
+  };
+
+  const handleEnumerateChange = (nextEnumerate) => {
+    setEnumerate(nextEnumerate);
+    resetCopiedChunkOrders();
   };
 
   return (
@@ -293,21 +317,21 @@ function ThreaderScreen() {
             accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.BREAK_ON_PARAGRAPHS}
             value={paragraphToggleEnabled && breakOnParagraphs}
             disabled={!paragraphToggleEnabled}
-            onValueChange={setBreakOnParagraphs}
+            onValueChange={handleBreakOnParagraphsChange}
           />
           <ToggleRow
             label={MOBILE_COPY.SENTENCE_TOGGLE_LABEL}
             accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.BREAK_ON_SENTENCES}
             value={textOptionTogglesEnabled && breakOnSentences}
             disabled={!textOptionTogglesEnabled}
-            onValueChange={setBreakOnSentences}
+            onValueChange={handleBreakOnSentencesChange}
           />
           <ToggleRow
             label={MOBILE_COPY.ENUMERATION_TOGGLE_LABEL}
             accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.ENUMERATE}
             value={textOptionTogglesEnabled && enumerate}
             disabled={!textOptionTogglesEnabled}
-            onValueChange={setEnumerate}
+            onValueChange={handleEnumerateChange}
           />
         </View>
 
@@ -344,6 +368,12 @@ function ThreaderScreen() {
           onCopyChunkPress={handleCopyChunkPress}
           onRemoveImagePress={handleRemoveImagePress}
         />
+
+        <View style={styles.footer}>
+          <Text testID={MOBILE_TEST_IDS.BUILT_BY_LINE} style={styles.builtByLine}>
+            {MOBILE_COPY.BUILT_BY_LINE}
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

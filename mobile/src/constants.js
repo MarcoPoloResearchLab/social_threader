@@ -24,6 +24,7 @@ export const MOBILE_COPY = Object.freeze({
   ATTACH_IMAGE_LABEL: "Attach image",
   REMOVE_IMAGE_LABEL: "Remove",
   CLEAR_BUTTON_LABEL: "Clear",
+  BUILT_BY_LINE: "Built by Marco Polo Research Lab",
   PARAGRAPH_TOGGLE_LABEL: "Paragraphs",
   SENTENCE_TOGGLE_LABEL: "Sentences",
   ENUMERATION_TOGGLE_LABEL: "Enumerate",
@@ -55,7 +56,8 @@ export const MOBILE_TEST_IDS = Object.freeze({
   TOGGLE_TRACK_PREFIX: "toggle-track",
   SHARE_THREAD_BUTTON: "share-thread-button",
   ATTACH_IMAGE_BUTTON: "attach-image-button",
-  CLEAR_BUTTON: "clear-button"
+  CLEAR_BUTTON: "clear-button",
+  BUILT_BY_LINE: "built-by-line"
 });
 
 export const MOBILE_ACCESSIBILITY_LABELS = Object.freeze({
@@ -84,6 +86,8 @@ export const LAYOUT_VALUES = Object.freeze({
   INPUT_MIN_HEIGHT: 180,
   CUSTOM_INPUT_WIDTH: 96,
   IMAGE_PREVIEW_HEIGHT: 120,
+  FOOTER_TOP_PADDING: 10,
+  FOOTER_BOTTOM_PADDING: 18,
   TIMELINE_RAIL_WIDTH: 32,
   TIMELINE_MARKER_SIZE: 22,
   TIMELINE_LINE_WIDTH: 2,
