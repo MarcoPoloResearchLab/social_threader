@@ -8,7 +8,7 @@ MOBILE_IOS_BUILD_ARGS ?=
 MOBILE_SUBMIT_ARGS ?=
 MOBILE_IOS_SUBMIT_ARGS ?=
 MOBILE_ANDROID_BUILD_DIR ?= /tmp/social-threader-mobile-android-aab
-MOBILE_ANDROID_VERSION_CODE ?= local
+MOBILE_ANDROID_VERSION_CODE ?= auto
 MOBILE_ANDROID_BUNDLE_ARGS ?=
 MOBILE_ANDROID_PUBLISH_ARGS ?=
 MOBILE_ANDROID_BUNDLE_SCRIPT := $(MOBILE_DIR)/scripts/build-android-bundle.mjs
@@ -20,12 +20,21 @@ ANDROID_HOME ?= $(ANDROID_SDK_ROOT)
 ANDROID_STUDIO_JAVA_HOME ?= /Applications/Android Studio.app/Contents/jbr/Contents/Home
 ANDROID_TOOL_PATH := $(ANDROID_SDK_ROOT)/emulator:$(ANDROID_SDK_ROOT)/platform-tools:$(ANDROID_SDK_ROOT)/cmdline-tools/latest/bin:$(ANDROID_SDK_ROOT)/tools/bin
 
-.PHONY: test ci mobile-install mobile-check run-ios run-android build-ios build-android mobile-android-bundle submit-ios submit-android
+.PHONY: test ci release publish deploy mobile-install mobile-check run-ios run-android build-ios build-android mobile-android-bundle submit-ios submit-android
 
 test:
 	npm test
 
 ci: test mobile-check
+
+release: ci
+	@CI=1 EXPO_NO_TELEMETRY=1 $(MAKE) --no-print-directory submit-android MOBILE_DIR="$(MOBILE_DIR)" MOBILE_ANDROID_VERSION_CODE="$(MOBILE_ANDROID_VERSION_CODE)" MOBILE_ANDROID_BUNDLE_ARGS="$(MOBILE_ANDROID_BUNDLE_ARGS)" MOBILE_ANDROID_PUBLISH_ARGS="$(MOBILE_ANDROID_PUBLISH_ARGS)"
+
+publish:
+	@echo "==> [publish] No separate Social Threader publish artifact; Android Google Play upload runs during make release."
+
+deploy:
+	@echo "==> [deploy] No repository-owned deploy target is configured for Social Threader."
 
 mobile-install:
 	@if [ ! -d "$(MOBILE_DIR)/node_modules" ]; then \
