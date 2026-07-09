@@ -74,6 +74,14 @@ Run the full mobile verification gate:
 make mobile-check
 ```
 
+Publish the Android app through the standard release command:
+
+```bash
+make release
+```
+
+`make release` runs the checked local Android bundle flow and submits the signed App Bundle to Google Play Internal testing. `make publish` and `make deploy` are exposed for the standard MPR release command surface; Social Threader does not currently have a separate backend image or repository-owned deploy step.
+
 Mobile test coverage is enforced at 100% for statements, branches, functions, and lines.
 
 `make run-android` starts Metro on localhost, prepares the Android emulator with Expo Go when needed, configures `adb reverse`, and opens Expo Go at the matching `127.0.0.1` URL so the Android emulator can download the local bundle without interactive Expo prompts.
