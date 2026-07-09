@@ -17,20 +17,51 @@ const SHARED_FILES = Object.freeze([
 const packageJson = readJson("package.json");
 const appJson = readJson("app.json");
 const easJson = readJson("eas.json");
+const packageLock = readJson("package-lock.json");
+const androidReleaseIdentity = readJson("android-release-identity.json");
+const makefileSource = fs.readFileSync(path.join(REPOSITORY_ROOT, "Makefile"), "utf8");
+const appSource = fs.readFileSync(path.join(MOBILE_ROOT, "App.js"), "utf8");
+const androidBuildSource = fs.readFileSync(path.join(MOBILE_ROOT, "scripts", "build-android-bundle.mjs"), "utf8");
+const jestConfigSource = fs.readFileSync(path.join(MOBILE_ROOT, "jest.config.js"), "utf8");
 
 assertEqual(packageJson.main, "expo/AppEntry", "mobile package must use Expo AppEntry");
 assertIncludes(packageJson.scripts?.check || "", "npm run test:coverage", "mobile check must run coverage");
 assertIncludes(packageJson.scripts?.check || "", "expo install --check", "mobile check must validate Expo dependency alignment");
 assertIncludes(packageJson.scripts?.ios || "", "scripts/ios-run.mjs", "iOS local run must use the prompt-safe Expo launcher");
 assertIncludes(packageJson.scripts?.android || "", "scripts/android-run.mjs", "Android local run must use the adb reverse launcher");
-assertEqual(packageJson.dependencies?.expo, "~56.0.15", "mobile package must use the Expo SDK 56 runtime");
+assertEqual(packageJson.dependencies?.expo, "57.0.4", "mobile package must use the Expo SDK 57 runtime");
 assertEqual(packageJson.dependencies?.react, "19.2.3", "mobile package must use the Expo SDK React version");
-assertEqual(packageJson.dependencies?.["react-native"], "0.85.3", "mobile package must use the Expo SDK React Native version");
-assertEqual(packageJson.dependencies?.["expo-clipboard"], "~56.0.4", "mobile package must use Expo SDK clipboard for native image copies");
-assertEqual(packageJson.dependencies?.["expo-image-picker"], "~56.0.20", "mobile package must use Expo SDK image picker for native image attachments");
+assertEqual(packageJson.dependencies?.["react-native"], "0.86.0", "mobile package must use the Expo SDK React Native version");
+assertEqual(packageJson.dependencies?.["expo-clipboard"], "57.0.0", "mobile package must use Expo SDK clipboard for native image copies");
+assertEqual(packageJson.dependencies?.["expo-image-picker"], "57.0.2", "mobile package must use Expo SDK image picker for native image attachments");
 assertEqual(packageJson.dependencies?.["expo-sharing"], undefined, "mobile package must not keep the old native image sharing dependency");
+assertEqual(
+  packageJson.dependencies?.["react-native-safe-area-context"],
+  undefined,
+  "mobile package must avoid the safe-area native dependency with deprecated Android call sites"
+);
 assertEqual(packageJson.dependencies?.playwright, undefined, "mobile package must not introduce Playwright");
 assertEqual(packageJson.devDependencies?.playwright, undefined, "mobile dev package must not introduce Playwright");
+assertNotIncludes(appSource, "react-native-safe-area-context", "mobile app must not import the removed safe-area native dependency");
+assertEqual(packageJson.devDependencies?.["jest-expo"], undefined, "mobile package must not use the deprecated-transitive jest-expo preset path");
+assertEqual(packageJson.devDependencies?.jest, "30.4.1", "mobile tests must use the upgraded Jest runtime");
+assertEqual(packageJson.devDependencies?.["babel-jest"], "30.4.1", "mobile tests must use the upgraded Babel Jest transformer");
+assertEqual(packageJson.devDependencies?.["babel-preset-expo"], "57.0.2", "mobile Babel preset must match Expo SDK 57");
+assertDeepEqual(
+  packageJson.expo?.install?.exclude,
+  ["jest"],
+  "Expo dependency validation exclusions must stay limited to deliberate deprecation-remediation upgrades"
+);
+assertEqual(packageJson.overrides?.xcode?.uuid, "11.1.0", "xcode must use a supported uuid release");
+assertEqual(packageJson.overrides?.["babel-plugin-istanbul"], "8.0.0", "coverage instrumentation must use the maintained Istanbul plugin");
+assertEqual(packageJson.overrides?.["test-exclude"], "8.0.0", "coverage exclusion must use the maintained test-exclude package");
+assertEqual(packageJson.overrides?.["@jest/reporters"]?.glob, "13.0.6", "Jest reporters must use supported glob");
+assertEqual(packageJson.overrides?.["jest-config"]?.glob, "13.0.6", "Jest config must use supported glob");
+assertEqual(packageJson.overrides?.["jest-runtime"]?.glob, "13.0.6", "Jest runtime must use supported glob");
+assertNotIncludes(jestConfigSource, "jest-expo", "mobile Jest config must not use jest-expo");
+assertNotIncludes(jestConfigSource, "reactNativeSafeAreaContext", "mobile Jest config must not keep the removed safe-area mock");
+assertIncludes(jestConfigSource, "tests/mocks/reactNative.js", "mobile Jest config must use the local React Native mock");
+assertNoDeprecatedLockPackages(packageLock);
 assertExecutable("scripts/ios-run.mjs", "iOS local-run launcher must be executable");
 assertExecutable("scripts/expo-run.expect", "Expo local-run prompt wrapper must be executable");
 assertExecutable("scripts/android-run.mjs", "Android local-run launcher must be executable");
@@ -58,6 +89,31 @@ assertProjectFile(appJson.expo?.android?.adaptiveIcon?.foregroundImage, "Android
 assertProjectFile(appJson.expo?.web?.favicon, "Web favicon must be stored inside mobile/");
 assertEqual(easJson.build?.production?.distribution, "store", "EAS production profile must target stores");
 assertEqual(easJson.build?.production?.android, undefined, "Android store publishing must not use EAS");
+assertEqual(androidReleaseIdentity.schema, "social-threader.mobile-android-release-identity.v1", "Android release identity schema must be stable");
+assertEqual(androidReleaseIdentity.googleCloudProjectId, "kamu-tales", "Android release identity must supply the Google Cloud quota project");
+assertEqual(androidReleaseIdentity.packageName, "com.mprlab.socialthreader", "Android release identity package must match the app package");
+assertIncludes(makefileSource, "MOBILE_ANDROID_VERSION_CODE ?= auto", "Android release version code must default to Play-safe auto resolution");
+assertIncludes(makefileSource, "release: ci", "root Makefile must expose make release as the checked store release entrypoint");
+assertIncludes(makefileSource, "$(MAKE) --no-print-directory submit-android", "make release must publish Android through the lower-level submit target");
+assertIncludes(makefileSource, "publish:", "root Makefile must expose make publish");
+assertIncludes(makefileSource, "deploy:", "root Makefile must expose make deploy");
+assertIncludes(androidBuildSource, "releaseIdentity.googleCloudProjectId", "Android bundle builder must use the release identity quota project");
+assertIncludes(
+  androidBuildSource,
+  "patchGeneratedAndroidDependencySources(buildMobileDir)",
+  "Android bundle builder must patch generated third-party native deprecation sources"
+);
+assertIncludes(androidBuildSource, "react::RawPropsParser()", "Android bundle builder must replace the deprecated RawPropsParser call");
+assertIncludes(androidBuildSource, "ForwardingCookieHandler()", "Android bundle builder must replace the deprecated cookie handler constructor");
+assertIncludes(androidBuildSource, "sharedObjectDidRelease()", "Android bundle builder must replace the deprecated shared-object release hook");
+assertIncludes(androidBuildSource, "patchGeneratedAndroidGradleFiles(buildMobileDir)", "Android bundle builder must patch generated Gradle syntax");
+assertIncludes(androidBuildSource, "org.gradle.java.installations.auto-download", "Android bundle builder must avoid Gradle toolchain auto-provisioning warnings");
+assertIncludes(androidBuildSource, `"none"`, "Android bundle builder must suppress remaining upstream Gradle warning-mode noise");
+assertIncludes(androidBuildSource, "NativeModulesProxyModule.kt", "Android bundle builder must patch the Expo native modules proxy DSL warning");
+assertIncludes(androidBuildSource, "ModuleRegistryAdapter.java", "Android bundle builder must patch Expo ReactPackage Java deprecations");
+assertIncludes(androidBuildSource, "EventEmitterModule.java", "Android bundle builder must patch Expo event dispatcher Java deprecations");
+assertIncludes(androidBuildSource, "-Xlint:none", "Android bundle builder must suppress upstream Expo Java deprecation notes");
+assertIncludes(androidBuildSource, "delete environment.FORCE_COLOR", "Android bundle builder must avoid Metro color environment warnings");
 
 console.log("Social Threader mobile config validation passed.");
 
@@ -71,9 +127,21 @@ function assertIncludes(sourceValue, expectedValue, message) {
   }
 }
 
+function assertNotIncludes(sourceValue, rejectedValue, message) {
+  if (String(sourceValue).includes(rejectedValue)) {
+    throw new Error(`${message}: found ${rejectedValue}`);
+  }
+}
+
 function assertEqual(actualValue, expectedValue, message) {
   if (actualValue !== expectedValue) {
     throw new Error(`${message}: got ${actualValue}, expected ${expectedValue}`);
+  }
+}
+
+function assertDeepEqual(actualValue, expectedValue, message) {
+  if (JSON.stringify(actualValue) !== JSON.stringify(expectedValue)) {
+    throw new Error(`${message}: got ${JSON.stringify(actualValue)}, expected ${JSON.stringify(expectedValue)}`);
   }
 }
 
@@ -151,4 +219,13 @@ function findPluginDefinition(plugins, pluginName) {
     }
     return Array.isArray(pluginDefinition) && pluginDefinition[0] === pluginName;
   });
+}
+
+function assertNoDeprecatedLockPackages(lockFile) {
+  const packages = lockFile.packages || {};
+  for (const [packagePath, packageMetadata] of Object.entries(packages)) {
+    if (packageMetadata?.deprecated) {
+      throw new Error(`mobile package-lock contains deprecated package ${packagePath}: ${packageMetadata.deprecated}`);
+    }
+  }
 }
