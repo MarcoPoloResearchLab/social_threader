@@ -39,23 +39,58 @@
     <meta property="og:description" content="Effortlessly split long text into post-sized chunks for Twitter/X, Bluesky, Mastodon, and Threads.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://threader.mprlab.com/">
-    <meta property="og:image" content="https://threader.mprlab.com/og-image.png">
+    <meta property="og:site_name" content="Social Threader">
+    <meta property="og:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Social Threader – Break Text into Threads">
     <meta name="twitter:description" content="Create perfectly sized posts for your favorite social media platforms.">
-    <meta name="twitter:image" content="https://threader.mprlab.com/og-image.png">
+    <meta name="twitter:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta name="twitter:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "@id": "https://threader.mprlab.com/#application",
+        "name": "Social Threader",
+        "url": "https://threader.mprlab.com/",
+        "description": "Split long text into character-limited chunks for social media while preserving readable sentence and paragraph boundaries.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any modern web browser",
+        "author": {
+            "@type": "Organization",
+            "name": "MPR Lab",
+            "url": "https://github.com/MarcoPoloResearchLab"
+        },
+        "featureList": [
+            "Twitter/X, Bluesky, Threads, and Mastodon character-limit presets",
+            "Custom character limits",
+            "Sentence-aware and paragraph-aware splitting",
+            "Optional post enumeration",
+            "Character, word, sentence, and paragraph statistics",
+            "Text and image chunk copying"
+        ]
+    }
+    </script>
 
     <link rel="stylesheet" href="./assets/css/main.css">
 </head>
 <body>
     <noscript>Social Threader requires JavaScript to operate.</noscript>
-    <div class="container">
+    <main class="container">
         <div class="left-pane">
-            <h2 id="appTitle"></h2>
-            <p class="mb-20" id="primaryDescription"></p>
-            <p class="mb-20" id="secondaryDescription"></p>
+            <h1>Social Threader</h1>
+            <p class="mb-20">Split long text into smaller chunks for Twitter/X, Bluesky, Threads, Mastodon, or any platform with a character limit.</p>
+            <p class="mb-20">Choose sentence or paragraph boundaries, track the counts that matter, and copy each chunk in order.</p>
+            <p class="resource-intro">
+                Need a specific workflow?
+                <a href="/resources/">Browse the Social Threader resource guides</a>.
+            </p>
             <div
                 id="sourceText"
                 class="richTextInput"
@@ -97,10 +132,17 @@
             </div>
             <div class="lower-right-pane" id="results" aria-live="polite"></div>
         </div>
-    </div>
+    </main>
 
     <footer>
-        <p id="footerText"></p>
+        <p>
+            Social Threader is open source.
+            <a href="https://github.com/MarcoPoloResearchLab/social_threader">View the code on GitHub</a>.
+        </p>
+        <nav aria-label="Site links">
+            <a href="/">Thread splitter</a>
+            <a href="/resources/">Resources</a>
+        </nav>
     </footer>
 
     <script src="https://formspree.io/js/formbutton-v1.min.js" defer></script>
