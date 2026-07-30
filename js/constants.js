@@ -5,11 +5,7 @@
 
 /** @type {Readonly<Record<string, string>>} */
 export const TEXT_CONTENT = Object.freeze({
-    APP_TITLE: "Social Threader",
-    PRIMARY_DESCRIPTION: "With Social Threader, you can split your text into smaller chunks ideal for Twitter/X, Bluesky, Threads, Mastodon, or any platform that limits character count.",
-    SECONDARY_DESCRIPTION: "Easily create threads, track word counts, and copy each chunk with a single click.",
     EDITOR_PLACEHOLDER: "Enter text here...",
-    FOOTER_HTML: "This project is <strong>open source</strong>! View the code on <a href=\"https://github.com/MarkoPoloResearchLab/social_threader\" target=\"_blank\">GitHub</a>.",
     CUSTOM_BUTTON_DEFAULT: "Custom Size",
     CUSTOM_BUTTON_TEMPLATE: "Custom ({VALUE})",
     COPY_BUTTON_LABEL: "Copy",

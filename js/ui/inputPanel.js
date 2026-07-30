@@ -261,16 +261,10 @@ export class InputPanel {
     }
 
     /**
-     * Populates static copy for headings and helper text.
-     * @param {HTMLElement} titleElement Heading for the application name.
-     * @param {HTMLElement} primaryDescriptionElement Primary descriptive paragraph.
-     * @param {HTMLElement} secondaryDescriptionElement Secondary descriptive paragraph.
+     * Initializes the editable input with its placeholder and empty statistics.
      * @returns {void}
      */
-    initializeCopy(titleElement, primaryDescriptionElement, secondaryDescriptionElement) {
-        titleElement.textContent = TEXT_CONTENT.APP_TITLE;
-        primaryDescriptionElement.textContent = TEXT_CONTENT.PRIMARY_DESCRIPTION;
-        secondaryDescriptionElement.textContent = TEXT_CONTENT.SECONDARY_DESCRIPTION;
+    initializeCopy() {
         this.editorElement.dataset.placeholder = TEXT_CONTENT.EDITOR_PLACEHOLDER;
         this.editorElement.innerHTML = "";
         this.statsElement.textContent = TEXT_CONTENT.INPUT_STATS_EMPTY;
