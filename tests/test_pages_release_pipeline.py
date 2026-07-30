@@ -1,4 +1,4 @@
-+from __future__ import annotations
+from __future__ import annotations
 
 import json
 import os
@@ -15,6 +15,31 @@ RELEASE_HELPER = RELEASE_SCRIPTS / "release_helper.py"
 PREPARE_RELEASE = RELEASE_SCRIPTS / "prepare_release.sh"
 PREPARE_PAGES = RELEASE_SCRIPTS / "prepare_pages_artifact.sh"
 DEPLOY_PAGES = RELEASE_SCRIPTS / "deploy_pages_artifact.sh"
+PUBLIC_PAGE_CATALOG = REPOSITORY_ROOT / "data" / "resource-pages.json"
+PUBLIC_ARTIFACT_FILES = {
+    ".nojekyll",
+    ".mprlab-release.json",
+    "CNAME",
+    "assets/css/resource-components.css",
+    "assets/css/resources.css",
+    "assets/img/social-threader-og.png",
+    "data/resource-pages.json",
+    "index.html",
+    "robots.txt",
+    "sitemap.xml",
+}
+PUBLIC_ARTIFACT_DIRECTORIES = {
+    "assets",
+    "data",
+    "js",
+    "resources",
+}
+PUBLIC_ARTIFACT_PREFIXES = (
+    "assets/",
+    "data/",
+    "js/",
+    "resources/",
+)
 
 
 class PagesReleasePipelineTest(unittest.TestCase):
@@ -223,7 +248,64 @@ class PagesReleasePipelineTest(unittest.TestCase):
         self.assertNotEqual(rejected.returncode, 0)
         self.assertIn(f"source {source_commit}", rejected.stderr)
 
+    def test_repository_pages_artifact_contains_only_the_public_contract(self) -> None:
+        artifact_directory = self.root / "public-pages-artifact"
+        artifact_directory.mkdir()
+        staging_manifest = {
+            "version": "v1.2.3",
+            "source_commit": "source-commit",
+            "release_commit": "release-commit",
+            "release_timestamp": "2026-07-30T20:00:00Z",
+        }
+        (artifact_directory / "staging.json").write_text(
+            json.dumps(staging_manifest),
+            encoding="utf-8",
+        )
+        pages_environment = os.environ.copy()
+        pages_environment["RELEASE_VERSION"] = staging_manifest["version"]
+        pages_environment["RELEASE_ARTIFACT_DIR"] = str(artifact_directory)
+
+        self.command(
+            "make",
+            "pages-artifact",
+            cwd=REPOSITORY_ROOT,
+            env=pages_environment,
+        )
+
+        pages_archive_path = (
+            artifact_directory / "payloads" / "release-assets" / "pages.tar.gz"
+        )
+        with tarfile.open(pages_archive_path, "r:gz") as pages_archive:
+            archive_paths = {
+                member.name.removeprefix("./").rstrip("/")
+                for member in pages_archive.getmembers()
+                if member.name.removeprefix("./").rstrip("/") not in {"", "."}
+            }
+
+        page_catalog = json.loads(PUBLIC_PAGE_CATALOG.read_text(encoding="utf-8"))
+        expected_paths = PUBLIC_ARTIFACT_FILES | {
+            page_definition["source"] for page_definition in page_catalog["pages"]
+        } | {
+            page_definition["evidenceSource"]
+            for page_definition in page_catalog["pages"]
+            if "evidenceSource" in page_definition
+        }
+        self.assertTrue(
+            expected_paths.issubset(archive_paths),
+            f"Pages archive is missing: {sorted(expected_paths - archive_paths)}",
+        )
+        self.assertEqual(
+            (artifact_directory / "payloads" / "release-assets" / "pages.tar.gz").is_file(),
+            True,
+        )
+        for archive_path in archive_paths:
+            self.assertTrue(
+                archive_path in PUBLIC_ARTIFACT_FILES
+                or archive_path in PUBLIC_ARTIFACT_DIRECTORIES
+                or archive_path.startswith(PUBLIC_ARTIFACT_PREFIXES),
+                f"Non-public repository path entered Pages archive: {archive_path}",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
-
