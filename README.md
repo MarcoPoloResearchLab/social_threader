@@ -74,13 +74,15 @@ Run the full mobile verification gate:
 make mobile-check
 ```
 
-Publish the Android app through the standard release command:
+Prepare and publish the Android app through the standard lifecycle:
 
 ```bash
 make release
+make publish
+make deploy
 ```
 
-`make release` runs the checked local Android bundle flow and submits the signed App Bundle to Google Play Internal testing. `make publish` and `make deploy` are exposed for the standard MPR release command surface; Social Threader does not currently have a separate backend image or repository-owned deploy step.
+`make release` runs the checks and prepares the signed Android App Bundle plus the static web Pages archive locally. `make publish` verifies and publishes those exact assets, including the bundle upload to Google Play Internal testing. `make deploy` activates the already-published web archive at `threader.mprlab.com`; the mobile app has no separate runtime rollout.
 
 Mobile test coverage is enforced at 100% for statements, branches, functions, and lines.
 
