@@ -29,11 +29,12 @@ assertIncludes(packageJson.scripts?.check || "", "npm run test:coverage", "mobil
 assertIncludes(packageJson.scripts?.check || "", "expo install --check", "mobile check must validate Expo dependency alignment");
 assertIncludes(packageJson.scripts?.ios || "", "scripts/ios-run.mjs", "iOS local run must use the prompt-safe Expo launcher");
 assertIncludes(packageJson.scripts?.android || "", "scripts/android-run.mjs", "Android local run must use the adb reverse launcher");
-assertEqual(packageJson.dependencies?.expo, "57.0.4", "mobile package must use the Expo SDK 57 runtime");
+assertEqual(packageJson.dependencies?.expo, "57.0.9", "mobile package must use the Expo SDK 57 runtime");
 assertEqual(packageJson.dependencies?.react, "19.2.3", "mobile package must use the Expo SDK React version");
-assertEqual(packageJson.dependencies?.["react-native"], "0.86.0", "mobile package must use the Expo SDK React Native version");
-assertEqual(packageJson.dependencies?.["expo-clipboard"], "57.0.0", "mobile package must use Expo SDK clipboard for native image copies");
-assertEqual(packageJson.dependencies?.["expo-image-picker"], "57.0.2", "mobile package must use Expo SDK image picker for native image attachments");
+assertEqual(packageJson.dependencies?.["react-native"], "0.86.2", "mobile package must use the Expo SDK React Native version");
+assertEqual(packageJson.dependencies?.["expo-clipboard"], "57.0.1", "mobile package must use Expo SDK clipboard for native image copies");
+assertEqual(packageJson.dependencies?.["expo-image-picker"], "57.0.7", "mobile package must use Expo SDK image picker for native image attachments");
+assertEqual(packageJson.dependencies?.["expo-status-bar"], "57.0.1", "mobile package must use Expo SDK status bar");
 assertEqual(packageJson.dependencies?.["expo-sharing"], undefined, "mobile package must not keep the old native image sharing dependency");
 assertEqual(
   packageJson.dependencies?.["react-native-safe-area-context"],
@@ -44,9 +45,11 @@ assertEqual(packageJson.dependencies?.playwright, undefined, "mobile package mus
 assertEqual(packageJson.devDependencies?.playwright, undefined, "mobile dev package must not introduce Playwright");
 assertNotIncludes(appSource, "react-native-safe-area-context", "mobile app must not import the removed safe-area native dependency");
 assertEqual(packageJson.devDependencies?.["jest-expo"], undefined, "mobile package must not use the deprecated-transitive jest-expo preset path");
+assertEqual(packageJson.devDependencies?.["react-test-renderer"], undefined, "mobile package must not use deprecated react-test-renderer");
+assertEqual(packageJson.devDependencies?.["test-renderer"], "1.2.0", "mobile tests must use the maintained React 19 test renderer");
 assertEqual(packageJson.devDependencies?.jest, "30.4.1", "mobile tests must use the upgraded Jest runtime");
 assertEqual(packageJson.devDependencies?.["babel-jest"], "30.4.1", "mobile tests must use the upgraded Babel Jest transformer");
-assertEqual(packageJson.devDependencies?.["babel-preset-expo"], "57.0.2", "mobile Babel preset must match Expo SDK 57");
+assertEqual(packageJson.devDependencies?.["babel-preset-expo"], "57.0.5", "mobile Babel preset must match Expo SDK 57");
 assertDeepEqual(
   packageJson.expo?.install?.exclude,
   ["jest"],
@@ -59,6 +62,8 @@ assertEqual(packageJson.overrides?.["@jest/reporters"]?.glob, "13.0.6", "Jest re
 assertEqual(packageJson.overrides?.["jest-config"]?.glob, "13.0.6", "Jest config must use supported glob");
 assertEqual(packageJson.overrides?.["jest-runtime"]?.glob, "13.0.6", "Jest runtime must use supported glob");
 assertNotIncludes(jestConfigSource, "jest-expo", "mobile Jest config must not use jest-expo");
+assertNotIncludes(jestConfigSource, "react-test-renderer", "mobile Jest config must not use react-test-renderer");
+assertNotIncludes(appTestSource(), "react-test-renderer", "mobile tests must not import deprecated react-test-renderer");
 assertNotIncludes(jestConfigSource, "reactNativeSafeAreaContext", "mobile Jest config must not keep the removed safe-area mock");
 assertIncludes(jestConfigSource, "tests/mocks/reactNative.js", "mobile Jest config must use the local React Native mock");
 assertNoDeprecatedLockPackages(packageLock);
@@ -145,6 +150,10 @@ console.log("Social Threader mobile config validation passed.");
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(MOBILE_ROOT, relativePath), "utf8"));
+}
+
+function appTestSource() {
+  return fs.readFileSync(path.join(MOBILE_ROOT, "__tests__", "app.test.js"), "utf8");
 }
 
 function assertIncludes(sourceValue, expectedValue, message) {

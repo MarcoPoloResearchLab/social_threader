@@ -1,6 +1,6 @@
-import React from "react";
+import React, { act } from "react";
 import { StyleSheet } from "react-native";
-import { act, create } from "react-test-renderer";
+import { createRoot } from "test-renderer";
 import App from "../App";
 import {
   MOBILE_ACCESSIBILITY_LABELS,
@@ -166,14 +166,14 @@ describe("Social Threader mobile app", () => {
   it("positions the custom size input to the right of the custom button", () => {
     const component = renderApp(createDependencies());
     const customRow = findByTestID(component, MOBILE_TEST_IDS.CUSTOM_ROW);
-    const customButton = customRow.findAll((node) => (
+    const customButton = findAll(customRow, (node) => (
       node.props?.accessibilityRole === "button"
       && node.props?.accessibilityLabel === MOBILE_ACCESSIBILITY_LABELS.CUSTOM_APPLY
     ))[0];
-    const customInput = customRow.findAll((node) => (
+    const customInput = findAll(customRow, (node) => (
       node.props?.testID === MOBILE_TEST_IDS.CUSTOM_LENGTH_INPUT
     ))[0];
-    const customRowDescendants = customRow.findAll(() => true);
+    const customRowDescendants = findAll(customRow, () => true);
     const customButtonIndex = customRowDescendants.indexOf(customButton);
     const customInputIndex = customRowDescendants.indexOf(customInput);
 
@@ -287,7 +287,7 @@ describe("Social Threader mobile app", () => {
 
   it("uses default dependencies when none are injected", () => {
     const component = renderDefaultApp();
-    expect(component.root.findByProps({ testID: MOBILE_TEST_IDS.SOURCE_INPUT })).toBeTruthy();
+    expect(findByTestID(component, MOBILE_TEST_IDS.SOURCE_INPUT)).toBeTruthy();
   });
 
   it("renders the Marco Polo Research Lab builder credit as quiet mobile metadata", async () => {
@@ -340,23 +340,23 @@ function createDependencies() {
 }
 
 function renderApp(dependencies) {
-  let component;
+  const component = createRoot();
   act(() => {
-    component = create(<App dependencies={dependencies} />);
+    component.render(<App dependencies={dependencies} />);
   });
   return component;
 }
 
 function renderDefaultApp() {
-  let component;
+  const component = createRoot();
   act(() => {
-    component = create(<App />);
+    component.render(<App />);
   });
   return component;
 }
 
 function findPressable(component, accessibilityLabel) {
-  return component.root.findAll((node) => (
+  return findAll(component, (node) => (
     node.props?.accessibilityRole === "button"
     && node.props?.accessibilityLabel === accessibilityLabel
     && typeof node.props?.onPress === "function"
@@ -364,7 +364,7 @@ function findPressable(component, accessibilityLabel) {
 }
 
 function findLink(component, accessibilityLabel) {
-  return component.root.findAll((node) => (
+  return findAll(component, (node) => (
     node.props?.accessibilityRole === "link"
     && node.props?.accessibilityLabel === accessibilityLabel
     && typeof node.props?.onPress === "function"
@@ -376,7 +376,7 @@ function pressableStyle(component, accessibilityLabel) {
 }
 
 function textInputStyle(component, testID) {
-  const input = component.root.findAll((node) => node.props?.testID === testID)[0];
+  const input = findAll(component, (node) => node.props?.testID === testID)[0];
   return StyleSheet.flatten(input.props.style);
 }
 
@@ -402,7 +402,7 @@ async function pressLinkAsync(component, accessibilityLabel) {
 }
 
 function changeText(component, testID, nextText) {
-  const input = component.root.findAll((node) => (
+  const input = findAll(component, (node) => (
     node.props?.testID === testID
     && typeof node.props?.onChangeText === "function"
   ))[0];
@@ -412,7 +412,7 @@ function changeText(component, testID, nextText) {
 }
 
 function findSwitch(component, accessibilityLabel) {
-  return component.root.findAll((node) => (
+  return findAll(component, (node) => (
     node.props?.accessibilityLabel === accessibilityLabel
     && node.props?.accessibilityRole === "switch"
     && typeof node.props?.onPress === "function"
@@ -429,7 +429,7 @@ function toggle(component, accessibilityLabel, nextValue) {
 }
 
 function findByTestID(component, testID) {
-  return component.root.findAll((node) => node.props?.testID === testID)[0] || null;
+  return findAll(component, (node) => node.props?.testID === testID)[0] || null;
 }
 
 function findToggleTrack(component, accessibilityLabel) {
@@ -437,7 +437,7 @@ function findToggleTrack(component, accessibilityLabel) {
 }
 
 function findText(component, expectedText) {
-  return component.root.findAll((node) => node.props.children === expectedText)[0] || null;
+  return findAll(component, (node) => node.props.children === expectedText)[0] || null;
 }
 
 function findMarkerOrder(component, chunkId, expectedOrder) {
@@ -445,7 +445,7 @@ function findMarkerOrder(component, chunkId, expectedOrder) {
   if (!marker) {
     return null;
   }
-  return marker.findAll((node) => node.props?.children === expectedOrder)[0] || null;
+  return findAll(marker, (node) => node.props?.children === expectedOrder)[0] || null;
 }
 
 function markerAccessibilityLabel(component, chunkId) {
@@ -456,4 +456,9 @@ function markerAccessibilityLabel(component, chunkId) {
 function lineBackgroundColor(component, testID) {
   const line = findByTestID(component, testID);
   return StyleSheet.flatten(line.props.style).backgroundColor;
+}
+
+function findAll(component, predicate) {
+  const queryRoot = component.container || component;
+  return queryRoot.queryAll(predicate);
 }

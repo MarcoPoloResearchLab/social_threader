@@ -11,5 +11,6 @@ jest.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] }))
 }));
 
+global.IS_REACT_ACT_ENVIRONMENT = true;
 global.window = global.window || {};
 global.window.dispatchEvent = global.window.dispatchEvent || jest.fn();

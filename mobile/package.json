@@ -22,20 +22,20 @@
     "check": "npm run sync-shared && npm run test:coverage && node scripts/validate-config.mjs && npx --no-install expo config --type public >/dev/null && npx --no-install expo install --check && npm run bundle:check"
   },
   "dependencies": {
-    "expo": "57.0.4",
-    "expo-clipboard": "57.0.0",
-    "expo-image-picker": "57.0.2",
-    "expo-status-bar": "57.0.0",
+    "expo": "57.0.9",
+    "expo-clipboard": "57.0.1",
+    "expo-image-picker": "57.0.7",
+    "expo-status-bar": "57.0.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-native": "0.86.0",
+    "react-native": "0.86.2",
     "react-native-web": "0.21.2"
   },
   "devDependencies": {
     "babel-jest": "30.4.1",
-    "babel-preset-expo": "57.0.2",
+    "babel-preset-expo": "57.0.5",
     "jest": "30.4.1",
-    "react-test-renderer": "19.2.3"
+    "test-renderer": "1.2.0"
   },
   "overrides": {
     "@jest/reporters": {
