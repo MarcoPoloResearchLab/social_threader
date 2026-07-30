@@ -2,7 +2,7 @@
 
 Social Threader is a web-based tool that helps you break long text into smaller chunks ideal for social media platforms like Twitter/X, Bluesky, Threads, and Mastodon. It intelligently preserves sentence structures and punctuation while respecting character limits.
 
-You can find the page ready to for threading texts at https://threader.mprlab.com
+Use the web tool at https://threader.mprlab.com.
 
 ## Features
 
@@ -49,6 +49,13 @@ You can find the page ready to for threading texts at https://threader.mprlab.co
    - Each chunk shows character count and other stats
    - Use "Copy" buttons to easily copy individual chunks
    - Visual indicators show copied chunks in order
+
+## Resource Guides
+
+The public [Social Threader resource library](https://threader.mprlab.com/resources/)
+documents the tool's sentence-aware splitting, platform presets, image-and-text
+workflow, and browser JavaScript implementation. Each guide links its examples
+back to the current repository source and states the workflow's limits.
 
 ### Working with Images
 
@@ -113,7 +120,7 @@ Mobile test coverage is enforced at 100% for statements, branches, functions, an
 
 ### Continuous Integration
 
-- `.github/workflows/browser-tests.yml` runs on pull requests and pushes that modify application code or test tooling. The single job executes the Happy DOM harness first and then the Chromium-only Puppeteer suite, matching the default `npm test` flow.
+- `.github/workflows/browser-tests.yml` runs on pull requests and pushes that modify application code, public-page metadata, release inputs, or test tooling. The web job executes the Happy DOM harness, the Chromium-only Puppeteer suite, and the Pages release-pipeline tests.
 - The workflow caches the Chromium download used by Puppeteer and executes the same commands developers run locally for consistent feedback.
 - The same workflow also runs the mobile job from `mobile/package-lock.json` and executes `npm run check` inside `mobile/`.
 
@@ -121,7 +128,7 @@ Mobile test coverage is enforced at 100% for statements, branches, functions, an
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/MarkoPoloResearchLab/social_threader.git
+git clone https://github.com/MarcoPoloResearchLab/social_threader.git
 ```
 
 2. Install development dependencies for tests:
@@ -155,7 +162,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 MPR Lab Support - [@MprlapSupport](https://twitter.com/MprlabSupport)
 
-Project Link: [https://github.com/MarkoPoloResearchLab/social_threader](https://github.com/YourUsername/social_threader)
+Project Link: [https://github.com/MarcoPoloResearchLab/social_threader](https://github.com/MarcoPoloResearchLab/social_threader)
 
 ---
 
