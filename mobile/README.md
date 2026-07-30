@@ -18,6 +18,18 @@ The mobile app reuses the shared Social Threader chunking engine from `../js/cor
 From the repository root:
 
 ```sh
+make release
+make publish
+make deploy
+```
+
+`make release` runs the repository checks and builds the signed Android App Bundle through the local Kamu-style pipeline. The default version code comes from the checked-in app configuration; pass an explicit `MOBILE_ANDROID_VERSION_CODE` when a higher value is required. `make publish` consumes the checked release manifest and submits that exact bundle to Google Play through the Android Publisher API.
+
+Social Threader has no mobile runtime promotion step. `make deploy` activates the companion web frontend from the published Pages archive.
+
+Lower-level development helpers remain available when working on a specific mobile path:
+
+```sh
 make mobile-check
 make run-ios
 make run-android
@@ -83,17 +95,16 @@ gcloud auth application-default login --scopes=https://www.googleapis.com/auth/a
 ```
 
 - [ ] Confirm the Play Console setup is complete: app content, Data safety, privacy policy, content rating, target audience, ads declaration, and testing track.
-- [ ] Build the Android App Bundle:
+- [ ] Run the normal Google Play release path:
 
 ```sh
-make build-android
-```
-
-- [ ] The first Google Play upload may need to be performed manually in Play Console. Upload `mobile/dist/social-threader-<version>-android-release.aab`, then verify the release on the internal testing track.
-- [ ] For subsequent automated internal testing uploads, submit through the Google Play Android Publisher API:
-
-```sh
-make submit-android
+make release
+make publish
 ```
 
 - [ ] In Play Console, verify the internal-test release, then promote to production after testing.
+- [ ] To create a Production draft directly instead of publishing to Internal testing, intentionally override the track and status:
+
+```sh
+MOBILE_ANDROID_PUBLISH_ARGS="--track production --status draft" make publish
+```

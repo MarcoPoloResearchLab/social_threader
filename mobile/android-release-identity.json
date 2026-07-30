@@ -1,6 +1,6 @@
 {
   "schema": "social-threader.mobile-android-release-identity.v1",
-  "googleCloudProjectId": "",
+  "googleCloudProjectId": "kamu-tales",
   "packageName": "com.mprlab.socialthreader",
   "uploadKey": {
     "sha1": "43:64:3F:3F:92:5C:EE:17:65:7F:14:A6:42:49:8D:A4:EE:64:37:96",

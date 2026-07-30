@@ -74,6 +74,16 @@ Run the full mobile verification gate:
 make mobile-check
 ```
 
+Prepare and publish the Android app through the standard lifecycle:
+
+```bash
+make release
+make publish
+make deploy
+```
+
+`make release` runs the checks and prepares the signed Android App Bundle plus the static web Pages archive locally. `make publish` verifies and publishes those exact assets, including the bundle upload to Google Play Internal testing. `make deploy` activates the already-published web archive at `threader.mprlab.com`; the mobile app has no separate runtime rollout.
+
 Mobile test coverage is enforced at 100% for statements, branches, functions, and lines.
 
 `make run-android` starts Metro on localhost, prepares the Android emulator with Expo Go when needed, configures `adb reverse`, and opens Expo Go at the matching `127.0.0.1` URL so the Android emulator can download the local bundle without interactive Expo prompts.

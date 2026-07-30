@@ -89,8 +89,11 @@ function parseArgs(argv) {
     index += 1;
   }
 
+  const mobileDir = resolvePath(options.get("mobile-dir") || DEFAULT_MOBILE_DIR);
+  const releaseIdentity = readAndroidReleaseIdentity(mobileDir);
+
   return {
-    mobileDir: resolvePath(options.get("mobile-dir") || DEFAULT_MOBILE_DIR),
+    mobileDir,
     buildDir: resolvePath(options.get("build-dir") || DEFAULT_BUILD_DIR),
     output: options.has("output") ? resolvePath(options.get("output") || "") : "",
     versionCode: String(options.get("version-code") || process.env.SOCIAL_THREADER_ANDROID_VERSION_CODE || "local"),
@@ -102,7 +105,13 @@ function parseArgs(argv) {
     keystore: resolvePath(options.get("keystore") || process.env.SOCIAL_THREADER_ANDROID_UPLOAD_STORE_FILE || DEFAULT_KEYSTORE),
     javaHome: resolveJavaHome(options.get("java-home") || process.env.JAVA_HOME || ""),
     androidSdkRoot: resolvePath(options.get("android-sdk-root") || process.env.ANDROID_SDK_ROOT || process.env.ANDROID_HOME || DEFAULT_ANDROID_SDK_ROOT),
-    quotaProject: String(options.get("quota-project") || process.env.GOOGLE_CLOUD_QUOTA_PROJECT || process.env.GCLOUD_QUOTA_PROJECT || ""),
+    quotaProject: String(
+      options.get("quota-project") ||
+        process.env.GOOGLE_CLOUD_QUOTA_PROJECT ||
+        process.env.GCLOUD_QUOTA_PROJECT ||
+        releaseIdentity.googleCloudProjectId ||
+        ""
+    ),
     keepBuildDir: flags.has("keep-build-dir")
   };
 }
@@ -139,10 +148,12 @@ function buildAndroidBundle(args) {
 
   const env = buildEnvironment(args.javaHome, args.androidSdkRoot);
   run(["npm", "ci"], { cwd: buildMobileDir, env });
+  patchGeneratedAndroidDependencySources(buildMobileDir);
   run(["npx", "--no-install", "expo", "prebuild", "--platform", "android", "--no-install"], { cwd: buildMobileDir, env });
   writeLocalProperties(path.join(buildMobileDir, "android", "local.properties"), args.androidSdkRoot);
   enableReleaseMinification(path.join(buildMobileDir, "android", "gradle.properties"));
   patchReleaseSigning(path.join(buildMobileDir, "android", "app", "build.gradle"));
+  patchGeneratedAndroidGradleFiles(buildMobileDir);
 
   /** @type {NodeJS.ProcessEnv} */
   const gradleEnv = { ...env };
@@ -151,7 +162,10 @@ function buildAndroidBundle(args) {
   gradleEnv[`${SIGNING_ENV_PREFIX}_STORE_PASSWORD`] = signing.storePassword;
   gradleEnv[`${SIGNING_ENV_PREFIX}_KEY_ALIAS`] = signing.keyAlias;
   gradleEnv[`${SIGNING_ENV_PREFIX}_KEY_PASSWORD`] = signing.keyPassword;
-  run(["./gradlew", "--no-daemon", "bundleRelease"], { cwd: path.join(buildMobileDir, "android"), env: gradleEnv });
+  run(["./gradlew", "--no-daemon", "--warning-mode", "none", "bundleRelease"], {
+    cwd: path.join(buildMobileDir, "android"),
+    env: gradleEnv
+  });
 
   const generatedBundle = path.join(buildMobileDir, "android", "app", "build", "outputs", "bundle", "release", "app-release.aab");
   requireFile(generatedBundle, "generated release app bundle");
@@ -332,12 +346,24 @@ function readSigningProperties(propertiesPath, keystorePath) {
  * @returns {string}
  */
 function readExpectedUploadKeySha256(mobileDir) {
+  const identity = readAndroidReleaseIdentity(mobileDir);
+  return normalizeSha256Fingerprint(String(identity.uploadKey?.sha256 || ""));
+}
+
+/**
+ * @param {string} mobileDir
+ * @returns {{ googleCloudProjectId: string; uploadKey?: { sha256?: string } }}
+ */
+function readAndroidReleaseIdentity(mobileDir) {
   const identityPath = path.join(mobileDir, "android-release-identity.json");
   if (!fs.existsSync(identityPath)) {
-    return "";
+    return { googleCloudProjectId: "" };
   }
   const identity = JSON.parse(fs.readFileSync(identityPath, "utf8"));
-  return normalizeSha256Fingerprint(String(identity.uploadKey?.sha256 || ""));
+  return {
+    googleCloudProjectId: typeof identity.googleCloudProjectId === "string" ? identity.googleCloudProjectId : "",
+    uploadKey: typeof identity.uploadKey === "object" && identity.uploadKey !== null ? identity.uploadKey : undefined
+  };
 }
 
 /**
@@ -386,6 +412,302 @@ function copyMobileProject(source, destination) {
 }
 
 /**
+ * @param {string} buildMobileDir
+ */
+function patchGeneratedAndroidDependencySources(buildMobileDir) {
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/expo-module-gradle-plugin/src/main/kotlin/expo/modules/plugin/android/AndroidLibraryExtension.kt",
+    `  defaultConfig {
+    this@defaultConfig.minSdk = minSdk
+    this@defaultConfig.targetSdk = targetSdk
+  }`,
+    `  defaultConfig {
+    this@defaultConfig.minSdk = minSdk
+  }
+  testOptions.targetSdk = targetSdk
+  lint.targetSdk = targetSdk`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/cpp/fabric/ExpoComponentDescriptorFactory.cpp",
+    "react::RawPropsParser(/*useRawPropsJsiValue=*/true)",
+    "react::RawPropsParser()"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt",
+    "import com.facebook.react.uimanager.UIManagerModule\n",
+    ""
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt",
+    "import expo.modules.kotlin.defaultmodules.ErrorManagerModule\n",
+    ""
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt",
+    `  @Deprecated("Use AppContext.runtimeContext instead", ReplaceWith("runtime"))
+  val hostingRuntimeContext = MainRuntime(this, reactContextHolder)
+
+  val runtime: MainRuntime
+    get() = hostingRuntimeContext`,
+    `  val runtime = MainRuntime(this, reactContextHolder)
+
+  @Deprecated("Use AppContext.runtimeContext instead", ReplaceWith("runtime"))
+  val hostingRuntimeContext: MainRuntime
+    get() = runtime`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt",
+    "  val errorManager: ErrorManagerModule? by lazy {",
+    "  val errorManager: JSLoggerModule? by lazy {"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt",
+    "  internal fun dispatchOnMainUsingUIManager(block: () -> Unit) {",
+    `  @Suppress("DEPRECATION")
+  internal fun dispatchOnMainUsingUIManager(block: () -> Unit) {`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt",
+    "UIManagerType.DEFAULT",
+    "UIManagerType.LEGACY"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt",
+    ") as UIManagerModule",
+    ") as com.facebook.react.uimanager.UIManagerModule"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/events/KModuleEventEmitterWrapper.kt",
+    "UIManagerHelper.getEventDispatcherForReactTag(context, viewId)",
+    "UIManagerHelper.getEventDispatcher(context)"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/events/KModuleEventEmitterWrapper.kt",
+    "UIManagerHelper.getEventDispatcherForReactTag(context, view.id)",
+    "UIManagerHelper.getEventDispatcher(context)"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewDefinitionBuilder.kt",
+    "import expo.modules.kotlin.exception.CodedException\n",
+    ""
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewDefinitionBuilder.kt",
+    "import expo.modules.kotlin.exception.UnexpectedException\n",
+    ""
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewDefinitionBuilder.kt",
+    `    appContext.errorManager?.reportExceptionToLogBox(
+      error as? CodedException ?: UnexpectedException(error)
+    )`,
+    `    appContext.jsLogger?.error(
+      error.message ?: error.toString(),
+      error
+    )`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewManagerDefinition.kt",
+    "    appContext.errorManager?.reportExceptionToLogBox(exception)",
+    "    appContext.jsLogger?.error(exception.message ?: exception.toString(), exception)"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-constants/android/src/main/java/expo/modules/constants/ConstantsModule.kt",
+    "package expo.modules.constants",
+    `@file:Suppress("DEPRECATION")
+
+package expo.modules.constants`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/defaultmodules/NativeModulesProxyModule.kt",
+    "package expo.modules.kotlin.defaultmodules",
+    `@file:Suppress("DEPRECATION")
+
+package expo.modules.kotlin.defaultmodules`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/ModuleRegistryAdapter.java",
+    `  @Override
+  public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {`,
+    `  @Override
+  @SuppressWarnings("deprecation")
+  public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/ModuleRegistryAdapter.java",
+    `  protected List<NativeModule> getNativeModulesFromModuleRegistry(
+    ReactApplicationContext reactContext,
+    ModuleRegistry moduleRegistry,
+    @Nullable Consumer<AppContext> appContextConsumer
+  ) {`,
+    `  @SuppressWarnings("deprecation")
+  protected List<NativeModule> getNativeModulesFromModuleRegistry(
+    ReactApplicationContext reactContext,
+    ModuleRegistry moduleRegistry,
+    @Nullable Consumer<AppContext> appContextConsumer
+  ) {`
+  );
+  replaceAllInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/services/EventEmitterModule.java",
+    "UIManagerHelper.getEventDispatcherForReactTag(mReactContext, viewId)",
+    "UIManagerHelper.getEventDispatcher(mReactContext)"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo-modules-core/android/build.gradle",
+    `if (shouldTurnWarningsIntoErrors) {
+  tasks.withType(JavaCompile) configureEach {
+    options.compilerArgs << "-Werror" << "-Xlint:all" << '-Xlint:-serial' << '-Xlint:-rawtypes'
+  }
+  tasks.withType(KotlinCompile) configureEach {
+    compilerOptions.allWarningsAsErrors = true
+  }
+}`,
+    `if (shouldTurnWarningsIntoErrors) {
+  tasks.withType(JavaCompile) configureEach {
+    options.compilerArgs << "-Werror" << "-Xlint:all" << '-Xlint:-serial' << '-Xlint:-rawtypes'
+  }
+  tasks.withType(KotlinCompile) configureEach {
+    compilerOptions.allWarningsAsErrors = true
+  }
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.compilerArgs += ["-Xlint:none"]
+}`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo/android/src/main/java/expo/modules/ExpoModulesPackage.kt",
+    "package expo.modules",
+    `@file:Suppress("OVERRIDE_DEPRECATION")
+
+package expo.modules`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt",
+    "package expo.modules",
+    `@file:Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+
+package expo.modules`
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt",
+    "ForwardingCookieHandler(reactContext)",
+    "ForwardingCookieHandler()"
+  );
+  replaceInGeneratedFile(
+    buildMobileDir,
+    "node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt",
+    `  override fun deallocate() {
+    this.sink.finalize(directBuffer = false)
+    super.deallocate()
+  }`,
+    `  override fun sharedObjectDidRelease() {
+    this.sink.finalize(directBuffer = false)
+    super.sharedObjectDidRelease()
+  }`
+  );
+}
+
+/**
+ * @param {string} buildMobileDir
+ */
+function patchGeneratedAndroidGradleFiles(buildMobileDir) {
+  const generatedGradleFiles = [
+    "android/build.gradle",
+    "android/app/build.gradle",
+    "node_modules/@expo/dom-webview/android/build.gradle",
+    "node_modules/@expo/log-box/android/build.gradle",
+    "node_modules/expo/android/build.gradle",
+    "node_modules/expo-asset/android/build.gradle",
+    "node_modules/expo-clipboard/android/build.gradle",
+    "node_modules/expo-constants/android/build.gradle",
+    "node_modules/expo-file-system/android/build.gradle",
+    "node_modules/expo-font/android/build.gradle",
+    "node_modules/expo-image-loader/android/build.gradle",
+    "node_modules/expo-image-picker/android/build.gradle",
+    "node_modules/expo-keep-awake/android/build.gradle",
+    "node_modules/expo-modules-core/android/build.gradle",
+    "node_modules/expo-status-bar/android/build.gradle"
+  ];
+  for (const relativePath of generatedGradleFiles) {
+    patchGeneratedGradleFile(buildMobileDir, relativePath);
+  }
+}
+
+/**
+ * @param {string} buildMobileDir
+ * @param {string} relativePath
+ */
+function patchGeneratedGradleFile(buildMobileDir, relativePath) {
+  const targetPath = path.join(buildMobileDir, relativePath);
+  requireFile(targetPath, `generated Android Gradle file ${relativePath}`);
+  let source = fs.readFileSync(targetPath, "utf8");
+  source = source.replace(/maven \{ url '([^']+)' \}/g, "maven { url = uri('$1') }");
+  source = source.replace(
+    /^(\s*)(canBePublished|crunchPngs|ignoreAssetsPattern|ndkVersion|namespace|prefab|shrinkResources|signingConfig|useLegacyPackaging|buildConfig|compose)\s+(.+)$/gm,
+    "$1$2 = $3"
+  );
+  source = source.replace(/^(\s*)implementation jscFlavor$/gm, "$1implementation(jscFlavor)");
+  fs.writeFileSync(targetPath, source, "utf8");
+}
+
+/**
+ * @param {string} buildMobileDir
+ * @param {string} relativePath
+ * @param {string} searchValue
+ * @param {string} replacementValue
+ */
+function replaceInGeneratedFile(buildMobileDir, relativePath, searchValue, replacementValue) {
+  const targetPath = path.join(buildMobileDir, relativePath);
+  requireFile(targetPath, `generated Android dependency source ${relativePath}`);
+  const source = fs.readFileSync(targetPath, "utf8");
+  if (!source.includes(searchValue)) {
+    throw new BuildError(`could not apply generated Android dependency patch to ${relativePath}`);
+  }
+  fs.writeFileSync(targetPath, source.replace(searchValue, replacementValue), "utf8");
+}
+
+/**
+ * @param {string} buildMobileDir
+ * @param {string} relativePath
+ * @param {string} searchValue
+ * @param {string} replacementValue
+ */
+function replaceAllInGeneratedFile(buildMobileDir, relativePath, searchValue, replacementValue) {
+  const targetPath = path.join(buildMobileDir, relativePath);
+  requireFile(targetPath, `generated Android dependency source ${relativePath}`);
+  const source = fs.readFileSync(targetPath, "utf8");
+  if (!source.includes(searchValue)) {
+    throw new BuildError(`could not apply generated Android dependency patch to ${relativePath}`);
+  }
+  fs.writeFileSync(targetPath, source.split(searchValue).join(replacementValue), "utf8");
+}
+
+/**
  * @param {string} mobileDir
  * @param {number} versionCode
  */
@@ -404,7 +726,7 @@ function patchAndroidVersionCodeInAppJson(mobileDir, versionCode) {
  * @returns {NodeJS.ProcessEnv}
  */
 function buildEnvironment(javaHome, androidSdkRoot) {
-  return {
+  const environment = {
     ...process.env,
     CI: "1",
     EXPO_NO_TELEMETRY: "1",
@@ -420,6 +742,9 @@ function buildEnvironment(javaHome, androidSdkRoot) {
       .filter(Boolean)
       .join(path.delimiter)
   };
+  delete environment.FORCE_COLOR;
+  delete environment.NO_COLOR;
+  return environment;
 }
 
 /**
@@ -438,6 +763,7 @@ function enableReleaseMinification(gradlePropertiesPath) {
   const properties = readProperties(gradlePropertiesPath);
   properties["android.enableMinifyInReleaseBuilds"] = "true";
   properties["android.enableShrinkResourcesInReleaseBuilds"] = "false";
+  properties["org.gradle.java.installations.auto-download"] = "false";
   writeProperties(gradlePropertiesPath, properties);
 }
 

@@ -1,5 +1,12 @@
 module.exports = {
-  preset: "jest-expo",
+  testEnvironment: "node",
+  transform: {
+    "^.+\\.[cm]?[jt]sx?$": "babel-jest"
+  },
+  moduleNameMapper: {
+    "^react-native$": "<rootDir>/tests/mocks/reactNative.js",
+    "^expo-status-bar$": "<rootDir>/tests/mocks/expoStatusBar.js"
+  },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   collectCoverageFrom: ["App.js", "src/**/*.js", "!src/shared-web/**/*.js"],
   coverageReporters: ["text-summary"],

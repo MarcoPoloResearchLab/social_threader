@@ -11,7 +11,6 @@ import {
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import {
   DEFAULT_LENGTHS,
@@ -48,11 +47,6 @@ const IMAGE_PICKER_OPTIONS = Object.freeze({
   quality: 1
 });
 
-const SAFE_AREA_INITIAL_METRICS = Object.freeze({
-  frame: Object.freeze({ x: 0, y: 0, width: 0, height: 0 }),
-  insets: Object.freeze({ top: 0, left: 0, right: 0, bottom: 0 })
-});
-
 const defaultDependencies = Object.freeze({
   clipboard: Clipboard,
   imagePicker: ImagePicker,
@@ -73,9 +67,7 @@ export default function App({ dependencies = null }) {
 
   return (
     <DependenciesContext.Provider value={resolvedDependencies}>
-      <SafeAreaProvider initialMetrics={SAFE_AREA_INITIAL_METRICS}>
-        <ThreaderScreen />
-      </SafeAreaProvider>
+      <ThreaderScreen />
     </DependenciesContext.Provider>
   );
 }
@@ -276,7 +268,7 @@ function ThreaderScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={styles.screen}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
@@ -400,7 +392,7 @@ function ThreaderScreen() {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
