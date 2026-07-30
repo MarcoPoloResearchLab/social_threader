@@ -26,6 +26,16 @@ body {
     margin-bottom: 20px;
 }
 
+.resource-intro {
+    margin: -8px 0 20px;
+    color: #334155;
+}
+
+.resource-intro a,
+footer a {
+    color: #0056b3;
+}
+
 /* 2) Split layout: left-pane & right-pane */
 .left-pane {
     flex: 2;
@@ -344,6 +354,13 @@ footer {
     text-align: center;
     padding: 20px;
     border-top: 1px solid #ccc;
+}
+
+footer nav {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 8px;
 }
 
 /* Active button state – uses the same border width to avoid layout shifts */
