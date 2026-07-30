@@ -23,9 +23,9 @@ make publish
 make deploy
 ```
 
-The default store-release command is `make release`. It runs the repository checks, builds the signed Android App Bundle through the local Kamu-style pipeline, and submits it to Google Play through the Android Publisher API.
+`make release` runs the repository checks and builds the signed Android App Bundle through the local Kamu-style pipeline. The default version code comes from the checked-in app configuration; pass an explicit `MOBILE_ANDROID_VERSION_CODE` when a higher value is required. `make publish` consumes the checked release manifest and submits that exact bundle to Google Play through the Android Publisher API.
 
-Social Threader currently has no separate backend image or repository-owned deploy step, so `make publish` and `make deploy` are present to keep the standard release command surface without repeating the Android upload.
+Social Threader has no mobile runtime promotion step. `make deploy` activates the companion web frontend from the published Pages archive.
 
 Lower-level development helpers remain available when working on a specific mobile path:
 
@@ -99,11 +99,12 @@ gcloud auth application-default login --scopes=https://www.googleapis.com/auth/a
 
 ```sh
 make release
+make publish
 ```
 
 - [ ] In Play Console, verify the internal-test release, then promote to production after testing.
 - [ ] To create a Production draft directly instead of publishing to Internal testing, intentionally override the track and status:
 
 ```sh
-MOBILE_ANDROID_PUBLISH_ARGS="--track production --status draft" make release
+MOBILE_ANDROID_PUBLISH_ARGS="--track production --status draft" make publish
 ```

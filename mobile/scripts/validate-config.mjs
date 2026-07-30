@@ -92,11 +92,37 @@ assertEqual(easJson.build?.production?.android, undefined, "Android store publis
 assertEqual(androidReleaseIdentity.schema, "social-threader.mobile-android-release-identity.v1", "Android release identity schema must be stable");
 assertEqual(androidReleaseIdentity.googleCloudProjectId, "kamu-tales", "Android release identity must supply the Google Cloud quota project");
 assertEqual(androidReleaseIdentity.packageName, "com.mprlab.socialthreader", "Android release identity package must match the app package");
-assertIncludes(makefileSource, "MOBILE_ANDROID_VERSION_CODE ?= auto", "Android release version code must default to Play-safe auto resolution");
-assertIncludes(makefileSource, "release: ci", "root Makefile must expose make release as the checked store release entrypoint");
-assertIncludes(makefileSource, "$(MAKE) --no-print-directory submit-android", "make release must publish Android through the lower-level submit target");
-assertIncludes(makefileSource, "publish:", "root Makefile must expose make publish");
-assertIncludes(makefileSource, "deploy:", "root Makefile must expose make deploy");
+assertIncludes(makefileSource, "MOBILE_ANDROID_VERSION_CODE ?= local", "Android release version code must default to local app configuration");
+assertIncludes(
+  makefileSource,
+  "RELEASE_ARTIFACT_TARGETS ?= mobile-release-artifacts pages-artifact",
+  "make release must declare the complete local artifact set"
+);
+assertIncludes(makefileSource, "prepare_release.sh", "make release must use the canonical local release pipeline");
+assertIncludes(
+  makefileSource,
+  "RELEASE_TOOL_DIR := $(abspath $(CURDIR)/scripts/release)",
+  "release tooling must be owned by this repository"
+);
+assertNotIncludes(
+  makefileSource,
+  "../agentSkills/gitrelease/scripts",
+  "release tooling must not execute from a mutable sibling repository"
+);
+assertIncludes(
+  makefileSource,
+  "python3 tests/test_pages_release_pipeline.py",
+  "make test must exercise the repository-owned Pages release contract"
+);
+assertIncludes(makefileSource, "mobile-release-artifacts: mobile-check", "make release must prepare the signed Android bundle locally");
+assertIncludes(makefileSource, "publish: publish-release submit-android", "make publish must publish the prepared release and Android bundle");
+assertNotIncludes(makefileSource, "submit-android: mobile-check", "make publish must not rebuild or reinstall mobile dependencies");
+assertIncludes(
+  makefileSource,
+  "payloads/release-assets/social-threader-android-release.aab",
+  "make publish must consume the Android bundle from the prepared release"
+);
+assertIncludes(makefileSource, "deploy: pages-deploy", "make deploy must activate the published web Pages artifact");
 assertIncludes(androidBuildSource, "releaseIdentity.googleCloudProjectId", "Android bundle builder must use the release identity quota project");
 assertIncludes(
   androidBuildSource,
