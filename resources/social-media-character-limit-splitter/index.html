@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Character Limit Splitter | Social Threader</title>
+    <meta name="description" content="Compare 280, 300, 500, and custom character limits, then adapt one source text into readable threads with Social Threader.">
+    <meta name="author" content="MPR Lab">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://threader.mprlab.com/resources/social-media-character-limit-splitter/">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+    <link rel="stylesheet" href="/assets/css/resources.css">
+    <link rel="stylesheet" href="/assets/css/resource-components.css">
+
+    <meta property="og:title" content="Social Media Character Limit Splitter | Social Threader">
+    <meta property="og:description" content="Compare Social Threader’s configured 280, 300, 500, and custom limits using the same source draft.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Social Threader">
+    <meta property="og:url" content="https://threader.mprlab.com/resources/social-media-character-limit-splitter/">
+    <meta property="og:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+    <meta property="article:published_time" content="2026-07-30">
+    <meta property="article:modified_time" content="2026-07-30">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Social Media Character Limit Splitter | Social Threader">
+    <meta name="twitter:description" content="Compare configured character limits and adapt one source draft into several manual thread formats.">
+    <meta name="twitter:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta name="twitter:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Article",
+                "@id": "https://threader.mprlab.com/resources/social-media-character-limit-splitter/#article",
+                "mainEntityOfPage": "https://threader.mprlab.com/resources/social-media-character-limit-splitter/",
+                "headline": "Social Media Character Limit Splitter",
+                "description": "Compare 280, 300, 500, and custom character limits, then adapt one source text into readable threads.",
+                "datePublished": "2026-07-30",
+                "dateModified": "2026-07-30",
+                "author": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "image": "https://threader.mprlab.com/assets/img/social-threader-og.png"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "https://threader.mprlab.com/resources/social-media-character-limit-splitter/#breadcrumbs",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Social Threader",
+                        "item": "https://threader.mprlab.com/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "Resources",
+                        "item": "https://threader.mprlab.com/resources/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": "Social Media Character Limit Splitter",
+                        "item": "https://threader.mprlab.com/resources/social-media-character-limit-splitter/"
+                    }
+                ]
+            },
+            {
+                "@type": "FAQPage",
+                "@id": "https://threader.mprlab.com/resources/social-media-character-limit-splitter/#faq",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "Which character limits are configured in Social Threader?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "The current repository configures 280 characters for Twitter/X, 300 for Bluesky, 500 for Threads/Mastodon, and a user-entered custom size."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Are these guaranteed to be every platform's current posting rules?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. They are the presets configured in Social Threader. Platform policies and account-specific behavior can change, so confirm the destination platform's rules when that matters."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Can I enter a character limit that is not one of the presets?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Yes. Enter a positive custom size and apply it to produce chunks within that selected maximum."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does numbering count toward the selected maximum?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Yes. When enumeration is enabled, Social Threader reduces the available text space so the final number suffix remains inside the selected maximum."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does Social Threader publish the same draft to several platforms?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. It prepares chunks for manual review and copying. Cross-posting, account connections, and scheduling are not documented product features."
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="brand-link" href="/">Social Threader</a>
+            <nav class="site-nav" aria-label="Primary navigation">
+                <a href="/">Thread splitter</a>
+                <a href="/resources/" aria-current="page">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+                <li><a href="/">Social Threader</a></li>
+                <li><a href="/resources/">Resources</a></li>
+                <li aria-current="page">Character-limit comparison</li>
+            </ol>
+        </nav>
+
+        <article>
+            <header class="hero">
+                <p class="eyebrow">Cross-platform planning</p>
+                <h1>Use a social media character limit splitter</h1>
+                <p class="hero__lede">
+                    A social media character limit splitter lets you test the same
+                    source draft at several maximum lengths before posting anything.
+                    Social Threader includes configured 280-, 300-, and 500-character
+                    presets plus a custom size.
+                </p>
+                <div class="quick-verdict" aria-label="Quick verdict">
+                    <p>
+                        <strong>Quick verdict</strong>
+                        Keep one source draft, switch presets, and compare the thread
+                        shape rather than rewriting blindly. Treat the numbers as
+                        Social Threader’s configured presets—not a guarantee about
+                        every destination platform or account.
+                    </p>
+                    <p><strong>Primary audience</strong>Cross-platform posters</p>
+                    <p><strong>Core outcome</strong>Comparable thread drafts</p>
+                </div>
+                <p class="byline">
+                    Written by
+                    <a href="https://github.com/MarcoPoloResearchLab">MPR Lab</a>
+                    · Verified against the public Social Threader repository
+                    · Updated <time datetime="2026-07-30">July 30, 2026</time>
+                </p>
+                <div class="hero-actions">
+                    <a class="button-link" href="/">Compare a draft now</a>
+                    <a class="button-link button-link--secondary" href="#comparison">Review the presets</a>
+                </div>
+            </header>
+
+            <div class="content-layout">
+                <div class="content-stack">
+                    <section class="content-card">
+                        <h2>Why one source draft produces different threads</h2>
+                        <p>
+                            A small limit does more than create additional posts. It
+                            changes where context appears, how much room numbering
+                            consumes, and whether a complete sentence can fit. A larger
+                            limit may combine several thoughts, while a smaller limit
+                            exposes transitions that need a manual rewrite.
+                        </p>
+                        <p>
+                            Social Threader does not automatically publish or maintain
+                            several platform versions. Its job is narrower: apply a
+                            selected maximum, preserve configured boundaries where
+                            possible, and present chunks for manual review and copying.
+                        </p>
+                    </section>
+
+                    <section id="comparison" class="content-card">
+                        <h2>Configured character limits in Social Threader</h2>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Control</th>
+                                        <th scope="col">Configured maximum</th>
+                                        <th scope="col">Useful comparison question</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Twitter/X</td>
+                                        <td>280 characters</td>
+                                        <td>Does every numbered post keep enough context on its own?</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bluesky</td>
+                                        <td>300 characters</td>
+                                        <td>Do the extra 20 characters remove an awkward boundary?</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Threads/Mastodon</td>
+                                        <td>500 characters</td>
+                                        <td>Would combining several short chunks improve or reduce scanability?</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Custom</td>
+                                        <td>User-entered positive number</td>
+                                        <td>What maximum matches the actual destination or house style?</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p>
+                            These values come directly from the repository’s immutable
+                            configuration:
+                        </p>
+                        <pre><code>export const DEFAULT_LENGTHS = Object.freeze({
+    THREADS: 500,
+    BLUESKY: 300,
+    TWITTER: 280,
+    CUSTOM: 128
+});</code></pre>
+                        <p>
+                            Inspect the
+                            <a href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/js/constants.js">current configuration on GitHub</a>
+                            before treating a preset as product evidence.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>How to compare the same draft</h2>
+                        <ol class="steps">
+                            <li>Keep one reviewed source draft so every comparison begins from identical text.</li>
+                            <li>Select the 280-character preset and note the number and boundaries of the resulting chunks.</li>
+                            <li>Switch to 300 and 500, reviewing where complete thoughts combine or separate.</li>
+                            <li>Use a custom size only when you have a specific destination requirement, then copy the chosen version manually.</li>
+                        </ol>
+                        <div class="callout">
+                            <p>
+                                <strong>Comparison rule:</strong> enable the same
+                                sentence, paragraph, and enumeration options for each
+                                preset. Otherwise you are comparing both a length change
+                                and a boundary-policy change.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Feature-to-benefit map</h2>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Feature</th>
+                                        <th scope="col">Why it matters here</th>
+                                        <th scope="col">Example</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Preset buttons</td>
+                                        <td>Make repeated comparisons quick and consistent.</td>
+                                        <td>Switch from 280 to 300 without re-entering the draft.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Custom size</td>
+                                        <td>Supports a documented maximum outside the included presets.</td>
+                                        <td>Apply an internal editorial limit shorter than the destination maximum.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Sentence and paragraph options</td>
+                                        <td>Keep boundary policy stable while the maximum changes.</td>
+                                        <td>Compare how one announcement flows at each preset.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Enumeration-aware sizing</td>
+                                        <td>Prevents the numbering suffix from pushing a final chunk over the maximum.</td>
+                                        <td>Review <code>(1/6)</code> as part of the post length.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Three useful comparison scenarios</h2>
+                        <div class="example-grid">
+                            <div>
+                                <h3>A product announcement</h3>
+                                <p>
+                                    Compare whether the hook, details, and closing action
+                                    remain self-contained at each maximum. Avoid inventing
+                                    new claims merely to fill a larger post.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>A multi-paragraph essay</h3>
+                                <p>
+                                    Keep paragraph mode consistent and inspect whether a
+                                    larger maximum merges sections that should remain
+                                    separate for meaning.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>A numbered explanation</h3>
+                                <p>
+                                    Enable enumeration before comparing. The suffix
+                                    consumes space and can change the chunk count, which
+                                    then changes the suffix length again.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>A destination-specific custom limit</h3>
+                                <p>
+                                    Enter the requirement you have verified. Social
+                                    Threader accepts the positive maximum but does not
+                                    verify external platform policy for you.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Objections and limitations</h2>
+                        <h3>Does this replace checking platform documentation?</h3>
+                        <p>
+                            No. The presets describe Social Threader’s current
+                            configuration. Destination rules can change or vary by
+                            content and account, so verify them when correctness depends
+                            on the external platform.
+                        </p>
+                        <h3>Does the tool adapt tone or shorten ideas?</h3>
+                        <p>
+                            No. It splits supplied text. If a thought needs rewriting to
+                            work at a smaller maximum, that remains an editorial step.
+                        </p>
+                        <h3>Does it create several connected platform drafts?</h3>
+                        <p>
+                            No persistent multi-platform workspace is documented. Change
+                            the preset, inspect the current result, and copy the version
+                            you intend to use.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Frequently asked questions</h2>
+                        <div class="faq-list">
+                            <details>
+                                <summary>Which character limits are configured in Social Threader?</summary>
+                                <p>The current repository configures 280 characters for Twitter/X, 300 for Bluesky, 500 for Threads/Mastodon, and a user-entered custom size.</p>
+                            </details>
+                            <details>
+                                <summary>Are these guaranteed to be every platform's current posting rules?</summary>
+                                <p>No. They are the presets configured in Social Threader. Platform policies and account-specific behavior can change, so confirm the destination platform's rules when that matters.</p>
+                            </details>
+                            <details>
+                                <summary>Can I enter a character limit that is not one of the presets?</summary>
+                                <p>Yes. Enter a positive custom size and apply it to produce chunks within that selected maximum.</p>
+                            </details>
+                            <details>
+                                <summary>Does numbering count toward the selected maximum?</summary>
+                                <p>Yes. When enumeration is enabled, Social Threader reduces the available text space so the final number suffix remains inside the selected maximum.</p>
+                            </details>
+                            <details>
+                                <summary>Does Social Threader publish the same draft to several platforms?</summary>
+                                <p>No. It prepares chunks for manual review and copying. Cross-posting, account connections, and scheduling are not documented product features.</p>
+                            </details>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Related Social Threader guides</h2>
+                        <div class="related-grid">
+                            <article class="resource-card">
+                                <h3>Preserve sentence boundaries</h3>
+                                <p>Choose readable boundaries independently of the selected platform maximum.</p>
+                                <a href="/resources/split-text-without-breaking-sentences/">Open the sentence-aware guide</a>
+                            </article>
+                            <article class="resource-card">
+                                <h3>Prepare a 280-character thread</h3>
+                                <p>Focus on numbering and manual copy sequence for the Twitter/X preset.</p>
+                                <a href="/resources/twitter-thread-splitter/">Open the Twitter thread guide</a>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="side-card">
+                    <h2>On this page</h2>
+                    <ul>
+                        <li><a href="#comparison">Configured presets</a></li>
+                        <li><a href="/resources/twitter-thread-splitter/">280-character workflow</a></li>
+                        <li><a href="/resources/split-text-without-breaking-sentences/">Sentence boundaries</a></li>
+                        <li><a href="/">Open the tool</a></li>
+                    </ul>
+                </aside>
+            </div>
+
+            <section class="cta-panel">
+                <h2>Compare one draft before choosing a format</h2>
+                <p>
+                    Use the same text and boundary settings, switch the maximum, and
+                    review what each version asks the reader to hold between posts.
+                </p>
+                <div class="cta-actions">
+                    <a class="button-link" href="/">Compare character limits</a>
+                </div>
+            </section>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <p>Social Threader is an open-source MPR Lab project.</p>
+            <nav aria-label="Footer navigation">
+                <a href="/">Tool</a>
+                <a href="/resources/">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">Source code</a>
+            </nav>
+        </div>
+    </footer>
+</body>
+</html>
