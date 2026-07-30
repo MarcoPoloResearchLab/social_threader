@@ -104,3 +104,25 @@ Under no circumstances may Playwright be introduced into this codebase. Prefer P
 * No eval, no inline event handlers.
 * CSP-friendly ES modules only.
 * External calls go through `core/gateway.js`, mockable in tests.
+
+<!-- BEGIN MPRLAB-GOVERNANCE -->
+## MPR Lab Governance
+
+Most workflow context files live under `.mprlab/`. The root `AGENTS.md` remains the repository entrypoint for agents.
+
+Read these files before editing:
+
+- `.mprlab/POLICY.md`: binding validation and confident-programming rules.
+- `.mprlab/PLANNING.md`: durable planning contract.
+- `.mprlab/issues-md-format.md`: issue tracker format and recurring identifier rules.
+- `.mprlab/ISSUES.md`: active issue tracker.
+- `.mprlab/AGENTS.GIT.md`: Git and pull request workflow.
+- `.mprlab/AGENTS.PY.md`: Python guidance.
+- `.mprlab/AGENTS.MOBILE.md`: mobile client guidance.
+- `.mprlab/AGENTS.MOBILE.EXPO.md`: Expo and React Native guidance.
+- `.mprlab/AGENTS.FRONTEND.md`: browser frontend guidance.
+- `.mprlab/AGENTS.FRONTEND.REACT.md`: React guidance.
+
+Do not create `.mprlab/AGENTS.md`. Scoped guidance belongs in `.mprlab/AGENTS.*.md` files.
+If guidance conflicts, follow `.mprlab/POLICY.md` first, then root `AGENTS.md`, then the relevant scoped guide.
+<!-- END MPRLAB-GOVERNANCE -->
