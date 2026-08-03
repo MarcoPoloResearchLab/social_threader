@@ -26,7 +26,140 @@ export const TEXT_CONTENT = Object.freeze({
     FEEDBACK_MESSAGE_LABEL: "Message:",
     FEEDBACK_MESSAGE_PLACEHOLDER: "What can be improved?",
     FEEDBACK_SUBMIT_LABEL: "Submit",
-    CUSTOM_INPUT_PLACEHOLDER: "Size"
+    CUSTOM_INPUT_PLACEHOLDER: "Size",
+    TRANSFORMATION_HEADING: "Improve with AI",
+    TRANSFORMATION_PRIVACY:
+        "AI editing sends only this text draft to Social Threader's protected API. The source draft is not persisted.",
+    TRANSFORMATION_AUTH_REQUIRED: "Sign in to use AI editing. Thread splitting stays available.",
+    TRANSFORMATION_EMPTY_REQUIRED: "Enter text to enable AI editing.",
+    TRANSFORMATION_IMAGES_UNSUPPORTED: "AI editing currently supports text-only drafts. Attached images remain unchanged.",
+    TRANSFORMATION_LOADING: "Improving your thread…",
+    TRANSFORMATION_READY: "Choose one editing operation.",
+    TRANSFORMATION_PREVIEW_TITLE: "AI edit preview",
+    TRANSFORMATION_STALE_RESULT: "Your draft changed while this result was prepared. Review it before you apply it.",
+    TRANSFORMATION_APPLY_LABEL: "Apply",
+    TRANSFORMATION_DISCARD_LABEL: "Discard",
+    TRANSFORMATION_RETRY_LABEL: "Try again",
+    TRANSFORMATION_UNDO_LABEL: "Undo",
+    TRANSFORMATION_RESULT_LABEL: "Suggested thread text",
+    TRANSFORMATION_ERROR_LABEL: "AI editing error",
+    TRANSFORMATION_APPLIED: "AI edit applied. You can undo this replacement once."
+});
+
+/** @type {Readonly<Record<string, string>>} */
+export const TRANSFORMATION_OPERATION_IDENTIFIERS = Object.freeze({
+    POLISH: "polish",
+    EXPAND: "expand",
+    PUNCH_UP: "punch_up"
+});
+
+/** @type {Readonly<Record<string, Readonly<{ label: string; description: string }>>>} */
+export const TRANSFORMATION_OPERATION_CONFIG = Object.freeze({
+    [TRANSFORMATION_OPERATION_IDENTIFIERS.POLISH]: Object.freeze({
+        label: "Polish",
+        description: "Improve grammar, clarity, cohesion, and flow while preserving meaning, voice, and approximate length."
+    }),
+    [TRANSFORMATION_OPERATION_IDENTIFIERS.EXPAND]: Object.freeze({
+        label: "Expand",
+        description: "Add useful explanation, connective detail, and structure without inventing facts or claims."
+    }),
+    [TRANSFORMATION_OPERATION_IDENTIFIERS.PUNCH_UP]: Object.freeze({
+        label: "Punch Up",
+        description: "Strengthen the hook, cadence, transitions, and ending without misleading clickbait."
+    })
+});
+
+export const TRANSFORMATION_ACTION_IDENTIFIERS = Object.freeze({
+    APPLY: "apply",
+    DISCARD: "discard",
+    RETRY: "retry",
+    UNDO: "undo"
+});
+
+export const AUTH_EVENT_NAMES = Object.freeze({
+    AUTHENTICATED: "mpr-ui:auth:authenticated",
+    UNAUTHENTICATED: "mpr-ui:auth:unauthenticated"
+});
+
+export const AUTH_LIFECYCLE_STATUS = Object.freeze({
+    AUTHENTICATED: "authenticated",
+    UNAUTHENTICATED: "unauthenticated",
+    UNKNOWN: "unknown"
+});
+
+export const API_ERROR_CODES = Object.freeze({
+    AUTHENTICATION_REQUIRED: "authentication_required",
+    CAPACITY_UNAVAILABLE: "capacity_unavailable",
+    CONCURRENCY_LIMITED: "concurrency_limited",
+    INPUT_TOO_LARGE: "input_too_large",
+    INVALID_COMPLETION: "invalid_completion",
+    INVALID_MEDIA_TYPE: "invalid_media_type",
+    INVALID_REQUEST: "invalid_request",
+    INVALID_REQUEST_ID: "invalid_request_id",
+    INVALID_RESPONSE: "invalid_response",
+    INVALID_TEXT: "invalid_text",
+    METHOD_NOT_ALLOWED: "method_not_allowed",
+    ORIGIN_NOT_ALLOWED: "origin_not_allowed",
+    RATE_LIMITED: "rate_limited",
+    REQUEST_CANCELED: "request_canceled",
+    REQUEST_ID_CONFLICT: "request_id_conflict",
+    REQUEST_TOO_LARGE: "request_too_large",
+    RESOURCE_NOT_FOUND: "resource_not_found",
+    UNKNOWN_OPERATION: "unknown_operation",
+    UPSTREAM_FAILURE: "upstream_failure",
+    UPSTREAM_TIMEOUT: "upstream_timeout",
+    NETWORK_FAILURE: "network_failure"
+});
+
+const TRANSFORMATION_REQUEST_REJECTED_MESSAGE =
+    "The thread could not be sent for AI editing. Review the draft and try again.";
+const TRANSFORMATION_INTEGRATION_ERROR_MESSAGE =
+    "AI editing could not use the configured application API. Please report the integration problem.";
+
+/** @type {Readonly<Record<string, string>>} */
+export const TRANSFORMATION_ERROR_MESSAGES = Object.freeze({
+    [API_ERROR_CODES.AUTHENTICATION_REQUIRED]:
+        "The authenticated transformation request was rejected. Please try again or report the integration problem.",
+    [API_ERROR_CODES.INVALID_MEDIA_TYPE]: TRANSFORMATION_REQUEST_REJECTED_MESSAGE,
+    [API_ERROR_CODES.INVALID_REQUEST]: TRANSFORMATION_REQUEST_REJECTED_MESSAGE,
+    [API_ERROR_CODES.INVALID_REQUEST_ID]: TRANSFORMATION_REQUEST_REJECTED_MESSAGE,
+    [API_ERROR_CODES.INVALID_TEXT]: TRANSFORMATION_REQUEST_REJECTED_MESSAGE,
+    [API_ERROR_CODES.UNKNOWN_OPERATION]: TRANSFORMATION_REQUEST_REJECTED_MESSAGE,
+    [API_ERROR_CODES.INPUT_TOO_LARGE]: "This draft is too large for AI editing. Shorten it and try again.",
+    [API_ERROR_CODES.REQUEST_TOO_LARGE]: "This draft is too large to send for AI editing. Shorten it and try again.",
+    [API_ERROR_CODES.INVALID_RESPONSE]: "AI editing returned an invalid result. Your draft was not changed.",
+    [API_ERROR_CODES.RATE_LIMITED]: "You reached the AI editing request limit. Please try again later.",
+    [API_ERROR_CODES.CONCURRENCY_LIMITED]: "AI editing is busy. Please try again in a moment.",
+    [API_ERROR_CODES.CAPACITY_UNAVAILABLE]: "AI editing is temporarily unavailable because its capacity limit was reached.",
+    [API_ERROR_CODES.UPSTREAM_FAILURE]: "AI editing failed before it produced a result. Your draft was not changed.",
+    [API_ERROR_CODES.UPSTREAM_TIMEOUT]: "AI editing took too long and stopped. Your draft was not changed.",
+    [API_ERROR_CODES.INVALID_COMPLETION]: "AI editing returned an unusable result. Your draft was not changed.",
+    [API_ERROR_CODES.REQUEST_ID_CONFLICT]: "This AI editing request conflicted with an earlier request. Please try again.",
+    [API_ERROR_CODES.REQUEST_CANCELED]: "AI editing stopped before it produced a result. Your draft was not changed.",
+    [API_ERROR_CODES.METHOD_NOT_ALLOWED]: TRANSFORMATION_INTEGRATION_ERROR_MESSAGE,
+    [API_ERROR_CODES.ORIGIN_NOT_ALLOWED]: TRANSFORMATION_INTEGRATION_ERROR_MESSAGE,
+    [API_ERROR_CODES.RESOURCE_NOT_FOUND]: TRANSFORMATION_INTEGRATION_ERROR_MESSAGE,
+    [API_ERROR_CODES.NETWORK_FAILURE]: "Social Threader could not reach AI editing. Check your connection and try again."
+});
+
+export const TRANSFORMATION_LIMITS = Object.freeze({
+    MAX_RESPONSE_CHARACTERS: 10000,
+    MINIMUM_REQUEST_ID_LENGTH: 8,
+    MAXIMUM_REQUEST_ID_LENGTH: 128
+});
+
+export const API_PATHS = Object.freeze({
+    THREAD_TRANSFORMATIONS: "/v1/thread-transformations",
+    APPLICATION_CONFIG: "/config-app.json"
+});
+
+export const HTTP_VALUES = Object.freeze({
+    GET: "GET",
+    POST: "POST",
+    APPLICATION_JSON: "application/json",
+    CONTENT_TYPE_HEADER: "Content-Type",
+    INCLUDE_CREDENTIALS: "include",
+    SAME_ORIGIN_CREDENTIALS: "same-origin"
 });
 
 /** @type {Readonly<Record<string, string>>} */

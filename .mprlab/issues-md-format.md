@@ -7,7 +7,7 @@ This document describes the canonical ISSUES.md layout and section-aware identif
 - The file starts with a title line, for example `# ISSUES`.
 - Issues are grouped under level-2 headings.
 - Sections are `BugFixes`, `Improvements`, `Maintenance`, `Features`, and `Planning`.
-- Optional subheadings may organize a section, but issue IDs must still match the parent section.
+- Optional subheadings can organize a section, but issue IDs must still match the parent section.
 
 ## Issue Entries
 
@@ -23,10 +23,11 @@ Rules:
 - `[-]` means taken.
 - `[!]` means blocked and must include a `Blocked:` body line.
 - `[x]` means closed.
-- The external ID is required.
+- The external ID is necessary.
 - Priority `(P0)` through `(P2)` is optional.
 - Dependencies `{ID,ID}` are optional.
-- The title is required.
+- The title is necessary.
+- Write each new or changed title in ASD-STE100 Simplified Technical English.
 
 ## Identifiers
 
@@ -48,7 +49,7 @@ Legacy repo-prefixed identifiers are invalid.
 
 ## Body Text
 
-Additional body lines are indented by two spaces. Structured issue bodies should use plain labels:
+Indent additional body lines by two spaces. Structured issue bodies must use plain labels:
 
 - `Goal:`
 - `Requirements:`
@@ -56,4 +57,6 @@ Additional body lines are indented by two spaces. Structured issue bodies should
 - `Validation:`
 - `Blocked:`
 
-`Blocked:` is required only for blocked issues and must name the external dependency, missing input, or policy decision preventing progress.
+`Blocked:` is necessary only for blocked issues. It must identify the dependency, input, or policy decision that prevents progress.
+
+Write each new or changed body in ASD-STE100. Use `.mprlab/AGENTS.DOCS.md` and `.mprlab/TERMINOLOGY.md`.

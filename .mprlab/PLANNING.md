@@ -26,4 +26,6 @@ Suggested shape:
 
 ## Completion
 
-A change is complete only when requested edits are done, required issue or documentation notes are updated, and validation has passed or a concrete blocker is documented.
+Complete a change only after you complete all requested edits and necessary documentation updates.
+
+The applicable validation must pass. If validation cannot pass, record the concrete blocker.

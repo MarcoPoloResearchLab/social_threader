@@ -8,6 +8,11 @@ import { InputPanel } from "./ui/inputPanel.js";
 import { ChunkListView } from "./ui/chunkListView.js";
 import { FormControls } from "./ui/formControls.js";
 import { ThreaderController } from "./ui/controller.js";
+import { TransformationToolbar } from "./ui/transformationToolbar.js";
+import { TransformationPreview } from "./ui/transformationPreview.js";
+import { TransformationCoordinator } from "./core/transformationCoordinator.js";
+import { createTransformationGateway, loadApplicationProfile } from "./core/gateway.js";
+import { reconcileMprUiAuthLifecycle } from "./core/authLifecycle.js";
 import { loggingHelpers } from "./utils/logging.js";
 import {
     PRESET_IDENTIFIERS,
@@ -71,6 +76,30 @@ function initializeFeedbackWidget() {
     });
 }
 
+/**
+ * Creates a gateway that resolves the public API profile before its first protected request.
+ * @returns {{ transform: (request: import("./types.d.js").TransformationGatewayRequest) => Promise<import("./types.d.js").TransformationResponse> }}
+ */
+function createProfiledTransformationGateway() {
+    /** @type {Promise<{ transform: (request: import("./types.d.js").TransformationGatewayRequest) => Promise<import("./types.d.js").TransformationResponse> }> | null} */
+    let gatewayPromise = null;
+    return Object.freeze({
+        transform(request) {
+            if (gatewayPromise === null) {
+                gatewayPromise = loadApplicationProfile({ currentOrigin: window.location.origin })
+                    .then((applicationProfile) => createTransformationGateway({
+                        apiOrigin: applicationProfile.apiOrigin
+                    }))
+                    .catch((profileError) => {
+                        gatewayPromise = null;
+                        throw profileError;
+                    });
+            }
+            return gatewayPromise.then((gateway) => gateway.transform(request));
+        }
+    });
+}
+
 /** @type {boolean} */
 let bootstrapHasInitialized = false;
 
@@ -89,6 +118,14 @@ function bootstrap() {
     const statsElement = assertElement(document.getElementById("inputStats"), "inputStats");
     const errorElement = assertElement(document.getElementById("inputError"), "inputError");
     const resultsElement = assertElement(document.getElementById("results"), "results");
+    const transformationToolbarElement = assertElement(
+        document.getElementById("transformationToolbar"),
+        "transformationToolbar"
+    );
+    const transformationPreviewElement = assertElement(
+        document.getElementById("transformationPreview"),
+        "transformationPreview"
+    );
     const presetButtons = {
         [PRESET_IDENTIFIERS.THREADS]: assertElement(document.getElementById("presetThreads"), "presetThreads"),
         [PRESET_IDENTIFIERS.BLUESKY]: assertElement(document.getElementById("presetBluesky"), "presetBluesky"),
@@ -113,6 +150,8 @@ function bootstrap() {
     const inputPanel = new InputPanel(editorElement, statsElement, errorElement);
     const chunkListView = new ChunkListView(resultsElement, chunkingService);
     const formControls = new FormControls(presetButtons, customButtonElement, customInputElement, toggleInputs, toggleLabels);
+    const transformationToolbar = new TransformationToolbar(transformationToolbarElement);
+    const transformationPreview = new TransformationPreview(transformationPreviewElement);
 
     const controller = new ThreaderController({
         inputPanel,
@@ -122,7 +161,22 @@ function bootstrap() {
         loggingHelpers
     });
 
+    const transformationCoordinator = new TransformationCoordinator({
+        inputPanel,
+        toolbar: transformationToolbar,
+        preview: transformationPreview,
+        gateway: createProfiledTransformationGateway(),
+        lifecycleTarget: document
+    });
+
     controller.initialize();
+    transformationCoordinator.initialize();
+    void reconcileMprUiAuthLifecycle({
+        namespace: /** @type {Window & typeof globalThis & { MPRUI?: unknown }} */ (window).MPRUI,
+        target: "#socialThreaderHeader",
+        handleAuthenticated: () => transformationCoordinator.handleAuthenticatedLifecycle(),
+        handleUnauthenticated: () => transformationCoordinator.handleUnauthenticatedLifecycle()
+    });
     initializeFeedbackWidget();
 }
 

@@ -1,0 +1,72 @@
+server:
+  address: ":8080"
+  read_header_timeout_seconds: 5
+  idle_timeout_seconds: 60
+  shutdown_timeout_seconds: 15
+
+llm_proxy:
+  base_url: "${LLM_PROXY_BASE_URL}"
+  secret: "${LLM_PROXY_SECRET}"
+  provider: "openai"
+  model: "gpt-5.6-terra"
+  reasoning_effort: "medium"
+  request_timeout_seconds: 120
+
+auth:
+  signing_key: "${TAUTH_JWT_SIGNING_KEY}"
+  issuer: "tauth"
+  tenant_id: "social-threader"
+
+profiles:
+  selected: "${SOCIAL_THREADER_PROFILE}"
+  local:
+    frontend_origin: "http://localhost:4173"
+    api_origin: "http://localhost:4173"
+    tauth_browser_origin: ""
+    oauth_callback: "http://localhost:4173/auth/google/callback"
+    tenant_id: "social-threader"
+    session_cookie_name: "social_threader_development_session"
+    refresh_cookie_name: "social_threader_development_refresh"
+    cookie_domain: ""
+    cookie_secure: false
+    cookie_same_site: "Lax"
+    cors_credentials: true
+    dns_owner: "local operator"
+    reverse_proxy_owner: "local Caddy front door"
+    upstream_service: "social-threader-api"
+    container_port: 8080
+  hosted:
+    frontend_origin: "https://threader.mprlab.com"
+    api_origin: "https://threader-api.mprlab.com"
+    tauth_browser_origin: "https://tauth-api.mprlab.com"
+    oauth_callback: "https://tauth-api.mprlab.com/auth/google/callback"
+    tenant_id: "social-threader"
+    session_cookie_name: "social_threader_session"
+    refresh_cookie_name: "social_threader_refresh"
+    cookie_domain: ".mprlab.com"
+    cookie_secure: true
+    cookie_same_site: "Lax"
+    cors_credentials: true
+    dns_owner: "mprlab-gateway DNS handler"
+    reverse_proxy_owner: "mprlab-gateway Caddy handler"
+    upstream_service: "social-threader-api"
+    container_port: 8080
+
+limits:
+  max_body_bytes: 24576
+  max_input_characters: 12000
+  max_response_characters: 10000
+  max_output_tokens: 4096
+  per_user_requests: 10
+  rate_window_seconds: 3600
+  global_concurrency: 2
+  idempotency_retention_seconds: 600
+  capacity:
+    enabled: true
+    max_requests: 1000
+    window_seconds: 86400
+
+application_policy:
+  persist_text: false
+  log_content: false
+  automatic_retry: false

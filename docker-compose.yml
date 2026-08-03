@@ -1,0 +1,75 @@
+services:
+  fake-llm-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: fake-llm-proxy
+    env_file:
+      - "${SOCIAL_THREADER_ENV_FILE:-.env}"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    restart: unless-stopped
+
+  tauth:
+    image: ghcr.io/tyemirov/tauth:latest
+    pull_policy: always
+    env_file:
+      - "${SOCIAL_THREADER_ENV_FILE:-.env}"
+    environment:
+      TAUTH_CONFIG_FILE: /config/tauth.local.yml
+    volumes:
+      - ./configs/tauth.local.yml:/config/tauth.local.yml:ro
+      - tauth-data:/data
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "8082"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    restart: unless-stopped
+
+  social-threader-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    env_file:
+      - "${SOCIAL_THREADER_ENV_FILE:-.env}"
+    environment:
+      LLM_PROXY_BASE_URL: http://fake-llm-proxy:8080
+      SOCIAL_THREADER_PROFILE: local
+    volumes:
+      - ./configs/config.yml:/app/configs/config.yml:ro
+    depends_on:
+      fake-llm-proxy:
+        condition: service_healthy
+      tauth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: local-web
+    depends_on:
+      social-threader-api:
+        condition: service_healthy
+    ports:
+      - "4173:4173"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:4173/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    restart: unless-stopped
+
+volumes:
+  tauth-data:

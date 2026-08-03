@@ -10,6 +10,10 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
 import { runPublicPagesSeoSuite } from "./publicPagesSeoSuite.js";
+import {
+    runTransformationBrowserSuite,
+    startTransformationApiServer
+} from "./transformationPuppeteerSuite.js";
 
 const SOURCE_TEXT_SELECTOR = "#sourceText";
 const INPUT_STATS_SELECTOR = "#inputStats";
@@ -260,10 +264,8 @@ function startStaticServer(rootDirectory) {
 
 /**
  * @param {import("puppeteer").Page} page
- * @param {(name: string) => void} pass
- * @param {(name: string, error: unknown) => void} fail
- * @param {string} indexUrl
- * @returns {Promise<void>}
+ * @param {{ characters: number; words: number; sentences: number; paragraphs: number }} expected
+ * @returns {Promise<{ statistics: { characters: number; words: number; sentences: number; paragraphs: number }; statisticsText: string }>}
  */
 async function waitForExpectedStatistics(page, expected) {
     let statisticsText = "";
@@ -440,6 +442,7 @@ async function runInputStatisticsSuite(page, pass, fail, indexUrl) {
 
 async function main() {
     const staticServer = await startStaticServer(repositoryRootPath);
+    const transformationApiServer = await startTransformationApiServer(staticServer.origin);
     const indexUrl = `${staticServer.origin}/index.html`;
     const browser = await puppeteer.launch({ headless: HEADLESS_MODE, args: PUPPETEER_ARGS });
     const page = await browser.newPage();
@@ -448,8 +451,17 @@ async function main() {
     try {
         await runInputStatisticsSuite(page, pass, fail, indexUrl);
         await runPublicPagesSeoSuite(page, pass, fail, staticServer.origin);
+        await runTransformationBrowserSuite(
+            page,
+            pass,
+            fail,
+            indexUrl,
+            staticServer.origin,
+            transformationApiServer
+        );
     } finally {
         await browser.close();
+        await transformationApiServer.close();
         await staticServer.close();
     }
 

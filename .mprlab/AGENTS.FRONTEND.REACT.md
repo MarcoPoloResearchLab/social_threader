@@ -17,14 +17,14 @@ Framework guidance for React frontends. Use this only when the repo actually use
 
 - Validate browser inputs, bootstrap data, imported files, local storage, backend payloads, and event streams at the boundary.
 - Backend clients own request construction, response parsing, and malformed-payload errors.
-- Components do not call `fetch` directly when a backend client exists or should exist.
-- Do not encode product states as ad-hoc component strings; use constants or closed sets.
+- Components do not call `fetch` directly when a backend client exists or is necessary.
+- Do not encode product states as ad-hoc component strings. Use constants or closed sets.
 
 ## Effects
 
 - Cancel timers, event streams, object URLs, probes, subscriptions, and pending async work from effects that create them.
 - Guard async completion handlers against stale active workflow or selected entity state.
-- Avoid full-tree rerenders for high-frequency animation or pointer work.
+- Prevent full-tree rerenders for high-frequency animation or pointer work.
 - Do not catch and ignore invariant violations.
 
 ## Generated Outputs
@@ -39,4 +39,4 @@ Framework guidance for React frontends. Use this only when the repo actually use
 - Prefer integration and end-to-end coverage through the real page or app shell.
 - For backend-adapter changes, add adapter contract tests before broader UI assertions.
 - For visible workflow changes, assert rendered behavior, DOM state, emitted events, requests, or downloaded artifacts.
-- Run the documented lint, test, build, and CI targets required by the active work.
+- Run the documented lint, test, build, and CI targets that are necessary for the active work.

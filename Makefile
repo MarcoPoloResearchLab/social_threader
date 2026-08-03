@@ -13,15 +13,7 @@ MOBILE_ANDROID_BUNDLE_ARGS ?=
 MOBILE_ANDROID_PUBLISH_ARGS ?=
 MOBILE_ANDROID_BUNDLE_SCRIPT := $(MOBILE_DIR)/scripts/build-android-bundle.mjs
 MOBILE_ANDROID_PUBLISH_SCRIPT := $(MOBILE_DIR)/scripts/publish-android-play.mjs
-RELEASE_ARGS ?=
-RELEASE_HELPER ?=
-PUBLISH_RELEASE_ARGS ?=
-RELEASE_ARTIFACT_TARGETS ?= mobile-release-artifacts pages-artifact
-RELEASE_TOOL_DIR := $(abspath $(CURDIR)/scripts/release)
-PAGES_URL ?= https://threader.mprlab.com/
-PAGES_BRANCH ?= gh-pages
-PAGES_VERSION ?=
-PAGES_DEPLOY_ARGS ?=
+LOCAL_ENV_FILE ?= .env
 MOBILE_PORT ?= 8081
 MOBILE_EXPECT ?= /usr/bin/expect
 ANDROID_SDK_ROOT ?= $(HOME)/Library/Android/sdk
@@ -29,36 +21,61 @@ ANDROID_HOME ?= $(ANDROID_SDK_ROOT)
 ANDROID_STUDIO_JAVA_HOME ?= /Applications/Android Studio.app/Contents/jbr/Contents/Home
 ANDROID_TOOL_PATH := $(ANDROID_SDK_ROOT)/emulator:$(ANDROID_SDK_ROOT)/platform-tools:$(ANDROID_SDK_ROOT)/cmdline-tools/latest/bin:$(ANDROID_SDK_ROOT)/tools/bin
 
-.PHONY: test ci release mobile-release-artifacts pages-artifact publish-release publish deploy pages-deploy mobile-install mobile-check run-ios run-android build-ios build-android mobile-android-bundle submit-ios submit-android
+.PHONY: test browser-test go-test go-vet go-format-check shell-check lint go-mod-verify ci release publish deploy local-config local-up local-down local-logs local-smoke container-check mobile-install mobile-check run-ios run-android build-ios build-android mobile-android-bundle submit-ios submit-android
 
-test:
+browser-test:
 	npm test
-	python3 tests/test_pages_release_pipeline.py
 
-ci: test mobile-check
+go-test:
+	go test ./... -count=1 -timeout=45s
 
-release:
-	@RELEASE_HELPER="$(RELEASE_HELPER)" RELEASE_ARTIFACT_TARGETS="$(RELEASE_ARTIFACT_TARGETS)" "$(RELEASE_TOOL_DIR)/prepare_release.sh" $(RELEASE_ARGS)
+go-vet:
+	go vet ./...
 
-mobile-release-artifacts: mobile-check
-	@test -n "$(RELEASE_ARTIFACT_DIR)" || { echo "error: RELEASE_ARTIFACT_DIR is required" >&2; exit 1; }
-	@asset_dir="$(RELEASE_ARTIFACT_DIR)/payloads/release-assets"; \
-	mkdir -p "$$asset_dir"; \
-	ANDROID_HOME="$(ANDROID_HOME)" ANDROID_SDK_ROOT="$(ANDROID_SDK_ROOT)" ANDROID_STUDIO_JAVA_HOME="$(ANDROID_STUDIO_JAVA_HOME)" node "$(MOBILE_ANDROID_BUNDLE_SCRIPT)" --mobile-dir "$(MOBILE_DIR)" --build-dir "$(MOBILE_ANDROID_BUILD_DIR)" --android-sdk-root "$(ANDROID_SDK_ROOT)" --version-code "$(MOBILE_ANDROID_VERSION_CODE)" --output "$$asset_dir/social-threader-android-release.aab" $(MOBILE_ANDROID_BUNDLE_ARGS)
+go-format-check:
+	@unformatted_files="$$(gofmt -l cmd internal)"; \
+	test -z "$$unformatted_files" || { printf 'Go files require gofmt:\n%s\n' "$$unformatted_files" >&2; exit 1; }
 
-pages-artifact:
-	@"$(RELEASE_TOOL_DIR)/prepare_pages_artifact.sh" --source . --domain threader.mprlab.com --exclude .git --exclude .github --exclude .gitignore --exclude .mprlab --exclude .DS_Store --exclude AGENTS.md --exclude CHANGELOG.md --exclude LICENSE --exclude Makefile --exclude README.md --exclude configs --exclude doc.md --exclude mobile --exclude node_modules --exclude package-lock.json --exclude package.json --exclude scripts --exclude tests
+shell-check:
+	bash -n scripts/local-smoke.sh
 
-publish-release:
-	@RELEASE_HELPER="$(RELEASE_HELPER)" "$(RELEASE_TOOL_DIR)/publish_release.sh" $(PUBLISH_RELEASE_ARGS)
+lint: go-vet go-format-check shell-check
 
-publish: publish-release submit-android
-	@echo "==> [publish] Published the prepared release and Android App Bundle"
+go-mod-verify:
+	go mod verify
 
-deploy: pages-deploy
+test: browser-test go-test
 
-pages-deploy:
-	@"$(RELEASE_TOOL_DIR)/deploy_pages_artifact.sh" --branch "$(PAGES_BRANCH)" --url "$(PAGES_URL)" $(if $(PAGES_VERSION),--version "$(PAGES_VERSION)") $(PAGES_DEPLOY_ARGS)
+ci: test lint go-mod-verify mobile-check
+
+release publish deploy:
+	@target="$@"; \
+	application_root="$$(git rev-parse --show-toplevel)"; \
+	gateway_root="$$(dirname "$$application_root")/mprlab-gateway"; \
+	test -d "$$gateway_root" || { printf 'missing sibling gateway: %s\n' "$$gateway_root" >&2; exit 2; }; \
+	$(MAKE) --no-print-directory -C "$$gateway_root" "app-$$target" MPRLAB_APP_ROOT="$$application_root"
+
+local-config:
+	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" config --quiet
+
+local-up:
+	@test -f "$(LOCAL_ENV_FILE)" || { printf 'missing local environment file: %s\n' "$(LOCAL_ENV_FILE)" >&2; exit 2; }
+	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" up --build --detach --wait --wait-timeout 120
+
+local-down:
+	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" down
+
+local-logs:
+	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" logs --follow
+
+local-smoke:
+	@bash scripts/local-smoke.sh
+
+container-check:
+	docker build --target api .
+	docker build --target fake-llm-proxy .
+	docker build --target local-web .
+	docker build --target pages .
 
 mobile-install:
 	@if [ ! -d "$(MOBILE_DIR)/node_modules" ]; then \
@@ -88,7 +105,4 @@ submit-ios: mobile-check
 
 submit-android:
 	@echo "==> [submit-android] Submitting Social Threader Android App Bundle to Google Play"
-	@artifact_dir="$$(git rev-parse --git-path mprlab-release)"; \
-	if [[ "$$artifact_dir" != /* ]]; then artifact_dir="$(CURDIR)/$$artifact_dir"; fi; \
-	"$(RELEASE_TOOL_DIR)/release_helper.py" verify-release-artifact --artifact-dir "$$artifact_dir"; \
-	node "$(MOBILE_ANDROID_PUBLISH_SCRIPT)" --mobile-dir "$(MOBILE_DIR)" --aab "$$artifact_dir/payloads/release-assets/social-threader-android-release.aab" $(MOBILE_ANDROID_PUBLISH_ARGS)
+	@node "$(MOBILE_ANDROID_PUBLISH_SCRIPT)" --mobile-dir "$(MOBILE_DIR)" $(MOBILE_ANDROID_PUBLISH_ARGS)

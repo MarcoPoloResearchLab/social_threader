@@ -1,82 +1,45 @@
-name: Browser Test Suite
+name: Social Threader CI
 
 on:
   push:
     branches:
       - master
-    paths:
-      - "**/*.js"
-      - "**/*.css"
-      - "**/*.html"
-      - "assets/img/**"
-      - "data/**"
-      - ".nojekyll"
-      - CNAME
-      - Makefile
-      - robots.txt
-      - sitemap.xml
-      - "scripts/release/**"
-      - "tests/**/*.py"
-      - mobile/app.json
-      - mobile/eas.json
-      - mobile/scripts/**
-      - package.json
-      - package-lock.json
-      - mobile/package.json
-      - mobile/package-lock.json
-      - .github/workflows/browser-tests.yml
   pull_request:
     branches:
       - master
-    paths:
-      - "**/*.js"
-      - "**/*.css"
-      - "**/*.html"
-      - "assets/img/**"
-      - "data/**"
-      - ".nojekyll"
-      - CNAME
-      - Makefile
-      - robots.txt
-      - sitemap.xml
-      - "scripts/release/**"
-      - "tests/**/*.py"
-      - mobile/app.json
-      - mobile/eas.json
-      - mobile/scripts/**
-      - package.json
-      - package-lock.json
-      - mobile/package.json
-      - mobile/package-lock.json
-      - .github/workflows/browser-tests.yml
 
 jobs:
-  run-browser-tests:
-    name: Run browser tests
+  browser-api-and-container:
+    name: Browser, API, and container checks
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       CI: "true"
+      PUPPETEER_CACHE_DIR: ~/.cache/puppeteer
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          cache: npm
 
       - name: Restore Puppeteer browser cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/puppeteer
-          key: ${{ runner.os }}-puppeteer-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-puppeteer-${{ hashFiles('package-lock.json') }}
 
-      - name: Install dependencies
+      - name: Install browser dependencies
         run: npm ci
-        env:
-          PUPPETEER_CACHE_DIR: ~/.cache/puppeteer
 
       - name: Install Chrome for Puppeteer
         id: setup-chrome
@@ -84,19 +47,29 @@ jobs:
         with:
           chrome-version: stable
 
-      - name: Run Happy DOM harness
-        run: npm run test:headless
-
-      - name: Run Puppeteer browser suite
+      - name: Run Go and Happy DOM checks
+        run: make go-mod-verify lint go-test browser-test
         env:
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
-        run: npm run test:browser
 
-      - name: Run Pages release pipeline tests
-        run: python3 tests/test_pages_release_pipeline.py
+      - name: Validate and build container contracts
+        run: |
+          SOCIAL_THREADER_ENV_FILE=.env.example docker compose --env-file .env.example config --quiet
+          make container-check
 
-  run-mobile-checks:
-    name: Run mobile checks
+      - name: Start the local black-box stack
+        run: make local-up LOCAL_ENV_FILE=.env.example
+
+      - name: Verify the TAuth and fake-proxy lifecycle
+        run: make local-smoke
+
+      - name: Stop the local black-box stack
+        if: always()
+        run: |
+          SOCIAL_THREADER_ENV_FILE=.env.example docker compose --env-file .env.example down --volumes
+
+  mobile:
+    name: Mobile checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -109,7 +82,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          cache: npm
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install mobile dependencies
