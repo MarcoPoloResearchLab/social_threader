@@ -47,7 +47,7 @@ mobile-release-artifacts: mobile-check
 	ANDROID_HOME="$(ANDROID_HOME)" ANDROID_SDK_ROOT="$(ANDROID_SDK_ROOT)" ANDROID_STUDIO_JAVA_HOME="$(ANDROID_STUDIO_JAVA_HOME)" node "$(MOBILE_ANDROID_BUNDLE_SCRIPT)" --mobile-dir "$(MOBILE_DIR)" --build-dir "$(MOBILE_ANDROID_BUILD_DIR)" --android-sdk-root "$(ANDROID_SDK_ROOT)" --version-code "$(MOBILE_ANDROID_VERSION_CODE)" --output "$$asset_dir/social-threader-android-release.aab" $(MOBILE_ANDROID_BUNDLE_ARGS)
 
 pages-artifact:
-	@"$(RELEASE_TOOL_DIR)/prepare_pages_artifact.sh" --source . --domain threader.mprlab.com --exclude .git --exclude .github --exclude .gitignore --exclude .DS_Store --exclude AGENTS.md --exclude CHANGELOG.md --exclude LICENSE --exclude Makefile --exclude README.md --exclude configs --exclude doc.md --exclude mobile --exclude node_modules --exclude package-lock.json --exclude package.json --exclude tests
+	@"$(RELEASE_TOOL_DIR)/prepare_pages_artifact.sh" --source . --domain threader.mprlab.com --exclude .git --exclude .github --exclude .gitignore --exclude .mprlab --exclude .DS_Store --exclude AGENTS.md --exclude CHANGELOG.md --exclude LICENSE --exclude Makefile --exclude README.md --exclude configs --exclude doc.md --exclude mobile --exclude node_modules --exclude package-lock.json --exclude package.json --exclude scripts --exclude tests
 
 publish-release:
 	@RELEASE_HELPER="$(RELEASE_HELPER)" "$(RELEASE_TOOL_DIR)/publish_release.sh" $(PUBLISH_RELEASE_ARGS)

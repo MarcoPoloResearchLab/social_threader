@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Image and Text Social Threads | Social Threader</title>
+    <meta name="description" content="Build image-and-text threads with ordered chunks, browser clipboard support, mobile image picking, and honest compatibility guidance.">
+    <meta name="author" content="MPR Lab">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://threader.mprlab.com/resources/image-and-text-social-threads/">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+    <link rel="stylesheet" href="/assets/css/resources.css">
+    <link rel="stylesheet" href="/assets/css/resource-components.css">
+
+    <meta property="og:title" content="Create Image and Text Social Threads | Social Threader">
+    <meta property="og:description" content="Arrange image and text chunks, then copy them with browser- and mobile-specific compatibility guidance.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Social Threader">
+    <meta property="og:url" content="https://threader.mprlab.com/resources/image-and-text-social-threads/">
+    <meta property="og:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+    <meta property="article:published_time" content="2026-07-30">
+    <meta property="article:modified_time" content="2026-07-30">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Create Image and Text Social Threads | Social Threader">
+    <meta name="twitter:description" content="Arrange image and text chunks, then copy them with browser- and mobile-specific compatibility guidance.">
+    <meta name="twitter:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta name="twitter:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Article",
+                "@id": "https://threader.mprlab.com/resources/image-and-text-social-threads/#article",
+                "mainEntityOfPage": "https://threader.mprlab.com/resources/image-and-text-social-threads/",
+                "headline": "Create Image and Text Social Threads",
+                "description": "Build image-and-text threads with ordered chunks, browser clipboard support, mobile image picking, and compatibility guidance.",
+                "datePublished": "2026-07-30",
+                "dateModified": "2026-07-30",
+                "author": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "image": "https://threader.mprlab.com/assets/img/social-threader-og.png"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "https://threader.mprlab.com/resources/image-and-text-social-threads/#breadcrumbs",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Social Threader",
+                        "item": "https://threader.mprlab.com/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "Resources",
+                        "item": "https://threader.mprlab.com/resources/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": "Image and Text Social Threads",
+                        "item": "https://threader.mprlab.com/resources/image-and-text-social-threads/"
+                    }
+                ]
+            },
+            {
+                "@type": "FAQPage",
+                "@id": "https://threader.mprlab.com/resources/image-and-text-social-threads/#faq",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "How do I add an image to a browser thread?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Paste or drag an image into the editable source area. Social Threader represents the image with an ordered placeholder and renders it as its own chunk alongside the surrounding text."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Can every browser copy an image chunk?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. Rich image copying depends on ClipboardItem support. The documented Safari compatibility branch surfaces an image-copy error when that API is unavailable, while text-only chunks retain their plain-text copy path."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does the mobile Share action include the image file?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Not in the documented combined share message. Mobile sharing substitutes an [Image] placeholder; individual image chunks can be copied through the native image clipboard path."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Will images stay between the same text sections?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "The mobile model stores source offsets and updates them as surrounding text changes. Browser input uses ordered placeholder tokens. Review the rendered thread after substantial edits."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does Social Threader upload or store my images?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "The repository documents in-memory data URL or base64 handling and no cloud image-storage feature. The hosted site still includes external analytics and feedback integrations, so this is not a privacy guarantee."
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="brand-link" href="/">Social Threader</a>
+            <nav class="site-nav" aria-label="Primary navigation">
+                <a href="/">Thread splitter</a>
+                <a href="/resources/" aria-current="page">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+                <li><a href="/">Social Threader</a></li>
+                <li><a href="/resources/">Resources</a></li>
+                <li aria-current="page">Image and text threads</li>
+            </ol>
+        </nav>
+
+        <article>
+            <header class="hero">
+                <p class="eyebrow">Mixed-media workflow</p>
+                <h1>Create image and text social threads</h1>
+                <p class="hero__lede">
+                    Create image and text social threads by treating every selected
+                    image as an ordered chunk beside the surrounding text. Social
+                    Threader supports browser paste or drag input and a native mobile
+                    image-picker path, with different clipboard limitations on each.
+                </p>
+                <div class="quick-verdict" aria-label="Quick verdict">
+                    <p>
+                        <strong>Quick verdict</strong>
+                        Use the rendered timeline as the source of truth for order.
+                        Copy text and images as separate chunks, and test your target
+                        browser before relying on rich image clipboard support.
+                    </p>
+                    <p><strong>Primary audience</strong>Image-led thread authors</p>
+                    <p><strong>Core outcome</strong>Ordered mixed-media chunks</p>
+                </div>
+                <p class="byline">
+                    Written by
+                    <a href="https://github.com/MarcoPoloResearchLab">MPR Lab</a>
+                    · Verified against the public Social Threader repository
+                    · Updated <time datetime="2026-07-30">July 30, 2026</time>
+                </p>
+                <div class="hero-actions">
+                    <a class="button-link" href="/">Build an image-and-text thread</a>
+                    <a class="button-link button-link--secondary" href="#workflow">Review the workflow</a>
+                </div>
+            </header>
+
+            <div class="content-layout">
+                <div class="content-stack">
+                    <section class="content-card">
+                        <h2>Why mixed-media threads need an explicit order</h2>
+                        <p>
+                            A screenshot or diagram often belongs between two specific
+                            explanations. Treating every image as an attachment at the
+                            end loses that relationship. Social Threader instead creates
+                            image records, assigns placeholder tokens or source offsets,
+                            and rebuilds a timeline containing separate text and image
+                            chunks.
+                        </p>
+                        <p>
+                            This is preparation, not upload. The final destination still
+                            determines how images are attached and posted. Social
+                            Threader’s job is to make the intended sequence visible and
+                            offer the supported copy actions.
+                        </p>
+                    </section>
+
+                    <section id="workflow" class="content-card">
+                        <h2>How to create image and text social threads</h2>
+                        <ol class="steps">
+                            <li>Enter the text before and after the point where an image belongs.</li>
+                            <li>On the web, paste or drag the image into the editable area; in the mobile app, use the image picker.</li>
+                            <li>Select a character maximum and review the generated timeline, including every separate image chunk.</li>
+                            <li>Copy text and image chunks individually in the displayed order, then attach or post them manually on the destination platform.</li>
+                        </ol>
+                        <p>
+                            The browser helper builds real image markup for a matched
+                            image record. This implementation excerpt is copied directly
+                            from the repository:
+                        </p>
+                        <pre><code>function createImageChunk(imageRecord) {
+    const altText = imageRecord.altText || TEXT_CONTENT.PASTED_IMAGE_ALT;
+    const sanitizedAlt = templateHelpers.escapeHtml(altText);
+    const htmlMarkup = `&lt;img src="${imageRecord.dataUrl}" alt="${sanitizedAlt}" draggable="false"&gt;`;
+    return {
+        variant: "image",
+        plainText: "",
+        htmlContent: htmlMarkup,
+        clipboardHtml: htmlMarkup,
+        imageDataUrl: imageRecord.dataUrl
+    };
+}</code></pre>
+                        <p>
+                            Read the
+                            <a href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/js/core/richText.js">full rich-text helper on GitHub</a>
+                            for placeholder translation and chunk construction.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Web and mobile behavior are not identical</h2>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Behavior</th>
+                                        <th scope="col">Browser app</th>
+                                        <th scope="col">Mobile app code</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Add an image</td>
+                                        <td>Paste or drag into the editable source area.</td>
+                                        <td>Select one image through Expo Image Picker.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Preserve order</td>
+                                        <td>Ordered placeholder tokens are translated into image chunks.</td>
+                                        <td>Source offsets keep images between text segments as the draft changes.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Copy one image</td>
+                                        <td>Uses rich clipboard data when <code>ClipboardItem</code> is supported.</td>
+                                        <td>Uses the native image clipboard path with base64 image data.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Share the full thread</td>
+                                        <td>No combined share action is documented.</td>
+                                        <td>The combined text share message represents images with <code>[Image]</code>.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Feature-to-benefit map</h2>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Feature</th>
+                                        <th scope="col">Why it matters here</th>
+                                        <th scope="col">Example</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Separate image chunks</td>
+                                        <td>Keeps image actions independent from text copying.</td>
+                                        <td>Copy a screenshot after the text that introduces it.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Ordered placeholders or offsets</td>
+                                        <td>Preserves where the image belongs in the source flow.</td>
+                                        <td>Place a diagram between setup and explanation sections.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Accessible alt field</td>
+                                        <td>Provides a text label for rendered image elements.</td>
+                                        <td>The browser fallback uses “Pasted image”; mobile can use the selected filename.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Explicit compatibility errors</td>
+                                        <td>Avoids claiming an image copy succeeded when the browser API is unavailable.</td>
+                                        <td>Safari’s unsupported branch displays an error for the image chunk.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Three mixed-media scenarios</h2>
+                        <div class="example-grid">
+                            <div>
+                                <h3>A screenshot walkthrough</h3>
+                                <p>
+                                    Put each screenshot immediately after the text that
+                                    introduces it. Review the rendered timeline after
+                                    editing earlier paragraphs.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>A diagram with commentary</h3>
+                                <p>
+                                    Keep the diagram as its own chunk, then follow it with
+                                    a text chunk that explains what the reader should
+                                    notice.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>An image-only sequence</h3>
+                                <p>
+                                    The tested models allow image-only content. Confirm
+                                    each image and destination caption manually because
+                                    the chunker does not generate descriptive copy.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>A mobile draft with native sharing</h3>
+                                <p>
+                                    Copy image chunks individually. The combined Share
+                                    action carries text plus <code>[Image]</code>
+                                    placeholders rather than binary image attachments.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Objections and limitations</h2>
+                        <h3>Can I assume rich image copying works everywhere?</h3>
+                        <p>
+                            No. The browser path depends on Clipboard API support and
+                            includes a documented Safari error branch. Test the actual
+                            browser and destination workflow you plan to use.
+                        </p>
+                        <h3>Does Social Threader create or edit images?</h3>
+                        <p>
+                            No image-generation or editing capability is documented. It
+                            accepts supplied images, renders them as chunks, and exposes
+                            supported copy or removal controls.
+                        </p>
+                        <h3>Does the workflow prove images remain private?</h3>
+                        <p>
+                            No. The implementation uses data URL or base64 records, but
+                            the hosted site also loads external analytics and feedback
+                            integrations and publishes no privacy guarantee. Do not infer
+                            a broader data-handling promise from the chunking code alone.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Frequently asked questions</h2>
+                        <div class="faq-list">
+                            <details>
+                                <summary>How do I add an image to a browser thread?</summary>
+                                <p>Paste or drag an image into the editable source area. Social Threader represents the image with an ordered placeholder and renders it as its own chunk alongside the surrounding text.</p>
+                            </details>
+                            <details>
+                                <summary>Can every browser copy an image chunk?</summary>
+                                <p>No. Rich image copying depends on ClipboardItem support. The documented Safari compatibility branch surfaces an image-copy error when that API is unavailable, while text-only chunks retain their plain-text copy path.</p>
+                            </details>
+                            <details>
+                                <summary>Does the mobile Share action include the image file?</summary>
+                                <p>Not in the documented combined share message. Mobile sharing substitutes an [Image] placeholder; individual image chunks can be copied through the native image clipboard path.</p>
+                            </details>
+                            <details>
+                                <summary>Will images stay between the same text sections?</summary>
+                                <p>The mobile model stores source offsets and updates them as surrounding text changes. Browser input uses ordered placeholder tokens. Review the rendered thread after substantial edits.</p>
+                            </details>
+                            <details>
+                                <summary>Does Social Threader upload or store my images?</summary>
+                                <p>The repository documents in-memory data URL or base64 handling and no cloud image-storage feature. The hosted site still includes external analytics and feedback integrations, so this is not a privacy guarantee.</p>
+                            </details>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Related Social Threader guides</h2>
+                        <div class="related-grid">
+                            <article class="resource-card">
+                                <h3>Prepare a 280-character thread</h3>
+                                <p>Combine manual post order with enumeration-aware text sizing.</p>
+                                <a href="/resources/twitter-thread-splitter/">Open the Twitter thread guide</a>
+                            </article>
+                            <article class="resource-card">
+                                <h3>Preserve sentence boundaries</h3>
+                                <p>Keep the prose around images readable within the selected maximum.</p>
+                                <a href="/resources/split-text-without-breaking-sentences/">Open the sentence-aware guide</a>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="side-card">
+                    <h2>On this page</h2>
+                    <ul>
+                        <li><a href="#workflow">Mixed-media workflow</a></li>
+                        <li><a href="/resources/twitter-thread-splitter/">Copy sequence</a></li>
+                        <li><a href="/resources/split-text-without-breaking-sentences/">Text boundaries</a></li>
+                        <li><a href="/">Open the tool</a></li>
+                    </ul>
+                </aside>
+            </div>
+
+            <section class="cta-panel">
+                <h2>Review the image order before you post</h2>
+                <p>
+                    Add supplied images, choose the text limit, and use the rendered
+                    timeline to copy every chunk in the sequence you intend.
+                </p>
+                <div class="cta-actions">
+                    <a class="button-link" href="/">Create an image-and-text thread</a>
+                </div>
+            </section>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <p>Social Threader is an open-source MPR Lab project.</p>
+            <nav aria-label="Footer navigation">
+                <a href="/">Tool</a>
+                <a href="/resources/">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">Source code</a>
+            </nav>
+        </div>
+    </footer>
+</body>
+</html>

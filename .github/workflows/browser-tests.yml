@@ -8,7 +8,15 @@ on:
       - "**/*.js"
       - "**/*.css"
       - "**/*.html"
+      - "assets/img/**"
+      - "data/**"
+      - ".nojekyll"
+      - CNAME
       - Makefile
+      - robots.txt
+      - sitemap.xml
+      - "scripts/release/**"
+      - "tests/**/*.py"
       - mobile/app.json
       - mobile/eas.json
       - mobile/scripts/**
@@ -24,7 +32,15 @@ on:
       - "**/*.js"
       - "**/*.css"
       - "**/*.html"
+      - "assets/img/**"
+      - "data/**"
+      - ".nojekyll"
+      - CNAME
       - Makefile
+      - robots.txt
+      - sitemap.xml
+      - "scripts/release/**"
+      - "tests/**/*.py"
       - mobile/app.json
       - mobile/eas.json
       - mobile/scripts/**
@@ -75,6 +91,9 @@ jobs:
         env:
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: npm run test:browser
+
+      - name: Run Pages release pipeline tests
+        run: python3 tests/test_pages_release_pipeline.py
 
   run-mobile-checks:
     name: Run mobile checks

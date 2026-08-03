@@ -83,17 +83,12 @@ function bootstrap() {
         return;
     }
     bootstrapHasInitialized = true;
-    const titleElement = assertElement(document.getElementById("appTitle"), "appTitle");
-    const primaryDescriptionElement = assertElement(document.getElementById("primaryDescription"), "primaryDescription");
-    const secondaryDescriptionElement = assertElement(document.getElementById("secondaryDescription"), "secondaryDescription");
     const editorElement = /** @type {HTMLDivElement} */ (
         assertElement(document.getElementById("sourceText"), "sourceText")
     );
     const statsElement = assertElement(document.getElementById("inputStats"), "inputStats");
     const errorElement = assertElement(document.getElementById("inputError"), "inputError");
     const resultsElement = assertElement(document.getElementById("results"), "results");
-    const footerElement = assertElement(document.getElementById("footerText"), "footerText");
-
     const presetButtons = {
         [PRESET_IDENTIFIERS.THREADS]: assertElement(document.getElementById("presetThreads"), "presetThreads"),
         [PRESET_IDENTIFIERS.BLUESKY]: assertElement(document.getElementById("presetBluesky"), "presetBluesky"),
@@ -127,7 +122,7 @@ function bootstrap() {
         loggingHelpers
     });
 
-    controller.initialize(titleElement, primaryDescriptionElement, secondaryDescriptionElement, footerElement);
+    controller.initialize();
     initializeFeedbackWidget();
 }
 

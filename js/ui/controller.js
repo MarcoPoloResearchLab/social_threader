@@ -115,16 +115,11 @@ export class ThreaderController {
     }
 
     /**
-     * Initializes UI copy and event listeners.
-     * @param {HTMLElement} titleElement Heading for the app title.
-     * @param {HTMLElement} primaryDescriptionElement First descriptive paragraph element.
-     * @param {HTMLElement} secondaryDescriptionElement Second descriptive paragraph element.
-     * @param {HTMLElement} footerElement Footer element for static copy.
+     * Initializes interactive copy and event listeners.
      * @returns {void}
      */
-    initialize(titleElement, primaryDescriptionElement, secondaryDescriptionElement, footerElement) {
-        this.inputPanel.initializeCopy(titleElement, primaryDescriptionElement, secondaryDescriptionElement);
-        footerElement.innerHTML = TEXT_CONTENT.FOOTER_HTML;
+    initialize() {
+        this.inputPanel.initializeCopy();
         this.formControls.initializeCopy();
         this.formControls.setToggleAvailability(TOGGLE_IDENTIFIERS.PARAGRAPH, false);
         this.formControls.setActivePreset(null);

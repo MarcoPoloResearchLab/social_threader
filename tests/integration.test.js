@@ -330,14 +330,10 @@ function setupControllerFixture() {
     const fixture = document.createElement("div");
     fixture.id = "test-fixture";
     fixture.innerHTML = `
-        <h2 id="appTitle"></h2>
-        <p id="primaryDescription"></p>
-        <p id="secondaryDescription"></p>
         <div id="sourceText" class="richTextInput" contenteditable="true"></div>
         <div id="inputStats"></div>
         <div id="inputError"></div>
         <div id="results"></div>
-        <div id="footerText"></div>
         <button id="presetThreads"></button>
         <button id="presetBluesky"></button>
         <button id="presetTwitter"></button>
@@ -353,14 +349,10 @@ function setupControllerFixture() {
     document.body.appendChild(fixture);
 
     const elements = {
-        titleElement: /** @type {HTMLElement} */ (fixture.querySelector("#appTitle")),
-        primaryDescription: /** @type {HTMLElement} */ (fixture.querySelector("#primaryDescription")),
-        secondaryDescription: /** @type {HTMLElement} */ (fixture.querySelector("#secondaryDescription")),
         editorElement: /** @type {HTMLDivElement} */ (fixture.querySelector("#sourceText")),
         statsElement: /** @type {HTMLElement} */ (fixture.querySelector("#inputStats")),
         errorElement: /** @type {HTMLElement} */ (fixture.querySelector("#inputError")),
         resultsElement: /** @type {HTMLElement} */ (fixture.querySelector("#results")),
-        footerElement: /** @type {HTMLElement} */ (fixture.querySelector("#footerText")),
         presetThreads: /** @type {HTMLButtonElement} */ (fixture.querySelector("#presetThreads")),
         presetBluesky: /** @type {HTMLButtonElement} */ (fixture.querySelector("#presetBluesky")),
         presetTwitter: /** @type {HTMLButtonElement} */ (fixture.querySelector("#presetTwitter")),
@@ -404,12 +396,7 @@ function setupControllerFixture() {
         loggingHelpers
     });
 
-    controller.initialize(
-        elements.titleElement,
-        elements.primaryDescription,
-        elements.secondaryDescription,
-        elements.footerElement
-    );
+    controller.initialize();
 
     return {
         elements,

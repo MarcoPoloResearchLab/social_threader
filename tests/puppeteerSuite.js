@@ -9,6 +9,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
+import { runPublicPagesSeoSuite } from "./publicPagesSeoSuite.js";
 
 const SOURCE_TEXT_SELECTOR = "#sourceText";
 const INPUT_STATS_SELECTOR = "#inputStats";
@@ -446,6 +447,7 @@ async function main() {
 
     try {
         await runInputStatisticsSuite(page, pass, fail, indexUrl);
+        await runPublicPagesSeoSuite(page, pass, fail, staticServer.origin);
     } finally {
         await browser.close();
         await staticServer.close();

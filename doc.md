@@ -42,3 +42,19 @@ Bootstraps DOM references, instantiates view models, initializes the controller,
 - `assert.js` / `runner.js` – Minimal assertion and reporting utilities.
 - `chunking.test.js` – Table-driven unit tests for the core algorithm.
 - `integration.test.js` – Black-box tests exercising the UI controller and DOM updates.
+
+### Public Resource Library
+
+- `resources/index.html` is the crawlable resource hub.
+- Each article is checked in as `resources/<slug>/index.html`, matching the
+  trailing-slash URLs served by GitHub Pages.
+- `assets/css/resources.css` owns the shared page shell and layout, while
+  `assets/css/resource-components.css` owns reusable guide components and
+  responsive behavior.
+- `data/resource-pages.json` is the canonical inventory for public paths,
+  metadata, significant-update dates, keywords, and differentiation notes.
+- `sitemap.xml`, page canonicals, Open Graph URLs, JSON-LD URLs, and internal
+  links use the same `https://threader.mprlab.com/` URL contract.
+- `tests/publicPagesSeoSuite.js` and `tests/publicPagesSeoSupport.js` extend the
+  Puppeteer suite with checks for the public inventory, structured data,
+  crawlable links, and rendered page behavior.

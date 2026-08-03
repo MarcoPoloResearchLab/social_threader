@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript: Split Text by Character Limit | Threader</title>
+    <meta name="description" content="Learn how Social Threader splits text by character limit in JavaScript while preserving words, sentences, paragraphs, and numbering space.">
+    <meta name="author" content="MPR Lab">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://threader.mprlab.com/resources/javascript-split-text-by-character-limit/">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+    <link rel="stylesheet" href="/assets/css/resources.css">
+    <link rel="stylesheet" href="/assets/css/resource-components.css">
+
+    <meta property="og:title" content="JavaScript: Split Text by Character Limit | Threader">
+    <meta property="og:description" content="Trace Social Threader’s open-source word, sentence, paragraph, and enumeration-aware chunking algorithm.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Social Threader">
+    <meta property="og:url" content="https://threader.mprlab.com/resources/javascript-split-text-by-character-limit/">
+    <meta property="og:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+    <meta property="article:published_time" content="2026-07-30">
+    <meta property="article:modified_time" content="2026-07-30">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="JavaScript: Split Text by Character Limit | Threader">
+    <meta name="twitter:description" content="Trace the open-source word, sentence, paragraph, and enumeration-aware chunking algorithm.">
+    <meta name="twitter:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta name="twitter:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "TechArticle",
+                "@id": "https://threader.mprlab.com/resources/javascript-split-text-by-character-limit/#article",
+                "mainEntityOfPage": "https://threader.mprlab.com/resources/javascript-split-text-by-character-limit/",
+                "headline": "How to Split Text by Character Limit in JavaScript",
+                "description": "Learn how Social Threader splits text by character limit in JavaScript while preserving words, sentences, paragraphs, and numbering space.",
+                "datePublished": "2026-07-30",
+                "dateModified": "2026-07-30",
+                "proficiencyLevel": "Intermediate",
+                "author": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "image": "https://threader.mprlab.com/assets/img/social-threader-og.png"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "https://threader.mprlab.com/resources/javascript-split-text-by-character-limit/#breadcrumbs",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Social Threader",
+                        "item": "https://threader.mprlab.com/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "Resources",
+                        "item": "https://threader.mprlab.com/resources/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": "JavaScript Text Chunking",
+                        "item": "https://threader.mprlab.com/resources/javascript-split-text-by-character-limit/"
+                    }
+                ]
+            },
+            {
+                "@type": "FAQPage",
+                "@id": "https://threader.mprlab.com/resources/javascript-split-text-by-character-limit/#faq",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "Is Social Threader's chunking engine a published npm package?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. It is a browser ES module in the Social Threader repository and is copied into the mobile source tree by the project's sync script. This guide does not present it as a versioned third-party package."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "What happens when one word is longer than the character limit?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "When no usable space or punctuation boundary exists inside the maximum, the documented chunkByLength function uses a hard character cut and continues with the remaining text."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "How does the JavaScript preserve sentence boundaries?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "When enabled, the engine groups words with a punctuation and abbreviation heuristic, then combines complete sentences while the combined value remains within the selected maximum."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Why does enumeration require repeated calculation?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Adding suffixes reduces available text space and can increase the chunk count, which can change the suffix width. The engine repeats until the effective maximum stops changing."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does the algorithm understand the meaning of the text?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. It uses deterministic whitespace, punctuation, abbreviation, paragraph, and length rules. It does not use a language model or claim semantic understanding."
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="brand-link" href="/">Social Threader</a>
+            <nav class="site-nav" aria-label="Primary navigation">
+                <a href="/">Thread splitter</a>
+                <a href="/resources/" aria-current="page">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+                <li><a href="/">Social Threader</a></li>
+                <li><a href="/resources/">Resources</a></li>
+                <li aria-current="page">JavaScript text chunking</li>
+            </ol>
+        </nav>
+
+        <article>
+            <header class="hero">
+                <p class="eyebrow">Open-source implementation guide</p>
+                <h1>How to split text by character limit in JavaScript</h1>
+                <p class="hero__lede">
+                    To split text by character limit in JavaScript without relying on
+                    raw substrings, Social Threader applies deterministic word,
+                    sentence, paragraph, and enumeration rules. The implementation is
+                    a browser ES module with table-driven and browser-level tests.
+                </p>
+                <div class="quick-verdict" aria-label="Quick verdict">
+                    <p>
+                        <strong>Quick verdict</strong>
+                        Treat maximum length as the invariant and readable boundaries
+                        as preferences. Reserve enumeration space before final output,
+                        and keep a hard-cut fallback for tokens that cannot fit.
+                    </p>
+                    <p><strong>Primary audience</strong>Web developers</p>
+                    <p><strong>Core outcome</strong>Auditable chunking logic</p>
+                </div>
+                <p class="byline">
+                    Written by
+                    <a href="https://github.com/MarcoPoloResearchLab">MPR Lab</a>
+                    · Verified against the public Social Threader repository
+                    · Updated <time datetime="2026-07-30">July 30, 2026</time>
+                </p>
+                <div class="hero-actions">
+                    <a class="button-link" href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/js/core/chunking.js">Inspect the source</a>
+                    <a class="button-link button-link--secondary" href="/">Try the working tool</a>
+                </div>
+            </header>
+
+            <div class="content-layout">
+                <div class="content-stack">
+                    <section class="content-card">
+                        <h2>Why substring slicing is not enough</h2>
+                        <p>
+                            A fixed <code>slice(0, maximumLength)</code> satisfies a
+                            numeric limit but can break a word, discard useful
+                            punctuation boundaries, or ignore the characters added by
+                            post numbering. A practical algorithm needs a strict output
+                            invariant and an ordered set of preferred fallbacks.
+                        </p>
+                        <p>
+                            Social Threader normalizes line separators and whitespace,
+                            identifies paragraphs, tokenizes words with their trailing
+                            punctuation, optionally groups sentences, and then combines
+                            values while the next candidate remains inside the maximum.
+                        </p>
+                    </section>
+
+                    <section id="algorithm" class="content-card">
+                        <h2>JavaScript split-text-by-character-limit flow</h2>
+                        <ol class="steps">
+                            <li>Normalize line endings, non-breaking spaces, tabs, and whitespace-only paragraph separators.</li>
+                            <li>Split text into word tokens while keeping punctuation attached to the preceding token.</li>
+                            <li>Optionally group tokens into heuristic sentences and process paragraphs independently.</li>
+                            <li>Build chunks within the effective maximum, then repeat with reduced space until enumeration overhead stabilizes.</li>
+                        </ol>
+                        <p>
+                            This public function is copied directly from
+                            <code>js/core/chunking.js</code>:
+                        </p>
+                        <pre><code>function getChunks(rawText, options) {
+    if (!options.enumerate) {
+        return buildBaseChunks(rawText, options);
+    }
+
+    let effectiveMaximumLength = Math.max(1, options.maximumLength);
+    /** @type {string[]} */
+    let baseChunks = [];
+
+    while (true) {
+        const iterationOptions = Object.assign({}, options, { maximumLength: effectiveMaximumLength });
+        baseChunks = buildBaseChunks(rawText, iterationOptions);
+        if (baseChunks.length === 0) {
+            return [];
+        }
+
+        const enumerationOverhead = getMaximumEnumerationOverhead(baseChunks.length);
+        const nextEffectiveMaximumLength = Math.max(1, options.maximumLength - enumerationOverhead);
+
+        if (nextEffectiveMaximumLength === effectiveMaximumLength) {
+            break;
+        }
+
+        effectiveMaximumLength = nextEffectiveMaximumLength;
+    }
+
+    return baseChunks.map((chunkText, index) =&gt; enumerateChunk(chunkText, index, baseChunks.length));
+}</code></pre>
+                        <p>
+                            The source exports this behavior through the frozen
+                            <code>chunkingService</code> object. It is a repository
+                            module, not a separately documented package API.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Boundary precedence</h2>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Boundary</th>
+                                        <th scope="col">When it is used</th>
+                                        <th scope="col">Fallback behavior</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Paragraph</td>
+                                        <td>When <code>breakOnParagraphs</code> is enabled.</td>
+                                        <td>Each paragraph recursively uses the remaining rules.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Sentence</td>
+                                        <td>When <code>breakOnSentences</code> is enabled and the sentence fits.</td>
+                                        <td>An over-limit sentence proceeds to length-based splitting.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Space or punctuation</td>
+                                        <td>When a candidate must be cut inside the maximum.</td>
+                                        <td>The search moves backward from the maximum.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Hard character cut</td>
+                                        <td>When no usable boundary exists.</td>
+                                        <td>The remaining text continues through the same loop.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Options and invariants</h2>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Option</th>
+                                        <th scope="col">Effect</th>
+                                        <th scope="col">Invariant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>maximumLength</code></td>
+                                        <td>Sets the final per-chunk character ceiling.</td>
+                                        <td>The implementation clamps the working value to at least 1.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>breakOnSentences</code></td>
+                                        <td>Groups heuristic sentences before combining them.</td>
+                                        <td>It cannot keep an over-limit sentence intact.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>breakOnParagraphs</code></td>
+                                        <td>Processes extracted paragraphs separately.</td>
+                                        <td>Nested processing disables paragraph recursion.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>enumerate</code></td>
+                                        <td>Adds <code>(current/total)</code> suffixes.</td>
+                                        <td>Suffix characters are reserved inside the original maximum.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Tested edge cases</h2>
+                        <div class="example-grid">
+                            <div>
+                                <h3>Abbreviations</h3>
+                                <p>
+                                    Strict and flexible abbreviation sets cover documented
+                                    examples such as honorifics, months, <code>e.g.</code>,
+                                    and <code>p.m.</code>.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>Decimals and ordinals</h3>
+                                <p>
+                                    Decimal-like tokens avoid false sentence boundaries,
+                                    while early ordinal-looking tokens receive special
+                                    handling.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>Ellipses and wrappers</h3>
+                                <p>
+                                    Sentence classification considers ellipses, the next
+                                    significant character, and trailing quote or bracket
+                                    characters.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>Paragraphs and list markers</h3>
+                                <p>
+                                    Tests cover blank-line variants, whitespace-wrapped
+                                    separators, and documented list-marker transitions.
+                                </p>
+                            </div>
+                        </div>
+                        <p>
+                            Browse the
+                            <a href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/tests/chunking.test.js">table-driven chunking tests</a>
+                            and
+                            <a href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/tests/puppeteerSuite.js">Puppeteer regression suite</a>
+                            for executable examples.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Objections and limitations</h2>
+                        <h3>Can I import this from npm?</h3>
+                        <p>
+                            The repository has no published library package contract.
+                            The web app imports the local ES module, and a project script
+                            synchronizes canonical web sources into the mobile tree.
+                        </p>
+                        <h3>Is sentence recognition linguistically complete?</h3>
+                        <p>
+                            No. It is a deterministic heuristic supported by the
+                            repository’s documented tests. Extend the public behavior
+                            and black-box cases before claiming broader punctuation or
+                            language coverage.
+                        </p>
+                        <h3>Does the module preserve input bytes exactly?</h3>
+                        <p>
+                            No byte-exact contract is documented. The implementation
+                            normalizes line separators, tabs, non-breaking spaces, and
+                            repeated whitespace as part of text preparation.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Frequently asked questions</h2>
+                        <div class="faq-list">
+                            <details>
+                                <summary>Is Social Threader's chunking engine a published npm package?</summary>
+                                <p>No. It is a browser ES module in the Social Threader repository and is copied into the mobile source tree by the project's sync script. This guide does not present it as a versioned third-party package.</p>
+                            </details>
+                            <details>
+                                <summary>What happens when one word is longer than the character limit?</summary>
+                                <p>When no usable space or punctuation boundary exists inside the maximum, the documented chunkByLength function uses a hard character cut and continues with the remaining text.</p>
+                            </details>
+                            <details>
+                                <summary>How does the JavaScript preserve sentence boundaries?</summary>
+                                <p>When enabled, the engine groups words with a punctuation and abbreviation heuristic, then combines complete sentences while the combined value remains within the selected maximum.</p>
+                            </details>
+                            <details>
+                                <summary>Why does enumeration require repeated calculation?</summary>
+                                <p>Adding suffixes reduces available text space and can increase the chunk count, which can change the suffix width. The engine repeats until the effective maximum stops changing.</p>
+                            </details>
+                            <details>
+                                <summary>Does the algorithm understand the meaning of the text?</summary>
+                                <p>No. It uses deterministic whitespace, punctuation, abbreviation, paragraph, and length rules. It does not use a language model or claim semantic understanding.</p>
+                            </details>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Related Social Threader guides</h2>
+                        <div class="related-grid">
+                            <article class="resource-card">
+                                <h3>See sentence mode as a user</h3>
+                                <p>Apply the same boundary rules through the public browser interface.</p>
+                                <a href="/resources/split-text-without-breaking-sentences/">Open the sentence-aware workflow</a>
+                            </article>
+                            <article class="resource-card">
+                                <h3>Compare configured maximums</h3>
+                                <p>See how the public controls expose 280, 300, 500, and custom sizes.</p>
+                                <a href="/resources/social-media-character-limit-splitter/">Open the character-limit guide</a>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="side-card">
+                    <h2>On this page</h2>
+                    <ul>
+                        <li><a href="#algorithm">Algorithm flow</a></li>
+                        <li><a href="/resources/split-text-without-breaking-sentences/">Sentence workflow</a></li>
+                        <li><a href="/resources/social-media-character-limit-splitter/">Configured limits</a></li>
+                        <li><a href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/js/core/chunking.js">Source module</a></li>
+                    </ul>
+                </aside>
+            </div>
+
+            <section class="cta-panel">
+                <h2>Inspect the implementation, then test it in the browser</h2>
+                <p>
+                    Read the public ES module and its black-box tests, or paste a draft
+                    into Social Threader to see the same options in the working interface.
+                </p>
+                <div class="cta-actions">
+                    <a class="button-link" href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/js/core/chunking.js">Read the source</a>
+                    <a class="button-link" href="/">Try Social Threader</a>
+                </div>
+            </section>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <p>Social Threader is an open-source MPR Lab project.</p>
+            <nav aria-label="Footer navigation">
+                <a href="/">Tool</a>
+                <a href="/resources/">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">Source code</a>
+            </nav>
+        </div>
+    </footer>
+</body>
+</html>
