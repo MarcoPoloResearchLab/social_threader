@@ -1,0 +1,31 @@
+server:
+  listen_addr: ":8082"
+  database_url: "sqlite:///data/tauth.db"
+  enable_cors: true
+  cors_allowed_origins:
+    - "http://localhost:4173"
+    - "https://accounts.google.com"
+  cors_allowed_origin_exceptions:
+    - "https://accounts.google.com"
+  enable_tenant_header_override: false
+
+tenants:
+  - id: "social-threader"
+    display_name: "Social Threader"
+    tenant_origins:
+      - "http://localhost:4173"
+    google_web_client_id: "${GOOGLE_CLIENT_ID}"
+    password_auth:
+      enabled: true
+      users:
+        - email: "local-smoke@social-threader.invalid"
+          display_name: "Local Smoke User"
+          password_hash: "$2y$10$Q15i1BvVWJh/YDpXS3v7f.0zDGKZQU92ql1Lm4txQoIwm5eUpflmu"
+    jwt_signing_key: "${TAUTH_JWT_SIGNING_KEY}"
+    cookie_domain: ""
+    session_cookie_name: "social_threader_development_session"
+    refresh_cookie_name: "social_threader_development_refresh"
+    session_ttl: "30m"
+    refresh_ttl: "720h"
+    nonce_ttl: "10m"
+    allow_insecure_http: true

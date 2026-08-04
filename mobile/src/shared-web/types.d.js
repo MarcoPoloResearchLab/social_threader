@@ -73,3 +73,23 @@
 /**
  * @typedef {(error: unknown) => void} ErrorLogger
  */
+
+/**
+ * @typedef {"polish" | "expand" | "punch_up"} TransformationOperation
+ */
+
+/**
+ * @typedef {Object} TransformationResponse
+ * @property {TransformationOperation} operation Product operation applied to the source.
+ * @property {string} text Plain-text transformation result.
+ * @property {string} request_id Non-secret client request identifier.
+ * @property {string} template_version Server-owned prompt template version.
+ */
+
+/**
+ * @typedef {Object} TransformationGatewayRequest
+ * @property {TransformationOperation} operation Product operation selected by the user.
+ * @property {string} text Source text to transform.
+ * @property {string} requestId Non-secret client request identifier.
+ * @property {AbortSignal} signal Cancellation signal for the protected request.
+ */

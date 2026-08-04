@@ -2,7 +2,7 @@
 
 ## Scope
 
-Guidance for browser frontends. Follow root `AGENTS.md` and `.mprlab/POLICY.md` for shared workflow and validation rules.
+This file gives rules for browser frontends. Obey root `AGENTS.md` and `.mprlab/POLICY.md` for shared workflow and validation rules.
 
 ## Principles
 
@@ -10,7 +10,7 @@ Guidance for browser frontends. Follow root `AGENTS.md` and `.mprlab/POLICY.md` 
 - Components render validated state and emit user intent.
 - Keep transport, persistence, and backend payload validation in explicit adapter modules.
 - Keep route strings, endpoint paths, storage keys, event names, and workflow codes in constants or backend payloads.
-- Avoid anonymous wrapper-heavy markup when semantic elements or custom elements fit.
+- Do not use anonymous wrapper-heavy markup when semantic elements or custom elements are applicable.
 
 ## JavaScript
 

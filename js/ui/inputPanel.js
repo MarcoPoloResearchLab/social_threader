@@ -354,6 +354,19 @@ export class InputPanel {
     }
 
     /**
+     * Replaces the editor with plain text and emits the normal input lifecycle.
+     * @param {string} replacementText Validated plain text to place in the editor.
+     * @returns {void}
+     */
+    replacePlainText(replacementText) {
+        if (typeof replacementText !== "string") {
+            throw new Error("InputPanel.replacePlainText requires a string");
+        }
+        this.editorElement.textContent = replacementText;
+        emitSyntheticInputEvent(this.editorElement);
+    }
+
+    /**
      * Adjusts the textarea font size based on the total input length.
      * @returns {void}
      */

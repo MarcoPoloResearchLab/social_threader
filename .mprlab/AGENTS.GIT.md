@@ -10,16 +10,18 @@ Git and GitHub workflow guidance for this repository. Use this guide whenever br
 - Use forward-only history. Do not rewrite, rebase, force-push, or amend published work.
 - Branch names use taxonomy prefixes: `feature/`, `improvement/`, `bugfix/`, `maintenance/`, or `blocked/`.
 - Keep one concrete issue or task per branch.
-- Never create, enter, modify, or use a separate Git worktree unless the user explicitly asks for one in the current request. Work in the repository's existing primary checkout; if it cannot be used safely, stop and ask instead of creating or using another worktree.
-- Do not infer worktree permission from a request to isolate work, preserve unrelated changes, branch, implement, commit, push, open a pull request, or parallelize.
+- Never create or use a separate Git worktree unless the user explicitly requests it in the current request.
+- Work only in the existing primary checkout. If the checkout is not safe, stop and ask the user.
+- Do not infer worktree permission from a request to isolate work or preserve unrelated changes.
+- Do not infer permission from a request to branch, implement, commit, push, open a pull request, or parallelize.
 - Prefer repo-native commands and documented release helpers.
 - Do not commit secrets, local env files, generated caches, or ephemeral planning files.
-- Do not run deploy or publish commands unless the user explicitly asks for that operation and the repo contract allows the agent to do it.
+- Run a deploy or publish command only when the user explicitly requests it and the repository contract permits it.
 
 ## Pull Requests
 
-- Open pull requests only after required local validation passes or a concrete blocker is documented.
-- PR descriptions should summarize changed behavior and validation run.
+- Open pull requests only after necessary local validation passes or a concrete blocker is documented.
+- A pull request description must summarize changed behavior and completed validation.
 - Keep release, publish, deploy, and production availability as separate statuses.
 
 ## Forbidden Operations
@@ -32,7 +34,9 @@ Git and GitHub workflow guidance for this repository. Use this guide whenever br
 
 ## Validation
 
-Before finalizing Git work, run the repo-native validation required by `AGENTS.md` and `.mprlab/POLICY.md`, then check:
+Before you finalize Git work, run the repo-native validation that `AGENTS.md` and `.mprlab/POLICY.md` specify.
+
+Then, run these commands:
 
 ```bash
 git diff --check

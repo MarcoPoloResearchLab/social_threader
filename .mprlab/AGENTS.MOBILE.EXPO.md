@@ -4,14 +4,15 @@
 
 Expo and React Native guidance for mobile clients. Use this guide only when the repository contains an Expo app, React Native app, or shared React Native client package.
 
-Follow root `AGENTS.md`, `.mprlab/POLICY.md`, and `.mprlab/AGENTS.MOBILE.md`.
+Obey root `AGENTS.md`, `.mprlab/POLICY.md`, and `.mprlab/AGENTS.MOBILE.md`.
 
 ## Expo And React Native Contract
 
 - Treat Expo configuration as a source contract. Keep `app.json`, `app.config.*`, native project settings, URL schemes, bundle identifiers, package names, plugins, and runtime config aligned.
 - Prefer Expo-managed APIs and config plugins when the repo already uses Expo.
 - Do not hand-edit generated iOS or Android project files unless the repo explicitly owns that native patch or script.
-- If native output must change, update the source config or documented prepare script first, then regenerate or run the repo-owned patch.
+- If native output must change, first update the source config or documented prepare script.
+- Then regenerate the output or run the repository patch.
 - Keep Expo dev-client, Metro, prebuild, and platform build commands inside package scripts or Make targets.
 
 ## Code Structure
@@ -20,7 +21,7 @@ Follow root `AGENTS.md`, `.mprlab/POLICY.md`, and `.mprlab/AGENTS.MOBILE.md`.
 - Backend clients parse and validate responses before UI state sees them.
 - Keep navigation route names, deep-link paths, storage keys, purchase product IDs, entitlement names, and event names in constants.
 - Use TypeScript or checked JavaScript consistently with the repo's current setup.
-- Avoid boolean flags that switch unrelated workflow behavior; prefer named commands or closed action objects.
+- Do not use boolean flags that switch unrelated workflow behavior. Prefer named commands or closed action objects.
 
 ## Auth, Links, And Storage
 
@@ -28,13 +29,13 @@ Follow root `AGENTS.md`, `.mprlab/POLICY.md`, and `.mprlab/AGENTS.MOBILE.md`.
 - Keep scheme, universal link/app link, OAuth callback, and hosted backend origin values in one documented config path.
 - Store tokens and private auth state in `expo-secure-store` or the repo's current secure-storage adapter.
 - Sign-out must clear secure storage, memory state, and backend session state according to the current contract.
-- Do not keep compatibility reads for old storage keys unless a bounded migration is explicitly required.
+- Keep a compatibility read only for an explicit bounded migration.
 
 ## Native Capabilities
 
 - Purchases, push notifications, clipboard, haptics, browser sessions, and native modules must have explicit adapters.
 - Validate purchase product identifiers, receipt/entitlement payloads, restore responses, and store errors before updating UI state.
-- Keep permissions explicit; do not silently continue after denied permissions unless the product state represents that denial.
+- Keep permissions explicit. Continue after denied permission only when the product state represents that denial.
 - Do not assume Expo web behavior proves iOS or Android behavior.
 
 ## Generated Native Projects

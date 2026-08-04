@@ -1,0 +1,138 @@
+---
+mprlab_resources:
+  schema_version: 3
+  owner: social-threader
+  resources:
+    - kind: private_values
+      id: private
+      bindings:
+        google-web-client-id: SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID
+        llm-proxy-secret: SOCIAL_THREADER_LLM_PROXY_SECRET
+        tauth-jwt-signing-key: SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY
+    - kind: compose_project
+      id: runtime
+      images:
+        - id: api-image
+          repository: ghcr.io/marcopoloresearchlab/social_threader
+          visibility: public
+          build:
+            context: .
+            dockerfile: Dockerfile
+            target: api
+            arguments:
+              RELEASE_VERSION:
+                identity: release_version
+              SOURCE_REVISION:
+                identity: source_commit
+            platforms:
+              - linux/amd64
+              - linux/arm64
+      services:
+        - id: social-threader-api
+          image: api-image
+          placement:
+            group: gateway
+            cardinality: one
+          environment:
+            LLM_PROXY_BASE_URL:
+              capability: llm-proxy.http
+              component: url
+            LLM_PROXY_SECRET:
+              resource: private
+              output: llm-proxy-secret
+            SOCIAL_THREADER_PROFILE:
+              value: hosted
+            TAUTH_JWT_SIGNING_KEY:
+              resource: authentication
+              output: jwt-signing-key
+          assets:
+            - source: configs/config.yml
+              target: /app/configs/config.yml
+              mode: "0444"
+          ports:
+            - container_port: 8080
+          readiness:
+            protocol: http
+            port: 8080
+            path: /healthz
+            expected_status: 200
+    - kind: runtime_capability
+      id: http
+      name: social-threader.http
+      version: 1
+      project: runtime
+      service: social-threader-api
+      endpoint:
+        scope: same_host
+        scheme: http
+        alias: social-threader-api
+        port: 8080
+      health:
+        protocol: http
+        path: /healthz
+        expected_status: 200
+    - kind: caddy_route
+      id: public-api
+      hostname: threader-api.mprlab.com
+      listener: https
+      handlers:
+        - id: default
+          path_prefix: /
+          upstream: social-threader.http
+          transport:
+            protocol: http
+            dial_timeout_seconds: 10
+            response_header_timeout_seconds: 180
+            read_timeout_seconds: 180
+      tls:
+        mode: automatic
+      access:
+        rate_limit:
+          events: 30
+          window_seconds: 10
+    - kind: health_check
+      id: public-health
+      protocol: http
+      url: https://threader-api.mprlab.com/healthz
+      expected_status: 200
+    - kind: github_pages
+      id: website
+      repository: marcopoloresearchlab/social_threader
+      branch: gh-pages
+      domain: threader.mprlab.com
+      url: https://threader.mprlab.com/
+      source:
+        kind: container
+        context: .
+        dockerfile: Dockerfile
+        target: pages
+      verification:
+        path: /.mprlab-release.json
+    - kind: mobile_application
+      id: mobile
+      source: mobile
+      build_system: expo
+      android:
+        package_name: com.mprlab.socialthreader
+        destination: google_play
+        track: production
+        profile: production
+    - kind: tauth_tenant
+      id: authentication
+      capability: tauth.tenants
+      version: 1
+      tenant:
+        id: social-threader
+        display_name: Social Threader
+        origins:
+          - https://threader.mprlab.com
+        google_web_client_id:
+          resource: private
+          output: google-web-client-id
+        jwt_signing_key:
+          resource: private
+          output: tauth-jwt-signing-key
+        cookie:
+          domain: .mprlab.com
+          session_name: social_threader_session
+          refresh_name: social_threader_refresh

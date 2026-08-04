@@ -182,7 +182,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## Features
 
-- [ ] [F001] (P1) Add authenticated LLM-powered thread transformations
+- [!] [F001] (P1) Add authenticated LLM-powered thread transformations
   Goal:
   Let a user deliberately transform the text in the main Social Threader editor with a small catalog of safe, product-defined operations while preserving the existing free, local thread-splitting workflow and keeping LLM credentials, routing, prompt policy, and paid-compute controls outside browser and mobile runtimes.
 
@@ -257,5 +257,36 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Run `npm test`, the focused Go tests, `go test ./...`, `go vet ./...`, `go mod verify`, `make mobile-check`, the deployment-manifest validation supplied by the current sibling gateway, the governor `--check`, and `git diff --check`.
   - Prove locally that no protected request occurs before authenticated lifecycle settlement, a valid TAuth session unlocks only the transformation endpoint, logout cancels/clears AI state without erasing the draft, and an API `401` after authentication is surfaced as an application/integration error rather than starting a second login flow.
   - For hosted acceptance, separately verify the Pages frontend, API DNS/TLS/health, exact CORS and credential behavior, TAuth callback/session restoration/logout, public route timeouts, and one explicitly authorized live transformation. Do not infer hosted readiness from localhost, CI, a healthy frontend, or a healthy backend alone.
+
+  Blocked: The required sibling-gateway isolation check cannot run. The sibling `mprlab-gateway` checkout has unrelated uncommitted work, and its private `.mprlab/deploy/.env` input is absent.
+
+- [ ] [F002] (P2) Add authenticated thread transformations to the mobile app
+  Goal:
+  Let a mobile user use the Social Threader transformation API after the browser capability is accepted and a native authentication contract is approved.
+
+  Requirements:
+  - Define a native TAuth application profile and session contract before implementation.
+  - Use the existing `POST /v1/thread-transformations` application API. Do not add an LLM client, prompt policy, provider configuration, or LLM Proxy credential to the mobile runtime.
+  - Keep ordinary thread splitting available without authentication.
+  - Let the user select only the current closed operations: `polish`, `expand`, and `punch_up`.
+  - Support text-only drafts. Block a transformation when the draft contains an image, and preserve all image bytes and positions.
+  - Show a plain-text preview before Apply. Include Discard, Try again, stale-result protection, and one-step Undo.
+  - Store native session material only in the approved secure client storage. Do not inspect or reinterpret session material in product code.
+  - Cancel protected work and clear AI result state after the approved native logout lifecycle. Preserve the source draft and local chunks.
+  - Do not change the browser authentication or transformation contracts in this issue.
+
+  Deliverables:
+  - Approved native TAuth profile, callback, session-restoration, and logout contract.
+  - Mobile transformation controls and preview workflow that use the existing application API.
+  - Mobile configuration and deployment resource updates that the approved native profile requires.
+  - Updated mobile architecture, privacy, setup, and test documentation.
+
+  Validation:
+  - Add black-box mobile tests for authentication gates, all operations, one request per action, cancellation, and errors.
+  - Add black-box mobile tests for preview actions, stale results, and Undo.
+  - Verify that image drafts never make a transformation request and remain byte-for-byte unchanged.
+  - Verify session restoration and logout on an Android device or emulator with the approved TAuth profile.
+  - Run the repository mobile coverage gate and the shared API contract tests.
+  - Treat one live transformation as explicit, potentially paid verification. Do not make it a default CI step.
 
 ## Planning

@@ -1,0 +1,209 @@
+openapi: 3.1.0
+info:
+  title: Social Threader API
+  version: 1.0.0
+  description: The API creates authenticated plain-text thread transformations.
+servers:
+  - url: https://threader-api.mprlab.com
+    description: Hosted profile
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      summary: Read API process health
+      responses:
+        "200":
+          description: The API process can serve requests.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+  /v1/thread-transformations:
+    post:
+      operationId: createThreadTransformation
+      summary: Create one thread transformation
+      security:
+        - profileSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransformationRequest"
+      responses:
+        "200":
+          description: The API created the thread transformation result.
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: "#/components/headers/AllowedOrigin"
+            Access-Control-Allow-Credentials:
+              $ref: "#/components/headers/AllowedCredentials"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransformationResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+        "413":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "502":
+          $ref: "#/components/responses/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ErrorResponse"
+        "504":
+          $ref: "#/components/responses/ErrorResponse"
+components:
+  securitySchemes:
+    profileSession:
+      type: apiKey
+      in: cookie
+      name: social_threader_session
+      description: The hosted profile TAuth session cookie.
+  headers:
+    AllowedOrigin:
+      description: The exact configured frontend origin.
+      schema:
+        type: string
+        const: https://threader.mprlab.com
+    AllowedCredentials:
+      description: The credentialed CORS indicator.
+      schema:
+        type: string
+        const: "true"
+    CacheControl:
+      description: The response cache policy.
+      schema:
+        type: string
+        const: no-store
+  responses:
+    ErrorResponse:
+      description: The request failed with a stable application error.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControl"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    MethodNotAllowed:
+      description: The resource does not permit the HTTP method.
+      headers:
+        Allow:
+          description: The permitted HTTP methods.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          const: ok
+    TransformationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - operation
+        - text
+        - request_id
+      properties:
+        operation:
+          type: string
+          enum:
+            - polish
+            - expand
+            - punch_up
+        text:
+          type: string
+          minLength: 1
+          maxLength: 12000
+        request_id:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: "^[A-Za-z0-9_-]+$"
+    TransformationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - operation
+        - text
+        - request_id
+        - template_version
+      properties:
+        operation:
+          type: string
+          enum:
+            - polish
+            - expand
+            - punch_up
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        request_id:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: "^[A-Za-z0-9_-]+$"
+        template_version:
+          type: string
+          pattern: "^(polish|expand|punch_up)\\.v[1-9][0-9]*$"
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - authentication_required
+                - capacity_unavailable
+                - concurrency_limited
+                - input_too_large
+                - invalid_completion
+                - invalid_media_type
+                - invalid_request
+                - invalid_request_id
+                - invalid_text
+                - method_not_allowed
+                - origin_not_allowed
+                - rate_limited
+                - request_canceled
+                - request_id_conflict
+                - request_too_large
+                - resource_not_found
+                - unknown_operation
+                - upstream_failure
+                - upstream_timeout
+            message:
+              type: string
+              minLength: 1

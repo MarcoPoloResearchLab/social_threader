@@ -73,15 +73,34 @@
             "Sentence-aware and paragraph-aware splitting",
             "Optional post enumeration",
             "Character, word, sentence, and paragraph statistics",
-            "Text and image chunk copying"
+            "Text and image chunk copying",
+            "Authenticated AI thread polishing, expansion, and punch-up previews"
         ]
     }
     </script>
 
     <link rel="stylesheet" href="./assets/css/main.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/MarcoPoloResearchLab/mpr-ui@latest/mpr-ui.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/gh/MarcoPoloResearchLab/mpr-ui@latest/mpr-ui-config.js"></script>
+    <script
+        id="mpr-ui-bundle"
+        type="application/json"
+        data-mpr-ui-bundle-src="https://cdn.jsdelivr.net/gh/MarcoPoloResearchLab/mpr-ui@latest/mpr-ui.js"
+    ></script>
 </head>
 <body>
     <noscript>Social Threader requires JavaScript to operate.</noscript>
+    <mpr-header
+        id="socialThreaderHeader"
+        data-config-url="/config-ui.yaml"
+        brand-label="Social Threader"
+        brand-href="/"
+        horizontal-links='{"alignment":"right","links":[{"label":"Resources","href":"/resources/"}]}'
+    >
+        <mpr-user slot="aux" display-mode="avatar" logout-url="/"></mpr-user>
+    </mpr-header>
     <main class="container">
         <div class="left-pane">
             <h1>Social Threader</h1>
@@ -91,6 +110,7 @@
                 Need a specific workflow?
                 <a href="/resources/">Browse the Social Threader resource guides</a>.
             </p>
+            <section id="transformationToolbar"></section>
             <div
                 id="sourceText"
                 class="richTextInput"
@@ -102,6 +122,7 @@
             ></div>
             <div id="inputStats" class="inputStats" aria-live="polite"></div>
             <div id="inputError" class="error" role="alert"></div>
+            <section id="transformationPreview" hidden></section>
         </div>
 
         <div class="right-pane">
@@ -144,6 +165,7 @@
             <a href="/resources/">Resources</a>
         </nav>
     </footer>
+    <mpr-footer theme-switcher="square"></mpr-footer>
 
     <script src="https://formspree.io/js/formbutton-v1.min.js" defer></script>
     <script type="module" src="./js/app.js"></script>

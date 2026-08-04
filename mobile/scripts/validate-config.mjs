@@ -20,6 +20,10 @@ const easJson = readJson("eas.json");
 const packageLock = readJson("package-lock.json");
 const androidReleaseIdentity = readJson("android-release-identity.json");
 const makefileSource = fs.readFileSync(path.join(REPOSITORY_ROOT, "Makefile"), "utf8");
+const deploymentManifestSource = fs.readFileSync(
+  path.join(REPOSITORY_ROOT, ".mprlab", "deploy", "resources.yml"),
+  "utf8"
+);
 const appSource = fs.readFileSync(path.join(MOBILE_ROOT, "App.js"), "utf8");
 const androidBuildSource = fs.readFileSync(path.join(MOBILE_ROOT, "scripts", "build-android-bundle.mjs"), "utf8");
 const jestConfigSource = fs.readFileSync(path.join(MOBILE_ROOT, "jest.config.js"), "utf8");
@@ -100,34 +104,35 @@ assertEqual(androidReleaseIdentity.packageName, "com.mprlab.socialthreader", "An
 assertIncludes(makefileSource, "MOBILE_ANDROID_VERSION_CODE ?= local", "Android release version code must default to local app configuration");
 assertIncludes(
   makefileSource,
-  "RELEASE_ARTIFACT_TARGETS ?= mobile-release-artifacts pages-artifact",
-  "make release must declare the complete local artifact set"
+  "release publish deploy:",
+  "root lifecycle commands must use one grouped zero-argument contract"
 );
-assertIncludes(makefileSource, "prepare_release.sh", "make release must use the canonical local release pipeline");
 assertIncludes(
   makefileSource,
-  "RELEASE_TOOL_DIR := $(abspath $(CURDIR)/scripts/release)",
-  "release tooling must be owned by this repository"
+  'gateway_root="$$(dirname "$$application_root")/mprlab-gateway"',
+  "root lifecycle commands must resolve the exact sibling gateway"
+);
+assertIncludes(
+  makefileSource,
+  '"app-$$target" MPRLAB_APP_ROOT="$$application_root"',
+  "root lifecycle commands must delegate the selected application root"
 );
 assertNotIncludes(
   makefileSource,
-  "../agentSkills/gitrelease/scripts",
-  "release tooling must not execute from a mutable sibling repository"
+  "RELEASE_ARTIFACT_TARGETS",
+  "root lifecycle commands must not preserve the obsolete app-owned release path"
 );
-assertIncludes(
+assertNotIncludes(
   makefileSource,
-  "python3 tests/test_pages_release_pipeline.py",
-  "make test must exercise the repository-owned Pages release contract"
+  "prepare_release.sh",
+  "root lifecycle commands must not use the removed app-owned release scripts"
 );
-assertIncludes(makefileSource, "mobile-release-artifacts: mobile-check", "make release must prepare the signed Android bundle locally");
-assertIncludes(makefileSource, "publish: publish-release submit-android", "make publish must publish the prepared release and Android bundle");
-assertNotIncludes(makefileSource, "submit-android: mobile-check", "make publish must not rebuild or reinstall mobile dependencies");
-assertIncludes(
-  makefileSource,
-  "payloads/release-assets/social-threader-android-release.aab",
-  "make publish must consume the Android bundle from the prepared release"
-);
-assertIncludes(makefileSource, "deploy: pages-deploy", "make deploy must activate the published web Pages artifact");
+assertIncludes(makefileSource, "mobile-android-bundle: mobile-check", "the Android development build helper must remain available");
+assertIncludes(makefileSource, "submit-android:", "the Android development publish helper must remain available");
+assertIncludes(deploymentManifestSource, "kind: mobile_application", "the canonical manifest must declare the mobile artifact");
+assertIncludes(deploymentManifestSource, "source: mobile", "the mobile resource must use the mobile source folder");
+assertIncludes(deploymentManifestSource, "package_name: com.mprlab.socialthreader", "the mobile resource must use the Android package");
+assertIncludes(deploymentManifestSource, "track: production", "the mobile resource must declare the production destination track");
 assertIncludes(androidBuildSource, "releaseIdentity.googleCloudProjectId", "Android bundle builder must use the release identity quota project");
 assertIncludes(
   androidBuildSource,

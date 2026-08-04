@@ -1,73 +1,162 @@
 # Social Threader
 
-Social Threader is a web-based tool that helps you break long text into smaller chunks ideal for social media platforms like Twitter/X, Bluesky, Threads, and Mastodon. It intelligently preserves sentence structures and punctuation while respecting character limits.
+Social Threader splits long text into ordered social posts. It preserves sentence, paragraph, punctuation, quotation, and image boundaries.
 
-Use the web tool at https://threader.mprlab.com.
+The browser frontend also offers optional authenticated thread transformations. Guest users can always split, review, and copy a draft without authentication.
 
-## Features
+Use the hosted frontend at [threader.mprlab.com](https://threader.mprlab.com/).
 
-- **Multiple Platform Support**: Pre-configured for popular social media character limits
-  - Twitter/X (280 characters)
-  - Bluesky (300 characters)
-  - Threads/Mastodon (500 characters)
-  - Custom length option
+## Product Functions
 
-- **Smart Text Processing**
-  - Preserves punctuation with preceding words
-  - Maintains quote integrity
-  - Optional sentence-aware breaking
-  - Intelligent chunk optimization
+- Use 280, 300, or 500 character presets.
+- Set a custom character limit.
+- Prefer sentence or paragraph boundaries.
+- Add post enumeration.
+- Review live text statistics.
+- Copy text and image chunks.
+- Use the same chunk logic in the Expo mobile client.
 
-- **User-Friendly Interface**
-  - Real-time character, word, and sentence counting
-  - One-click copying for each chunk
-  - Visual thread preview
-  - Responsive design for mobile and desktop
-  - Native iOS and Android app under `mobile/`
+### Improve With AI
 
-- **Advanced Features**
-  - Optional post enumeration (e.g., 1/5, 2/5, etc.)
-  - Custom chunk size support
-  - Dynamic font sizing
-  - Auto-expanding text areas
-  - Inline image support with clipboard-friendly copying
+The `Improve with AI` toolbar appears above the main editor. It has three closed operations:
 
-## Usage
+- `Polish` improves grammar, clarity, cohesion, and flow.
+- `Expand` adds connective detail, explanation, and structure.
+- `Punch Up` strengthens the hook, cadence, transitions, and ending.
 
-1. **Input Text**
-   - Paste or type your text in the left panel
-   - See real-time statistics for your input
+Each operation preserves the source language and factual meaning. Each operation also preserves names, URLs, mentions, hashtags, and quoted claims.
 
-2. **Choose Breaking Method**
-   - Select a preset platform button (Twitter, Bluesky, etc.)
-   - Or enter a custom character limit
-   - Toggle "Break on full sentences" if desired
-   - Enable post enumeration if needed
+The browser sends only the current plain-text draft to the protected API. The application does not persist source or transformed text.
 
-3. **Review and Copy**
-   - See your text broken into optimal chunks
-   - Each chunk shows character count and other stats
-   - Use "Copy" buttons to easily copy individual chunks
-   - Visual indicators show copied chunks in order
+The controls require an authenticated `mpr-ui` lifecycle. The app uses the documented public startup snapshot when that optional helper is present. The normal split and copy functions remain available to guest users.
 
-## Resource Guides
+An image disables every thread transformation control. The browser does not upload, remove, move, or replace the image.
 
-The public [Social Threader resource library](https://threader.mprlab.com/resources/)
-documents the tool's sentence-aware splitting, platform presets, image-and-text
-workflow, and browser JavaScript implementation. Each guide links its examples
-back to the current repository source and states the workflow's limits.
+A completed request creates a plain-text preview. The user must select `Apply`, `Discard`, or `Try again`.
 
-### Working with Images
+`Apply` uses the normal editor input lifecycle. It recalculates chunks and statistics, resets copy state, and offers one replacement `Undo`.
 
-- Paste or drag images directly into the editor; each image becomes its own chunk alongside surrounding text.
-- Copied image chunks include the PNG data, HTML markup, and accessible alt text so screenshots can be reposted without manual downloads.
-- When the browser cannot perform a rich clipboard write, the app falls back to copying plain text so text-only chunks continue to work on restrictive browsers.
+## Architecture
 
-## Mobile App
+The browser frontend uses CDN dependencies and native ES modules. It has no application build step.
 
-The universal mobile app lives in `mobile/` and is built with Expo and React Native. It reuses the existing Social Threader chunking engine, adds native clipboard/share/image-picker flows, and targets both iOS and Android from one codebase.
+The Go API owns authentication, request limits, prompt policy, LLM Proxy access, and content-free logs.
 
-Run the mobile app locally:
+Read [doc.md](doc.md) for module and data-flow details. Read [docs/api.md](docs/api.md) for the HTTP contract.
+
+The machine-readable API contract is [api/openapi.yml](api/openapi.yml).
+
+## Local Browser Use
+
+Open `index.html` directly to use guest thread splitting. The protected thread transformation needs the local stack or the hosted API.
+
+## Local Stack
+
+The local stack includes these services:
+
+- A Caddy frontend at `http://localhost:4173`.
+- The Social Threader API.
+- TAuth with a local profile.
+- A fake LLM Proxy with no provider connection.
+
+Install Go 1.26.5, Node.js 20 or later, Docker, and Docker Compose.
+
+1. Copy the tracked environment template.
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Replace each placeholder before non-smoke development.
+
+3. Start the local stack.
+
+   ```bash
+   make local-up
+   ```
+
+4. Open `http://localhost:4173`.
+
+5. Run the local TAuth and fake-proxy smoke test.
+
+   ```bash
+   make local-smoke
+   ```
+
+6. Stop the local stack.
+
+   ```bash
+   make local-down
+   ```
+
+The smoke test uses a seeded local-only TAuth user. It verifies session issuance, API authorization, logout, and fake-proxy routing.
+
+The smoke user password is `social-threader-local-smoke`. Do not use this local profile or credential in a hosted environment.
+
+## Configuration
+
+`configs/config.yml` is the only backend config. Startup fails for an unknown field, a missing field, or an invalid value.
+
+The `llm_proxy` block contains only connection and model-routing values. Paid-compute limits remain in the separate `limits` block.
+
+The backend reads these environment values:
+
+- `SOCIAL_THREADER_PROFILE` selects `local` or `hosted`.
+- `LLM_PROXY_BASE_URL` identifies the official LLM Proxy endpoint.
+- `LLM_PROXY_SECRET` contains the dedicated Social Threader tenant secret.
+- `TAUTH_JWT_SIGNING_KEY` validates the selected TAuth tenant session.
+
+`config-app.json` selects the browser API origin. `config-ui.yaml` is the only app-owned `mpr-ui` authentication config.
+
+The hosted profile uses these origins:
+
+| Surface | Origin |
+| --- | --- |
+| Frontend | `https://threader.mprlab.com` |
+| API | `https://threader-api.mprlab.com` |
+| TAuth browser API | `https://tauth-api.mprlab.com` |
+
+The hosted session cookie uses `.mprlab.com`, `Secure`, and `SameSite=Lax`. The API permits only the exact hosted frontend origin.
+
+## Validation
+
+Install browser dependencies once:
+
+```bash
+npm ci
+```
+
+Run the repository CI gate:
+
+```bash
+make ci
+```
+
+The gate runs these checks:
+
+- Happy DOM browser contracts.
+- Puppeteer real-browser contracts.
+- All Go tests.
+- `go vet ./...`.
+- `go mod verify`.
+- Expo mobile tests, config checks, and bundle checks.
+
+Run container checks separately:
+
+```bash
+make local-config LOCAL_ENV_FILE=.env.example
+make container-check
+```
+
+CI also starts the local stack and runs `make local-smoke`. It does not make a paid provider call.
+
+Read [docs/prompt-quality.md](docs/prompt-quality.md) for the prompt fixture corpus and the human review rubric.
+
+## Mobile Client
+
+The Expo mobile client remains under `mobile/`. F001 does not add thread transformations to that client.
+
+Run the mobile client:
 
 ```bash
 make mobile-install
@@ -75,13 +164,28 @@ make run-ios
 make run-android
 ```
 
-Run the full mobile verification gate:
+Run the mobile validation gate:
 
 ```bash
 make mobile-check
 ```
 
-Prepare and publish the Android app through the standard lifecycle:
+The schema-v3 manifest preserves the Android store artifact. Native thread transformation needs its own TAuth profile and session contract.
+
+## Release, Publish, And Deployment
+
+`.mprlab/deploy/resources.yml` is the only tracked production deployment manifest. It uses `schema_version: 3`.
+
+The manifest declares these resources:
+
+- The immutable API image and runtime service.
+- The public API route and health check.
+- The Pages frontend.
+- The Android mobile artifact.
+- The TAuth tenant contribution.
+- The dedicated private values.
+
+Root lifecycle commands delegate to the exact sibling `../mprlab-gateway` checkout:
 
 ```bash
 make release
@@ -89,81 +193,24 @@ make publish
 make deploy
 ```
 
-`make release` runs the checks and prepares the signed Android App Bundle plus the static web Pages archive locally. `make publish` verifies and publishes those exact assets, including the bundle upload to Google Play Internal testing. `make deploy` activates the already-published web archive at `threader.mprlab.com`; the mobile app has no separate runtime rollout.
+These commands take no arguments. Do not use the removed app-owned Pages scripts.
 
-Mobile test coverage is enforced at 100% for statements, branches, functions, and lines.
+Create `.mprlab/deploy/.env` as a private mode-`0600` file before a lifecycle transaction. Supply these operator values:
 
-`make run-android` starts Metro on localhost, prepares the Android emulator with Expo Go when needed, configures `adb reverse`, and opens Expo Go at the matching `127.0.0.1` URL so the Android emulator can download the local bundle without interactive Expo prompts.
-
-## Technical Details
-
-### Architecture
-
-- ES-module entry point at `js/app.js` orchestrates initialization.
-- Core text processing lives in `js/core/chunking.js` with `// @ts-check` and JSDoc annotations.
-- DOM-facing view models reside in `js/ui/`, coordinated by `ThreaderController`.
-- Constants, presets, and user copy live in `js/constants.js` to avoid magic strings.
-
-### Browser Support
-
-- Modern browsers (Chrome, Firefox, Safari, Edge)
-- Responsive design for mobile devices
-- No build tooling required; open `index.html` directly
-
-### Testing
-
-- Run `npm install` to install the Happy DOM harness along with the Puppeteer regression runner.
-- Execute `npm test` to run the Happy DOM harness (`npm run test:headless`) followed by the Puppeteer browser suite (`npm run test:browser`). The command mirrors the sequence executed in CI so local runs surface the same failures.
-- The Puppeteer suite (`tests/puppeteerSuite.js`) opens `index.html`, injects rich text markup, and verifies the live statistics rendered in the UI.
-- Execute `make mobile-check` to run the Expo/Jest mobile suite with 100% coverage thresholds, validate Expo app config, confirm dependency compatibility with `expo install --check`, and bundle the iOS app once through Metro.
-- Continue to use the `?test=true` query flag in a manual browser session to view the in-browser harness reporter.
-
-### Continuous Integration
-
-- `.github/workflows/browser-tests.yml` runs on pull requests and pushes that modify application code, public-page metadata, release inputs, or test tooling. The web job executes the Happy DOM harness, the Chromium-only Puppeteer suite, and the Pages release-pipeline tests.
-- The workflow caches the Chromium download used by Puppeteer and executes the same commands developers run locally for consistent feedback.
-- The same workflow also runs the mobile job from `mobile/package-lock.json` and executes `npm run check` inside `mobile/`.
-
-## Local Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/MarcoPoloResearchLab/social_threader.git
+```dotenv
+SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID=
+SOCIAL_THREADER_LLM_PROXY_SECRET=
+SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY=
 ```
 
-2. Install development dependencies for tests:
-```bash
-npm install
-```
+The operator owns production deployment. Ordinary implementation validation must not run `make deploy`.
 
-3. Open `index.html` in a web browser to use the app directly.
+Hosted acceptance is separate from local and CI evidence. It requires DNS, TLS, CORS, TAuth, route, and explicitly authorized live-provider checks.
 
-The application remains a static HTML/CSS/JS bundle, while the optional tooling supports automated testing.
+## Public Resource Guides
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+The [resource library](https://threader.mprlab.com/resources/) documents supported split workflows and browser implementation details.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Inspired by the need for better thread creation tools
-- Built with modern web standards
-- Community feedback and contributions welcome
-
-## Contact
-
-MPR Lab Support - [@MprlapSupport](https://twitter.com/MprlabSupport)
-
-Project Link: [https://github.com/MarcoPoloResearchLab/social_threader](https://github.com/MarcoPoloResearchLab/social_threader)
-
----
-
-Made with ❤️ for the social media community
+Social Threader uses the [MIT License](LICENSE).

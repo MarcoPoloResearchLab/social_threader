@@ -7,7 +7,10 @@ const TEST_SUITE_REGISTRY = Object.freeze([
     { modulePath: "./chunking.test.js", exportName: "runChunkingTests" },
     { modulePath: "./richText.test.js", exportName: "runRichTextTests" },
     { modulePath: "./inputPanel.test.js", exportName: "runInputPanelTests" },
-    { modulePath: "./integration.test.js", exportName: "runIntegrationTests" }
+    { modulePath: "./integration.test.js", exportName: "runIntegrationTests" },
+    { modulePath: "./transformationGateway.test.js", exportName: "runTransformationGatewayTests" },
+    { modulePath: "./transformationToolbar.test.js", exportName: "runTransformationToolbarTests" },
+    { modulePath: "./transformation.test.js", exportName: "runTransformationTests" }
 ]);
 
 /**

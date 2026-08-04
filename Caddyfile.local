@@ -1,0 +1,33 @@
+{
+	admin off
+	auto_https off
+}
+
+:4173 {
+	encode zstd gzip
+
+	handle /v1/* {
+		reverse_proxy social-threader-api:8080
+	}
+
+	handle /healthz {
+		reverse_proxy social-threader-api:8080
+	}
+
+	handle /auth/* {
+		reverse_proxy tauth:8082
+	}
+
+	handle /me {
+		reverse_proxy tauth:8082
+	}
+
+	handle /api/me {
+		reverse_proxy tauth:8082
+	}
+
+	handle {
+		root * /srv
+		file_server
+	}
+}

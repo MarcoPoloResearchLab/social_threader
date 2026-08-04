@@ -2,9 +2,11 @@
 
 ## Scope
 
-Mobile client guidance for iOS and Android applications. Use this guide when the repository contains native mobile projects, React Native packages, Expo apps, app-store configuration, mobile authentication, purchases, push notifications, deep links, or platform-specific runtime code.
+This guide gives mobile client rules for iOS and Android applications.
 
-Follow root `AGENTS.md` and `.mprlab/POLICY.md` for shared workflow and confident-programming rules.
+Use it for native projects, React Native, Expo, app stores, mobile authentication, purchases, notifications, deep links, and platform code.
+
+Obey root `AGENTS.md` and `.mprlab/POLICY.md` for shared workflow and confident-programming rules.
 
 ## Principles
 
@@ -29,7 +31,7 @@ Validate once at these edges:
 - Clipboard, camera, photos, files, contacts, location, and other device APIs.
 - Native module responses and bridge payloads.
 
-After validation, core mobile state and UI code should consume domain values, not raw payload maps.
+After validation, core mobile state and UI code must use domain values, not raw payload maps.
 
 ## State And Storage
 
@@ -42,16 +44,16 @@ After validation, core mobile state and UI code should consume domain values, no
 ## Platform Boundaries
 
 - Keep platform-specific behavior in named adapters or modules.
-- Avoid inline conditionals that mix iOS, Android, and shared business logic in screens.
+- Do not use inline conditionals that mix iOS, Android, and shared business logic in screens.
 - Name platform differences in tests and documentation when behavior legitimately diverges.
 - Keep permissions, entitlements, associated domains, URL schemes, intent filters, and store identifiers aligned with checked-in config.
 - Do not assume simulator behavior proves device, store, OAuth, notification, or production callback behavior.
 
 ## UI And UX
 
-- Screens should receive validated state and call explicit commands.
+- Screens must receive validated state and call explicit commands.
 - Keep loading, error, empty, offline, unauthorized, and entitlement-required states explicit.
-- Avoid silent retries or hidden fallbacks that leave the app appearing successful while the contract failed.
+- Do not use silent retries or hidden fallbacks that show a false successful state.
 - Handle safe areas, keyboard movement, orientation, accessibility labels, dynamic type, and reduced-motion settings intentionally.
 - Keep destructive, purchase, auth, and permission actions explicit.
 
