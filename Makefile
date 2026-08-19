@@ -49,11 +49,15 @@ test: browser-test go-test
 ci: test lint go-mod-verify mobile-check
 
 release publish deploy:
-	@target="$@"; \
-	application_root="$$(git rev-parse --show-toplevel)"; \
-	gateway_root="$$(dirname "$$application_root")/mprlab-gateway"; \
-	test -d "$$gateway_root" || { printf 'missing sibling gateway: %s\n' "$$gateway_root" >&2; exit 2; }; \
-	$(MAKE) --no-print-directory -C "$$gateway_root" "app-$$target" MPRLAB_APP_ROOT="$$application_root"
+	@application_root="$$(git rev-parse --show-toplevel)"; \
+	gateway_root="$$(dirname "$${application_root}")/mprlab-gateway"; \
+	if [ ! -d "$${gateway_root}" ]; then \
+		printf "required sibling gateway is missing: %s; clone mprlab-gateway at exactly %s\n" \
+			"$${gateway_root}" "$${gateway_root}" >&2; \
+		exit 2; \
+	fi; \
+	$(MAKE) --no-print-directory -C "$${gateway_root}" "app-$@" \
+		MPRLAB_APP_ROOT="$${application_root}"
 
 local-config:
 	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" config --quiet
