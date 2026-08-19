@@ -16,8 +16,13 @@ const PUBLISH_SCHEMA = "social-threader.mobile-android-play-publish.v1";
 const ANDROID_PUBLISHER_API_BASE = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications";
 const ANDROID_PUBLISHER_UPLOAD_BASE = "https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications";
 const ANDROID_PUBLISHER_SCOPE = "https://www.googleapis.com/auth/androidpublisher";
-const DEFAULT_TRACK = "internal";
+const DEFAULT_TRACK = "production";
 const DEFAULT_STATUS = "completed";
+const PROVIDER_MODES = Object.freeze({
+  PREFLIGHT: "preflight",
+  RECONCILE: "reconcile",
+  SUBMIT: "submit"
+});
 
 class PublishError extends Error {
   /**
@@ -52,7 +57,8 @@ try {
  *   track: string;
  *   status: string;
  *   releaseName: string;
- *   dryRun: boolean;
+ *   mode: string;
+ *   versioning: { artifactVersion: string; releaseTimestamp: string } | null;
  * }} PublishArgs
  */
 
@@ -65,8 +71,8 @@ function parseArgs(argv) {
   const flags = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
-    if (token === "--dry-run") {
-      flags.add("dry-run");
+    if (token === "--dry-run" || token === "--reconcile") {
+      flags.add(token.slice(2));
       continue;
     }
     if (!token.startsWith("--")) {
@@ -112,6 +118,18 @@ function parseArgs(argv) {
   const releaseName = String(options.get("release-name") || appConfig.version);
   requireTrack(track);
   requireReleaseStatus(status);
+  if (flags.has("dry-run") && flags.has("reconcile")) {
+    throw new PublishError("--dry-run and --reconcile cannot be used together");
+  }
+  const mode = flags.has("dry-run")
+    ? PROVIDER_MODES.PREFLIGHT
+    : flags.has("reconcile")
+      ? PROVIDER_MODES.RECONCILE
+      : PROVIDER_MODES.SUBMIT;
+  const versioning = parseLifecycleVersioning(
+    String(process.env.MPRLAB_ARTIFACT_VERSION || ""),
+    String(options.get("release-timestamp") || "")
+  );
 
   return {
     mobileDir,
@@ -123,8 +141,30 @@ function parseArgs(argv) {
     track,
     status,
     releaseName,
-    dryRun: flags.has("dry-run")
+    mode,
+    versioning
   };
+}
+
+/**
+ * @param {string} artifactVersion
+ * @param {string} releaseTimestamp
+ * @returns {{ artifactVersion: string; releaseTimestamp: string } | null}
+ */
+function parseLifecycleVersioning(artifactVersion, releaseTimestamp) {
+  if (!artifactVersion && !releaseTimestamp) {
+    return null;
+  }
+  if (!artifactVersion || !releaseTimestamp) {
+    throw new PublishError("MPRLAB_ARTIFACT_VERSION and --release-timestamp must be provided together");
+  }
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(artifactVersion)) {
+    throw new PublishError("MPRLAB_ARTIFACT_VERSION is not canonical");
+  }
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(releaseTimestamp)) {
+    throw new PublishError("--release-timestamp must be an RFC 3339 UTC timestamp");
+  }
+  return { artifactVersion, releaseTimestamp };
 }
 
 /**
@@ -135,17 +175,26 @@ async function publishAndroidBundle(args) {
   const appConfig = readAndroidAppConfig(args.mobileDir);
   requireFile(args.aab, "Android App Bundle");
   requireFile(args.mapping, "R8 deobfuscation mapping file");
-  const buildArtifact = readAndroidBuildManifest(args.buildManifest, args.aab, args.mapping, appConfig);
+  const buildArtifact = readAndroidBuildManifest(
+    args.buildManifest,
+    args.aab,
+    args.mapping,
+    appConfig,
+    args.versioning
+  );
   if (buildArtifact.androidPackage !== args.packageName) {
     throw new PublishError(`build manifest package mismatch: manifest has ${buildArtifact.androidPackage}, publish target is ${args.packageName}`);
   }
-  if (!args.quotaProject && !args.dryRun) {
+  if (!args.quotaProject) {
     throw new PublishError("missing Google Cloud quota project; pass --quota-project or set GOOGLE_CLOUD_QUOTA_PROJECT");
   }
 
-  const plan = {
+  const providerToken = accessTokenFromApplicationDefaultCredentials();
+  const providerHeaders = googleAuthHeaders(providerToken, args.quotaProject);
+  const providerState = await inspectGooglePlayState(args, buildArtifact, providerHeaders);
+  const result = {
     schema: PUBLISH_SCHEMA,
-    status: args.dryRun ? "planned" : "submitted",
+    status: PROVIDER_MODES.PREFLIGHT === args.mode ? "planned" : "absent",
     androidPackage: args.packageName,
     versionName: buildArtifact.versionName,
     versionCode: buildArtifact.versionCode,
@@ -161,77 +210,261 @@ async function publishAndroidBundle(args) {
     aabSha256: sha256File(args.aab),
     deobfuscationFile: args.mapping,
     deobfuscationSha256: sha256File(args.mapping),
-    quotaProject: args.quotaProject
+    quotaProject: args.quotaProject,
+    publisherAccess: "verified"
   };
-  if (args.dryRun) {
-    return plan;
+  if (args.mode === PROVIDER_MODES.PREFLIGHT) {
+    return result;
+  }
+  if (args.mode === PROVIDER_MODES.RECONCILE) {
+    return {
+      ...result,
+      status: providerState.submitted ? "submitted" : "absent"
+    };
+  }
+  if (providerState.submitted) {
+    return {
+      ...result,
+      status: "submitted"
+    };
   }
 
-  const token = accessTokenFromApplicationDefaultCredentials();
-  const authHeaders = googleAuthHeaders(token, args.quotaProject);
+  await submitGooglePlayRelease(args, buildArtifact, providerHeaders);
+  const verifiedState = await inspectGooglePlayState(args, buildArtifact, providerHeaders);
+  if (!verifiedState.submitted) {
+    throw new PublishError(`Google Play did not expose versionCode ${buildArtifact.versionCode} on track ${args.track} after submission`);
+  }
+  return {
+    ...result,
+    status: "submitted",
+    uploadedVersionCode: buildArtifact.versionCode
+  };
+}
+
+/**
+ * @param {PublishArgs} args
+ * @param {{ versionCode: number }} buildArtifact
+ * @param {Record<string, string>} providerHeaders
+ * @returns {Promise<{ submitted: boolean; bundleExists: boolean }>}
+ */
+async function inspectGooglePlayState(args, buildArtifact, providerHeaders) {
+  const editId = await createGooglePlayEdit(args.packageName, providerHeaders);
+  try {
+    const bundles = await listGooglePlayBundles(args.packageName, editId, providerHeaders);
+    const existingBundle = findBundleByVersionCode(bundles, buildArtifact.versionCode);
+    if (existingBundle) {
+      requireMatchingBundleDigest(existingBundle, args.aab);
+    }
+    const tracks = await listGooglePlayTracks(args.packageName, editId, providerHeaders);
+    const trackContainsVersion = trackHasVersionCode(tracks, args.track, buildArtifact.versionCode);
+    if (trackContainsVersion && !existingBundle) {
+      throw new PublishError(`Google Play track ${args.track} references absent versionCode ${buildArtifact.versionCode}`);
+    }
+    return {
+      submitted: trackContainsVersion,
+      bundleExists: Boolean(existingBundle)
+    };
+  } finally {
+    await deleteGooglePlayEdit(args.packageName, editId, providerHeaders);
+  }
+}
+
+/**
+ * @param {PublishArgs} args
+ * @param {{ versionCode: number }} buildArtifact
+ * @param {Record<string, string>} providerHeaders
+ */
+async function submitGooglePlayRelease(args, buildArtifact, providerHeaders) {
+  const editId = await createGooglePlayEdit(args.packageName, providerHeaders);
+  let editCommitted = false;
+  try {
+    let uploadedVersionCode = buildArtifact.versionCode;
+    const bundles = await listGooglePlayBundles(args.packageName, editId, providerHeaders);
+    const existingBundle = findBundleByVersionCode(bundles, buildArtifact.versionCode);
+    if (existingBundle) {
+      requireMatchingBundleDigest(existingBundle, args.aab);
+    } else {
+      const bundle = await requestJson({
+        method: "POST",
+        url: publisherUploadUrl(args.packageName, `edits/${encodeURIComponent(editId)}/bundles`, { uploadType: "media" }),
+        headers: { ...providerHeaders, "Content-Type": "application/octet-stream" },
+        body: fs.readFileSync(args.aab),
+        label: "upload Android App Bundle"
+      });
+      uploadedVersionCode = requirePositiveInteger(bundle.versionCode, "uploaded bundle versionCode");
+      if (uploadedVersionCode !== buildArtifact.versionCode) {
+        throw new PublishError(`uploaded bundle versionCode ${uploadedVersionCode} does not match build manifest ${buildArtifact.versionCode}`);
+      }
+    }
+
+    await requestJson({
+      method: "POST",
+      url: publisherUploadUrl(
+        args.packageName,
+        `edits/${encodeURIComponent(editId)}/apks/${uploadedVersionCode}/deobfuscationFiles/proguard`,
+        { uploadType: "media" }
+      ),
+      headers: { ...providerHeaders, "Content-Type": "application/octet-stream" },
+      body: fs.readFileSync(args.mapping),
+      label: "upload Android deobfuscation mapping"
+    });
+
+    await requestJson({
+      method: "PUT",
+      url: publisherUrl(args.packageName, `edits/${encodeURIComponent(editId)}/tracks/${encodeURIComponent(args.track)}`),
+      headers: { ...providerHeaders, "Content-Type": "application/json" },
+      body: Buffer.from(
+        JSON.stringify({
+          releases: [
+            {
+              name: args.releaseName,
+              versionCodes: [String(uploadedVersionCode)],
+              status: args.status
+            }
+          ]
+        })
+      ),
+      label: `update ${args.track} track`
+    });
+
+    await requestJson({
+      method: "POST",
+      url: publisherUrl(args.packageName, `edits/${encodeURIComponent(editId)}:commit`),
+      headers: providerHeaders,
+      label: "commit Android Publisher edit"
+    });
+    editCommitted = true;
+  } finally {
+    if (!editCommitted) {
+      await deleteGooglePlayEdit(args.packageName, editId, providerHeaders);
+    }
+  }
+}
+
+/**
+ * @param {string} packageName
+ * @param {Record<string, string>} providerHeaders
+ * @returns {Promise<string>}
+ */
+async function createGooglePlayEdit(packageName, providerHeaders) {
   const edit = await requestJson({
     method: "POST",
-    url: publisherUrl(args.packageName, "edits"),
-    headers: authHeaders,
+    url: publisherUrl(packageName, "edits"),
+    headers: providerHeaders,
     label: "create Android Publisher edit"
   });
-  const editId = requireString(edit.id, "edit id");
+  return requireString(edit.id, "edit id");
+}
 
-  const bundle = await requestJson({
-    method: "POST",
-    url: publisherUploadUrl(args.packageName, `edits/${encodeURIComponent(editId)}/bundles`, { uploadType: "media" }),
-    headers: { ...authHeaders, "Content-Type": "application/octet-stream" },
-    body: fs.readFileSync(args.aab),
-    label: "upload Android App Bundle"
+/**
+ * @param {string} packageName
+ * @param {string} editId
+ * @param {Record<string, string>} providerHeaders
+ * @returns {Promise<Record<string, unknown>[]>}
+ */
+async function listGooglePlayBundles(packageName, editId, providerHeaders) {
+  const payload = await requestJson({
+    method: "GET",
+    url: publisherUrl(packageName, `edits/${encodeURIComponent(editId)}/bundles`),
+    headers: providerHeaders,
+    label: "list Android App Bundles"
   });
-  const uploadedVersionCode = requirePositiveInteger(bundle.versionCode, "uploaded bundle versionCode");
-  if (uploadedVersionCode !== buildArtifact.versionCode) {
-    throw new PublishError(`uploaded bundle versionCode ${uploadedVersionCode} does not match build manifest ${buildArtifact.versionCode}`);
+  return requireObjectArray(payload.bundles, "Android App Bundles");
+}
+
+/**
+ * @param {string} packageName
+ * @param {string} editId
+ * @param {Record<string, string>} providerHeaders
+ * @returns {Promise<Record<string, unknown>[]>}
+ */
+async function listGooglePlayTracks(packageName, editId, providerHeaders) {
+  const payload = await requestJson({
+    method: "GET",
+    url: publisherUrl(packageName, `edits/${encodeURIComponent(editId)}/tracks`),
+    headers: providerHeaders,
+    label: "list Google Play tracks"
+  });
+  return requireObjectArray(payload.tracks, "Google Play tracks");
+}
+
+/**
+ * @param {string} packageName
+ * @param {string} editId
+ * @param {Record<string, string>} providerHeaders
+ */
+async function deleteGooglePlayEdit(packageName, editId, providerHeaders) {
+  await requestJson({
+    method: "DELETE",
+    url: publisherUrl(packageName, `edits/${encodeURIComponent(editId)}`),
+    headers: providerHeaders,
+    label: "delete Android Publisher edit"
+  });
+}
+
+/**
+ * @param {unknown} value
+ * @param {string} label
+ * @returns {Record<string, unknown>[]}
+ */
+function requireObjectArray(value, label) {
+  if (value === undefined) {
+    return [];
   }
+  if (!Array.isArray(value) || value.some((item) => !item || typeof item !== "object" || Array.isArray(item))) {
+    throw new PublishError(`${label} must be an array of objects`);
+  }
+  return value;
+}
 
-  await requestJson({
-    method: "POST",
-    url: publisherUploadUrl(
-      args.packageName,
-      `edits/${encodeURIComponent(editId)}/apks/${uploadedVersionCode}/deobfuscationFiles/proguard`,
-      { uploadType: "media" }
-    ),
-    headers: { ...authHeaders, "Content-Type": "application/octet-stream" },
-    body: fs.readFileSync(args.mapping),
-    label: "upload Android deobfuscation mapping"
+/**
+ * @param {Record<string, unknown>[]} bundles
+ * @param {number} versionCode
+ * @returns {Record<string, unknown> | null}
+ */
+function findBundleByVersionCode(bundles, versionCode) {
+  const matches = bundles.filter((bundle) => requirePositiveInteger(bundle.versionCode, "Google Play bundle versionCode") === versionCode);
+  if (matches.length > 1) {
+    throw new PublishError(`Google Play returned duplicate bundle versionCode ${versionCode}`);
+  }
+  return matches[0] || null;
+}
+
+/**
+ * @param {Record<string, unknown>} bundle
+ * @param {string} aabPath
+ */
+function requireMatchingBundleDigest(bundle, aabPath) {
+  const expectedHex = sha256File(aabPath);
+  const expectedBase64 = Buffer.from(expectedHex, "hex").toString("base64");
+  const expectedBase64URL = expectedBase64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const providerDigest = requireString(bundle.sha256, "Google Play bundle SHA-256");
+  if (![expectedHex, expectedBase64, expectedBase64URL].includes(providerDigest)) {
+    throw new PublishError(`Google Play versionCode ${bundle.versionCode} has a different Android App Bundle digest`);
+  }
+}
+
+/**
+ * @param {Record<string, unknown>[]} tracks
+ * @param {string} trackName
+ * @param {number} versionCode
+ * @returns {boolean}
+ */
+function trackHasVersionCode(tracks, trackName, versionCode) {
+  const matchingTracks = tracks.filter((track) => requireString(track.track, "Google Play track name") === trackName);
+  if (matchingTracks.length > 1) {
+    throw new PublishError(`Google Play returned duplicate track ${trackName}`);
+  }
+  if (matchingTracks.length === 0) {
+    return false;
+  }
+  const releases = requireObjectArray(matchingTracks[0].releases, `Google Play track ${trackName} releases`);
+  return releases.some((release) => {
+    if (!Array.isArray(release.versionCodes) || release.versionCodes.some((value) => typeof value !== "string")) {
+      throw new PublishError(`Google Play track ${trackName} versionCodes must be an array of strings`);
+    }
+    return release.versionCodes.includes(String(versionCode));
   });
-
-  await requestJson({
-    method: "PUT",
-    url: publisherUrl(args.packageName, `edits/${encodeURIComponent(editId)}/tracks/${encodeURIComponent(args.track)}`),
-    headers: { ...authHeaders, "Content-Type": "application/json" },
-    body: Buffer.from(
-      JSON.stringify({
-        releases: [
-          {
-            name: args.releaseName,
-            versionCodes: [String(uploadedVersionCode)],
-            status: args.status
-          }
-        ]
-      })
-    ),
-    label: `update ${args.track} track`
-  });
-
-  const commit = await requestJson({
-    method: "POST",
-    url: publisherUrl(args.packageName, `edits/${encodeURIComponent(editId)}:commit`),
-    headers: authHeaders,
-    label: "commit Android Publisher edit"
-  });
-
-  return {
-    ...plan,
-    editId,
-    committedEditId: commit.id || editId,
-    uploadedVersionCode
-  };
 }
 
 /**
@@ -272,9 +505,10 @@ function readAndroidReleaseIdentity(mobileDir) {
  * @param {string} aabPath
  * @param {string} mappingPath
  * @param {{ version: string; packageName: string }} appConfig
+ * @param {{ artifactVersion: string; releaseTimestamp: string } | null} expectedVersioning
  * @returns {{ androidPackage: string; versionName: string; versionCode: number; sourceVersionCode: number; versionCodeSource: string; versionCodePolicy: string; googlePlayMaxVersionCode: number | null }}
  */
-function readAndroidBuildManifest(manifestPath, aabPath, mappingPath, appConfig) {
+function readAndroidBuildManifest(manifestPath, aabPath, mappingPath, appConfig, expectedVersioning) {
   requireFile(manifestPath, "Android bundle build manifest");
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   if (manifest.schema !== BUNDLE_SCHEMA) {
@@ -296,6 +530,17 @@ function readAndroidBuildManifest(manifestPath, aabPath, mappingPath, appConfig)
   }
   if (manifest.deobfuscationSha256 !== sha256File(mappingPath)) {
     throw new PublishError(`R8 deobfuscation mapping hash changed since build manifest: ${mappingPath}`);
+  }
+  if (expectedVersioning) {
+    if (!manifest.versioning || typeof manifest.versioning !== "object" || Array.isArray(manifest.versioning)) {
+      throw new PublishError(`missing lifecycle versioning in ${manifestPath}`);
+    }
+    if (manifest.versioning.artifactVersion !== expectedVersioning.artifactVersion) {
+      throw new PublishError(`build manifest artifact version does not match MPRLAB_ARTIFACT_VERSION in ${manifestPath}`);
+    }
+    if (manifest.versioning.releaseTimestamp !== expectedVersioning.releaseTimestamp) {
+      throw new PublishError(`build manifest release timestamp does not match --release-timestamp in ${manifestPath}`);
+    }
   }
   const versionName = requireString(manifest.versionName, `versionName in ${manifestPath}`);
   if (versionName !== appConfig.version) {

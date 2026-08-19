@@ -55,6 +55,7 @@ try {
  *   javaHome: string;
  *   androidSdkRoot: string;
  *   quotaProject: string;
+ *   versioning: { artifactVersion: string; releaseTimestamp: string } | null;
  *   keepBuildDir: boolean;
  * }} BundleArgs
  */
@@ -91,6 +92,10 @@ function parseArgs(argv) {
 
   const mobileDir = resolvePath(options.get("mobile-dir") || DEFAULT_MOBILE_DIR);
   const releaseIdentity = readAndroidReleaseIdentity(mobileDir);
+  const versioning = parseLifecycleVersioning(
+    String(process.env.MPRLAB_ARTIFACT_VERSION || ""),
+    String(options.get("release-timestamp") || "")
+  );
 
   return {
     mobileDir,
@@ -112,8 +117,30 @@ function parseArgs(argv) {
         releaseIdentity.googleCloudProjectId ||
         ""
     ),
+    versioning,
     keepBuildDir: flags.has("keep-build-dir")
   };
+}
+
+/**
+ * @param {string} artifactVersion
+ * @param {string} releaseTimestamp
+ * @returns {{ artifactVersion: string; releaseTimestamp: string } | null}
+ */
+function parseLifecycleVersioning(artifactVersion, releaseTimestamp) {
+  if (!artifactVersion && !releaseTimestamp) {
+    return null;
+  }
+  if (!artifactVersion || !releaseTimestamp) {
+    throw new BuildError("MPRLAB_ARTIFACT_VERSION and --release-timestamp must be provided together");
+  }
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(artifactVersion)) {
+    throw new BuildError("MPRLAB_ARTIFACT_VERSION is not canonical");
+  }
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(releaseTimestamp)) {
+    throw new BuildError("--release-timestamp must be an RFC 3339 UTC timestamp");
+  }
+  return { artifactVersion, releaseTimestamp };
 }
 
 /**
@@ -216,6 +243,9 @@ function buildAndroidBundle(args) {
     r8Minification: "enabled",
     resourceShrinking: "disabled"
   };
+  if (args.versioning) {
+    metadata.versioning = args.versioning;
+  }
   metadata.buildManifest = writeBuildManifest(outputPath, metadata);
   return metadata;
 }
