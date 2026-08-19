@@ -148,7 +148,7 @@ make local-config LOCAL_ENV_FILE=.env.example
 make container-check
 ```
 
-CI also starts the local stack and runs `make local-smoke`. It does not make a paid provider call.
+Run `make local-smoke` separately to verify the local stack. The smoke test does not make a paid provider call.
 
 Read [docs/prompt-quality.md](docs/prompt-quality.md) for the prompt fixture corpus and the human review rubric.
 
@@ -170,11 +170,11 @@ Run the mobile validation gate:
 make mobile-check
 ```
 
-The schema-v3 manifest preserves the Android store artifact. Native thread transformation needs its own TAuth profile and session contract.
+The schema-v4 manifest preserves the Android store artifact. Native thread transformation needs its own TAuth profile and session contract.
 
 ## Release, Publish, And Deployment
 
-`.mprlab/deploy/resources.yml` is the only tracked production deployment manifest. It uses `schema_version: 3`.
+`.mprlab/deploy/resources.yml` is the only tracked production deployment manifest. It uses `schema_version: 4` and the SemVer release scheme.
 
 The manifest declares these resources:
 
@@ -185,17 +185,21 @@ The manifest declares these resources:
 - The TAuth tenant contribution.
 - The dedicated private values.
 
+The Android resource uses repository-owned local build and publish scripts. The publisher supports preflight, exact reconciliation, and submission.
+
+The gateway adds `CNAME`, `.nojekyll`, and the release marker to the Pages artifact. Application source does not own these files.
+
 Root lifecycle commands delegate to the exact sibling `../mprlab-gateway` checkout:
 
 ```bash
-make release
-make publish
-make deploy
+make release && make publish && make deploy
 ```
 
 These commands take no arguments. Do not use the removed app-owned Pages scripts.
 
-Create `.mprlab/deploy/.env` as a private mode-`0600` file before a lifecycle transaction. Supply these operator values:
+Configure the Android upload key and Google Application Default Credentials before `make release`. See [mobile/README.md](mobile/README.md).
+
+Create `.mprlab/deploy/.env` as a private mode-`0600` file before `make deploy`. Supply these operator values:
 
 ```dotenv
 SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID=
@@ -204,6 +208,8 @@ SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY=
 ```
 
 The operator owns production deployment. Ordinary implementation validation must not run `make deploy`.
+
+Release runs CI once and seals each declared artifact. Publish consumes only that sealed release. Deploy consumes only the sealed publication.
 
 Hosted acceptance is separate from local and CI evidence. It requires DNS, TLS, CORS, TAuth, route, and explicitly authorized live-provider checks.
 
