@@ -45,10 +45,45 @@ func TestAndroidPublisherLifecycleModes(t *testing.T) {
 			forbiddenEffects: []string{"UPLOAD_BUNDLE", "UPDATE_TRACK", "COMMIT_EDIT"},
 		},
 		{
+			name:             "reconcile rejects draft release",
+			providerState:    "draft",
+			modeArguments:    []string{"--reconcile"},
+			expectedStatus:   "absent",
+			forbiddenEffects: []string{"UPLOAD_BUNDLE", "UPDATE_TRACK", "COMMIT_EDIT"},
+		},
+		{
+			name:             "reconcile rejects halted release",
+			providerState:    "halted",
+			modeArguments:    []string{"--reconcile"},
+			expectedStatus:   "absent",
+			forbiddenEffects: []string{"UPLOAD_BUNDLE", "UPDATE_TRACK", "COMMIT_EDIT"},
+		},
+		{
+			name:             "reconcile rejects partial release",
+			providerState:    "inProgress",
+			modeArguments:    []string{"--reconcile"},
+			expectedStatus:   "absent",
+			forbiddenEffects: []string{"UPLOAD_BUNDLE", "UPDATE_TRACK", "COMMIT_EDIT"},
+		},
+		{
+			name:             "reconcile rejects release with wrong name",
+			providerState:    "wrong-name",
+			modeArguments:    []string{"--reconcile"},
+			expectedStatus:   "absent",
+			forbiddenEffects: []string{"UPLOAD_BUNDLE", "UPDATE_TRACK", "COMMIT_EDIT"},
+		},
+		{
 			name:            "submit publishes and verifies absent artifact",
 			providerState:   "absent",
 			expectedStatus:  "submitted",
 			expectedEffects: []string{"UPLOAD_BUNDLE", "UPDATE_TRACK", "COMMIT_EDIT"},
+		},
+		{
+			name:             "submit repairs mismatched release metadata",
+			providerState:    "draft",
+			expectedStatus:   "submitted",
+			expectedEffects:  []string{"UPLOAD_MAPPING", "UPDATE_TRACK", "COMMIT_EDIT"},
+			forbiddenEffects: []string{"UPLOAD_BUNDLE"},
 		},
 	}
 
@@ -228,8 +263,25 @@ func readOptionalFile(t *testing.T, filePath string) string {
 const androidPublisherPreload = `
 import fs from "node:fs";
 
-let submitted = process.env.SOCIAL_THREADER_PROVIDER_STATE === "submitted";
-const conflicting = process.env.SOCIAL_THREADER_PROVIDER_STATE === "conflict";
+const PROVIDER_STATES = Object.freeze({
+  ABSENT: "absent",
+  CONFLICT: "conflict",
+  DRAFT: "draft",
+  HALTED: "halted",
+  IN_PROGRESS: "inProgress",
+  SUBMITTED: "submitted",
+  WRONG_NAME: "wrong-name"
+});
+const providerState = String(process.env.SOCIAL_THREADER_PROVIDER_STATE || "");
+let submitted = providerState === PROVIDER_STATES.SUBMITTED;
+const conflicting = providerState === PROVIDER_STATES.CONFLICT;
+const releaseMetadataStates = new Set([
+  PROVIDER_STATES.DRAFT,
+  PROVIDER_STATES.HALTED,
+  PROVIDER_STATES.IN_PROGRESS,
+  PROVIDER_STATES.SUBMITTED,
+  PROVIDER_STATES.WRONG_NAME
+]);
 const expectedDigest = String(process.env.SOCIAL_THREADER_PROVIDER_AAB_SHA256 || "");
 const effectsPath = String(process.env.SOCIAL_THREADER_PROVIDER_EFFECTS || "");
 const recordEffect = (effect) => fs.appendFileSync(effectsPath, effect + "\n", { mode: 0o600 });
@@ -238,6 +290,15 @@ const response = (payload = {}) => ({
   status: 200,
   text: async () => Object.keys(payload).length ? JSON.stringify(payload) : ""
 });
+const currentRelease = () => {
+  if (submitted) {
+    return { name: "0.1.0", versionCodes: ["7"], status: "completed" };
+  }
+  if (providerState === PROVIDER_STATES.WRONG_NAME) {
+    return { name: "other-release", versionCodes: ["7"], status: "completed" };
+  }
+  return { name: "0.1.0", versionCodes: ["7"], status: providerState };
+};
 
 globalThis.fetch = async (urlValue, options = {}) => {
   const url = String(urlValue);
@@ -249,15 +310,15 @@ globalThis.fetch = async (urlValue, options = {}) => {
     return response();
   }
   if (method === "GET" && url.endsWith("/edits/fixture-edit/bundles")) {
-    if (!submitted && !conflicting) {
+    if (!releaseMetadataStates.has(providerState) && !submitted && !conflicting) {
       return response({ bundles: [] });
     }
     return response({ bundles: [{ versionCode: 7, sha256: conflicting ? "different" : expectedDigest }] });
   }
   if (method === "GET" && url.endsWith("/edits/fixture-edit/tracks")) {
     return response({
-      tracks: submitted
-        ? [{ track: "production", releases: [{ versionCodes: ["7"], status: "completed" }] }]
+      tracks: submitted || releaseMetadataStates.has(providerState)
+        ? [{ track: "production", releases: [currentRelease()] }]
         : []
     });
   }
