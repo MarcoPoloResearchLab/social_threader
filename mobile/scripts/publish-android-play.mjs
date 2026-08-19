@@ -256,12 +256,18 @@ async function inspectGooglePlayState(args, buildArtifact, providerHeaders) {
       requireMatchingBundleDigest(existingBundle, args.aab);
     }
     const tracks = await listGooglePlayTracks(args.packageName, editId, providerHeaders);
-    const trackContainsVersion = trackHasVersionCode(tracks, args.track, buildArtifact.versionCode);
-    if (trackContainsVersion && !existingBundle) {
+    const trackReleaseState = inspectTrackReleaseState(
+      tracks,
+      args.track,
+      buildArtifact.versionCode,
+      args.releaseName,
+      args.status
+    );
+    if (trackReleaseState.containsVersion && !existingBundle) {
       throw new PublishError(`Google Play track ${args.track} references absent versionCode ${buildArtifact.versionCode}`);
     }
     return {
-      submitted: trackContainsVersion,
+      submitted: trackReleaseState.matchesRequestedRelease,
       bundleExists: Boolean(existingBundle)
     };
   } finally {
@@ -418,6 +424,33 @@ function requireObjectArray(value, label) {
 }
 
 /**
+ * @param {unknown} value
+ * @param {string} label
+ * @returns {string[]}
+ */
+function requireStringArray(value, label) {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new PublishError(`${label} must be an array of strings`);
+  }
+  return value;
+}
+
+/**
+ * @param {unknown} value
+ * @param {string} label
+ * @returns {string}
+ */
+function readOptionalString(value, label) {
+  if (value === undefined) {
+    return "";
+  }
+  if (typeof value !== "string") {
+    throw new PublishError(`${label} must be a string`);
+  }
+  return value;
+}
+
+/**
  * @param {Record<string, unknown>[]} bundles
  * @param {number} versionCode
  * @returns {Record<string, unknown> | null}
@@ -448,23 +481,42 @@ function requireMatchingBundleDigest(bundle, aabPath) {
  * @param {Record<string, unknown>[]} tracks
  * @param {string} trackName
  * @param {number} versionCode
- * @returns {boolean}
+ * @param {string} releaseName
+ * @param {string} releaseStatus
+ * @returns {{ containsVersion: boolean; matchesRequestedRelease: boolean }}
  */
-function trackHasVersionCode(tracks, trackName, versionCode) {
+function inspectTrackReleaseState(tracks, trackName, versionCode, releaseName, releaseStatus) {
   const matchingTracks = tracks.filter((track) => requireString(track.track, "Google Play track name") === trackName);
   if (matchingTracks.length > 1) {
     throw new PublishError(`Google Play returned duplicate track ${trackName}`);
   }
   if (matchingTracks.length === 0) {
-    return false;
+    return { containsVersion: false, matchesRequestedRelease: false };
   }
   const releases = requireObjectArray(matchingTracks[0].releases, `Google Play track ${trackName} releases`);
-  return releases.some((release) => {
-    if (!Array.isArray(release.versionCodes) || release.versionCodes.some((value) => typeof value !== "string")) {
-      throw new PublishError(`Google Play track ${trackName} versionCodes must be an array of strings`);
-    }
-    return release.versionCodes.includes(String(versionCode));
-  });
+  const matchingReleases = releases
+    .map((release) => ({
+      release,
+      versionCodes: requireStringArray(release.versionCodes, `Google Play track ${trackName} versionCodes`)
+    }))
+    .filter((releaseState) => releaseState.versionCodes.includes(String(versionCode)));
+  if (matchingReleases.length > 1) {
+    throw new PublishError(`Google Play track ${trackName} returned duplicate release versionCode ${versionCode}`);
+  }
+  if (matchingReleases.length === 0) {
+    return { containsVersion: false, matchesRequestedRelease: false };
+  }
+  const matchingRelease = matchingReleases[0];
+  const providerReleaseName = readOptionalString(matchingRelease.release.name, `Google Play track ${trackName} release name`);
+  const providerReleaseStatus = readOptionalString(matchingRelease.release.status, `Google Play track ${trackName} release status`);
+  return {
+    containsVersion: true,
+    matchesRequestedRelease:
+      matchingRelease.versionCodes.length === 1 &&
+      matchingRelease.versionCodes[0] === String(versionCode) &&
+      providerReleaseName === releaseName &&
+      providerReleaseStatus === releaseStatus
+  };
 }
 
 /**
