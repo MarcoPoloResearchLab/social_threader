@@ -258,7 +258,11 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Prove locally that no protected request occurs before authenticated lifecycle settlement, a valid TAuth session unlocks only the transformation endpoint, logout cancels/clears AI state without erasing the draft, and an API `401` after authentication is surfaced as an application/integration error rather than starting a second login flow.
   - For hosted acceptance, separately verify the Pages frontend, API DNS/TLS/health, exact CORS and credential behavior, TAuth callback/session restoration/logout, public route timeouts, and one explicitly authorized live transformation. Do not infer hosted readiness from localhost, CI, a healthy frontend, or a healthy backend alone.
 
-  Blocked: The required sibling-gateway isolation check cannot run. The sibling `mprlab-gateway` checkout has unrelated uncommitted work, and its private `.mprlab/deploy/.env` input is absent.
+  Blocked: Production acceptance requires a committed implementation and the canonical operator command.
+  The private deployment input is present.
+  Google accepts the configured callback.
+  LLM Proxy accepts the dedicated tenant secret without a provider call.
+  No production lifecycle operation occurred.
 
 - [ ] [F002] (P2) Add authenticated thread transformations to the mobile app
   Goal:

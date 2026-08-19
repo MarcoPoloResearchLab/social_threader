@@ -1,7 +1,9 @@
 ---
 mprlab_resources:
-  schema_version: 3
+  schema_version: 4
   owner: social-threader
+  release:
+    scheme: semver
   resources:
     - kind: private_values
       id: private
@@ -14,7 +16,6 @@ mprlab_resources:
       images:
         - id: api-image
           repository: ghcr.io/marcopoloresearchlab/social_threader
-          visibility: public
           build:
             context: .
             dockerfile: Dockerfile
@@ -111,12 +112,15 @@ mprlab_resources:
     - kind: mobile_application
       id: mobile
       source: mobile
-      build_system: expo
+      build_system: local
+      build:
+        android: mobile/scripts/build-android-bundle.mjs
+      publish:
+        android: mobile/scripts/publish-android-play.mjs
       android:
         package_name: com.mprlab.socialthreader
         destination: google_play
         track: production
-        profile: production
     - kind: tauth_tenant
       id: authentication
       capability: tauth.tenants
