@@ -19,3 +19,7 @@ test-results/
 qodana.yaml
 tools/
 bin/
+
+# BEGIN MPRLAB-GOVERNANCE
+/.mprlab/*-PLAN.md
+# END MPRLAB-GOVERNANCE
