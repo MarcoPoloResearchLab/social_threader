@@ -39,4 +39,5 @@ Framework guidance for React frontends. Use this only when the repo actually use
 - Prefer integration and end-to-end coverage through the real page or app shell.
 - For backend-adapter changes, add adapter contract tests before broader UI assertions.
 - For visible workflow changes, assert rendered behavior, DOM state, emitted events, requests, or downloaded artifacts.
-- Run the documented lint, test, build, and CI targets that are necessary for the active work.
+- Use `.mprlab/POLICY.md` for validation.
+- During the change, run the smallest React target that validates the changed contract.

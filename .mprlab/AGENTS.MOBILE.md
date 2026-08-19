@@ -49,6 +49,15 @@ After validation, core mobile state and UI code must use domain values, not raw 
 - Keep permissions, entitlements, associated domains, URL schemes, intent filters, and store identifiers aligned with checked-in config.
 - Do not assume simulator behavior proves device, store, OAuth, notification, or production callback behavior.
 
+## Build And Store Publication
+
+- Build each iOS and Android store artifact on an operator-controlled build host.
+- Use the native platform toolchain to create a signed `.ipa` or `.aab` artifact.
+- Seal the artifact identity before publication.
+- Publish the sealed artifact directly to App Store Connect or Google Play.
+- Keep release and publication commands in repository Make targets or package scripts.
+- Release, publication, and deployment must consume prebuilt mobile store artifacts.
+
 ## UI And UX
 
 - Screens must receive validated state and call explicit commands.
@@ -60,8 +69,9 @@ After validation, core mobile state and UI code must use domain values, not raw 
 ## Testing And Validation
 
 - Prefer tests through mobile entrypoints, mobile backend clients, config validators, and app-flow harnesses.
+- Use `.mprlab/POLICY.md` for validation.
+- During the change, run the smallest mobile target that validates the changed contract.
 - Validate auth, deep links, purchases, secure storage, notification permissions, and API contract parsing at their boundaries.
-- Run type checks and repo-native mobile checks before claiming completion.
 - When touching iOS or Android generated/native projects, run the platform-specific prepare/build command documented by the repo.
 - Do not claim production mobile readiness from web-only, simulator-only, or unit-only evidence.
 
@@ -73,4 +83,5 @@ After validation, core mobile state and UI code must use domain values, not raw 
 - [ ] Platform-specific code is isolated in named adapters.
 - [ ] iOS and Android differences are explicit and tested or documented.
 - [ ] Native/generated files were changed only through documented ownership paths.
+- [ ] Store publication consumes signed prebuilt mobile store artifacts.
 - [ ] Repo-native mobile validation passed or blockers are documented.
