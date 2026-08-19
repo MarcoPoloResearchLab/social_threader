@@ -18,12 +18,20 @@ type manifestDocument struct {
 type manifestEnvelope struct {
 	SchemaVersion int                `yaml:"schema_version"`
 	Owner         string             `yaml:"owner"`
+	Release       manifestRelease    `yaml:"release"`
 	Resources     []manifestResource `yaml:"resources"`
 }
 
+type manifestRelease struct {
+	Scheme string `yaml:"scheme"`
+}
+
 type manifestResource struct {
-	Kind string `yaml:"kind"`
-	ID   string `yaml:"id"`
+	Kind        string            `yaml:"kind"`
+	ID          string            `yaml:"id"`
+	BuildSystem string            `yaml:"build_system"`
+	Build       map[string]string `yaml:"build"`
+	Publish     map[string]string `yaml:"publish"`
 }
 
 type localComposeDocument struct {
@@ -62,11 +70,14 @@ func TestProductionLifecycleContract(t *testing.T) {
 	if unmarshalError := yaml.Unmarshal(manifestBytes, &document); unmarshalError != nil {
 		t.Fatalf("deployment manifest must be valid YAML: %v", unmarshalError)
 	}
-	if document.Resources.SchemaVersion != 3 {
-		t.Fatalf("schema version = %d, want 3", document.Resources.SchemaVersion)
+	if document.Resources.SchemaVersion != 4 {
+		t.Fatalf("schema version = %d, want 4", document.Resources.SchemaVersion)
 	}
 	if document.Resources.Owner != "social-threader" {
 		t.Fatalf("manifest owner = %q, want social-threader", document.Resources.Owner)
+	}
+	if document.Resources.Release.Scheme != "semver" {
+		t.Fatalf("release scheme = %q, want semver", document.Resources.Release.Scheme)
 	}
 
 	expectedResources := map[string]string{
@@ -91,13 +102,30 @@ func TestProductionLifecycleContract(t *testing.T) {
 	if len(actualResources) != len(expectedResources) {
 		t.Fatalf("manifest has %d resources, want %d", len(actualResources), len(expectedResources))
 	}
+	for _, resource := range document.Resources.Resources {
+		if resource.ID != "mobile" {
+			continue
+		}
+		if resource.BuildSystem != "local" {
+			t.Errorf("mobile build system = %q, want local", resource.BuildSystem)
+		}
+		if resource.Build["android"] != "mobile/scripts/build-android-bundle.mjs" {
+			t.Errorf("mobile Android build script = %q", resource.Build["android"])
+		}
+		if resource.Publish["android"] != "mobile/scripts/publish-android-play.mjs" {
+			t.Errorf("mobile Android publish script = %q", resource.Publish["android"])
+		}
+	}
 
 	makefile := string(readRepositoryFile(t, repositoryRoot, "Makefile"))
 	if !strings.Contains(makefile, "release publish deploy:") {
 		t.Error("Makefile does not define the three production lifecycle targets together")
 	}
-	if !strings.Contains(makefile, `"app-$$target" MPRLAB_APP_ROOT="$$application_root"`) {
+	if !strings.Contains(makefile, `"app-$@"`) || !strings.Contains(makefile, `MPRLAB_APP_ROOT="$${application_root}"`) {
 		t.Error("Makefile does not delegate the selected lifecycle target to the sibling gateway")
+	}
+	if !strings.Contains(makefile, "required sibling gateway is missing:") {
+		t.Error("Makefile does not explain the exact required sibling gateway location")
 	}
 	if strings.Contains(makefile, "scripts/release") {
 		t.Error("Makefile retains the obsolete application-owned release path")
@@ -112,6 +140,9 @@ func TestProductionLifecycleContract(t *testing.T) {
 		if _, statError := os.Stat(filepath.Join(repositoryRoot, "scripts", "release", obsoleteScript)); !os.IsNotExist(statError) {
 			t.Errorf("obsolete release script %q must be absent", obsoleteScript)
 		}
+	}
+	if _, statError := os.Stat(filepath.Join(repositoryRoot, ".mprlab", "release.yml")); !os.IsNotExist(statError) {
+		t.Error("obsolete .mprlab/release.yml must be absent")
 	}
 }
 
@@ -134,8 +165,13 @@ func TestLocalBlackBoxStackContract(t *testing.T) {
 			t.Errorf("Dockerfile target marker %q is missing", target)
 		}
 	}
-	if !strings.Contains(dockerfile, "COPY .nojekyll /") {
-		t.Error("Pages image does not preserve the existing .nojekyll artifact")
+	for _, reservedPagePath := range []string{".nojekyll", "CNAME"} {
+		if strings.Contains(dockerfile, reservedPagePath) {
+			t.Errorf("Pages image claims gateway-owned path %q", reservedPagePath)
+		}
+		if _, statError := os.Stat(filepath.Join(repositoryRoot, reservedPagePath)); !os.IsNotExist(statError) {
+			t.Errorf("gateway-owned Pages path %q must be absent", reservedPagePath)
+		}
 	}
 
 	tauthConfig := string(readRepositoryFile(t, repositoryRoot, "configs/tauth.local.yml"))

@@ -26,6 +26,7 @@ const deploymentManifestSource = fs.readFileSync(
 );
 const appSource = fs.readFileSync(path.join(MOBILE_ROOT, "App.js"), "utf8");
 const androidBuildSource = fs.readFileSync(path.join(MOBILE_ROOT, "scripts", "build-android-bundle.mjs"), "utf8");
+const androidPublishSource = fs.readFileSync(path.join(MOBILE_ROOT, "scripts", "publish-android-play.mjs"), "utf8");
 const jestConfigSource = fs.readFileSync(path.join(MOBILE_ROOT, "jest.config.js"), "utf8");
 
 assertEqual(packageJson.main, "expo/AppEntry", "mobile package must use Expo AppEntry");
@@ -33,11 +34,11 @@ assertIncludes(packageJson.scripts?.check || "", "npm run test:coverage", "mobil
 assertIncludes(packageJson.scripts?.check || "", "expo install --check", "mobile check must validate Expo dependency alignment");
 assertIncludes(packageJson.scripts?.ios || "", "scripts/ios-run.mjs", "iOS local run must use the prompt-safe Expo launcher");
 assertIncludes(packageJson.scripts?.android || "", "scripts/android-run.mjs", "Android local run must use the adb reverse launcher");
-assertEqual(packageJson.dependencies?.expo, "57.0.9", "mobile package must use the Expo SDK 57 runtime");
+assertEqual(packageJson.dependencies?.expo, "57.0.14", "mobile package must use the Expo SDK 57 runtime");
 assertEqual(packageJson.dependencies?.react, "19.2.3", "mobile package must use the Expo SDK React version");
 assertEqual(packageJson.dependencies?.["react-native"], "0.86.2", "mobile package must use the Expo SDK React Native version");
 assertEqual(packageJson.dependencies?.["expo-clipboard"], "57.0.1", "mobile package must use Expo SDK clipboard for native image copies");
-assertEqual(packageJson.dependencies?.["expo-image-picker"], "57.0.7", "mobile package must use Expo SDK image picker for native image attachments");
+assertEqual(packageJson.dependencies?.["expo-image-picker"], "57.0.11", "mobile package must use Expo SDK image picker for native image attachments");
 assertEqual(packageJson.dependencies?.["expo-status-bar"], "57.0.1", "mobile package must use Expo SDK status bar");
 assertEqual(packageJson.dependencies?.["expo-sharing"], undefined, "mobile package must not keep the old native image sharing dependency");
 assertEqual(
@@ -109,14 +110,15 @@ assertIncludes(
 );
 assertIncludes(
   makefileSource,
-  'gateway_root="$$(dirname "$$application_root")/mprlab-gateway"',
+  'gateway_root="$$(dirname "$${application_root}")/mprlab-gateway"',
   "root lifecycle commands must resolve the exact sibling gateway"
 );
 assertIncludes(
   makefileSource,
-  '"app-$$target" MPRLAB_APP_ROOT="$$application_root"',
+  '"app-$@"',
   "root lifecycle commands must delegate the selected application root"
 );
+assertIncludes(makefileSource, 'MPRLAB_APP_ROOT="$${application_root}"', "root lifecycle commands must pass the selected application root");
 assertNotIncludes(
   makefileSource,
   "RELEASE_ARTIFACT_TARGETS",
@@ -129,11 +131,20 @@ assertNotIncludes(
 );
 assertIncludes(makefileSource, "mobile-android-bundle: mobile-check", "the Android development build helper must remain available");
 assertIncludes(makefileSource, "submit-android:", "the Android development publish helper must remain available");
+assertIncludes(deploymentManifestSource, "schema_version: 4", "the canonical manifest must use resource schema 4");
+assertIncludes(deploymentManifestSource, "scheme: semver", "the canonical manifest must own the SemVer release scheme");
 assertIncludes(deploymentManifestSource, "kind: mobile_application", "the canonical manifest must declare the mobile artifact");
 assertIncludes(deploymentManifestSource, "source: mobile", "the mobile resource must use the mobile source folder");
+assertIncludes(deploymentManifestSource, "build_system: local", "the mobile resource must use repository-owned local scripts");
+assertIncludes(deploymentManifestSource, "android: mobile/scripts/build-android-bundle.mjs", "the mobile resource must declare the Android builder");
+assertIncludes(deploymentManifestSource, "android: mobile/scripts/publish-android-play.mjs", "the mobile resource must declare the Android publisher");
 assertIncludes(deploymentManifestSource, "package_name: com.mprlab.socialthreader", "the mobile resource must use the Android package");
 assertIncludes(deploymentManifestSource, "track: production", "the mobile resource must declare the production destination track");
 assertIncludes(androidBuildSource, "releaseIdentity.googleCloudProjectId", "Android bundle builder must use the release identity quota project");
+assertIncludes(androidBuildSource, "MPRLAB_ARTIFACT_VERSION", "Android bundle builder must seal the gateway artifact version");
+assertIncludes(androidBuildSource, "releaseTimestamp", "Android bundle builder must seal the gateway release timestamp");
+assertIncludes(androidPublishSource, "PROVIDER_MODES.RECONCILE", "Android publisher must reconcile an interrupted publication");
+assertIncludes(androidPublishSource, 'publisherAccess: "verified"', "Android publisher must report verified provider access");
 assertIncludes(
   androidBuildSource,
   "patchGeneratedAndroidDependencySources(buildMobileDir)",

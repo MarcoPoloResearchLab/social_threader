@@ -18,14 +18,14 @@ The mobile app reuses the shared Social Threader chunking engine from `../js/cor
 From the repository root:
 
 ```sh
-make release
-make publish
-make deploy
+make release && make publish && make deploy
 ```
 
 The three root lifecycle commands take no arguments. They delegate the selected repository to the exact sibling `../mprlab-gateway` checkout.
 
-`.mprlab/deploy/resources.yml` declares the Android artifact, Pages frontend, and API service. The sibling gateway owns the complete release, publish, and deploy transaction.
+`.mprlab/deploy/resources.yml` declares the Android artifact, Pages frontend, and API service. The sibling gateway owns each lifecycle transaction.
+
+Release runs the local Android builder with the sealed version and timestamp. Publish preflights Google Play and reconciles an interrupted submission.
 
 The operator owns production deployment. Do not run `make deploy` as an implementation or local-development check.
 
@@ -103,11 +103,10 @@ gcloud auth application-default login --scopes=https://www.googleapis.com/auth/a
 - [ ] Run the normal selected-application lifecycle from a clean checkout:
 
 ```sh
-make release
-make publish
+make release && make publish && make deploy
 ```
 
-- [ ] In Play Console, verify the internal-test release, then promote to production after testing.
+- [ ] In Play Console, verify the production release after publication completes.
 - [ ] To create a production draft with the lower-level development helper, first run `make build-android`. Then run:
 
 ```sh

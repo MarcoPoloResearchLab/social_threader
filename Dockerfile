@@ -50,8 +50,7 @@ ENTRYPOINT ["/usr/local/bin/fake-llm-proxy"]
 
 FROM scratch AS static-site
 
-COPY .nojekyll /
-COPY index.html CNAME robots.txt sitemap.xml config-app.json config-ui.yaml /
+COPY index.html robots.txt sitemap.xml config-app.json config-ui.yaml /
 COPY assets /assets
 COPY data /data
 COPY js /js
