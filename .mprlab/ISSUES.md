@@ -39,6 +39,9 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## Improvements
 
+- [x] [I001] (P1) Freeze the selected manifest as a versionless contract
+  Resolved: removed the numbered manifest envelope and stale mobile publication member, kept only current typed resources, and added a contract test that rejects numbered envelope drift.
+
 ## Maintenance
 
 - [ ] [M400R] (P2) Backlog hygiene and archive

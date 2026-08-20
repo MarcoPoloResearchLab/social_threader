@@ -1,6 +1,5 @@
 ---
 mprlab_resources:
-  schema_version: 4
   owner: social-threader
   release:
     scheme: semver
@@ -115,8 +114,6 @@ mprlab_resources:
       build_system: local
       build:
         android: mobile/scripts/build-android-bundle.mjs
-      publish:
-        android: mobile/scripts/publish-android-play.mjs
       android:
         package_name: com.mprlab.socialthreader
         destination: google_play

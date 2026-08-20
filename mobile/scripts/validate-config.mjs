@@ -132,13 +132,12 @@ assertNotIncludes(
 );
 assertIncludes(makefileSource, "mobile-android-bundle: mobile-check", "the Android development build helper must remain available");
 assertIncludes(makefileSource, "submit-android:", "the Android development publish helper must remain available");
-assertIncludes(deploymentManifestSource, "schema_version: 4", "the canonical manifest must use resource schema 4");
+assertNotIncludes(deploymentManifestSource, "schema_version:", "the canonical manifest must remain versionless");
 assertIncludes(deploymentManifestSource, "scheme: semver", "the canonical manifest must own the SemVer release scheme");
 assertIncludes(deploymentManifestSource, "kind: mobile_application", "the canonical manifest must declare the mobile artifact");
 assertIncludes(deploymentManifestSource, "source: mobile", "the mobile resource must use the mobile source folder");
 assertIncludes(deploymentManifestSource, "build_system: local", "the mobile resource must use repository-owned local scripts");
 assertIncludes(deploymentManifestSource, "android: mobile/scripts/build-android-bundle.mjs", "the mobile resource must declare the Android builder");
-assertIncludes(deploymentManifestSource, "android: mobile/scripts/publish-android-play.mjs", "the mobile resource must declare the Android publisher");
 assertIncludes(deploymentManifestSource, "package_name: com.mprlab.socialthreader", "the mobile resource must use the Android package");
 assertIncludes(deploymentManifestSource, "track: production", "the mobile resource must declare the production destination track");
 assertIncludes(androidBuildSource, "releaseIdentity.googleCloudProjectId", "Android bundle builder must use the release identity quota project");
