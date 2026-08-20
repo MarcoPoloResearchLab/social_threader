@@ -9,6 +9,8 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { buildEnvironment } from "./lib/build-environment.mjs";
+
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
 const DEFAULT_MOBILE_DIR = path.join(REPO_ROOT, "mobile");
@@ -748,33 +750,6 @@ function patchAndroidVersionCodeInAppJson(mobileDir, versionCode) {
   payload.expo.android = payload.expo.android || {};
   payload.expo.android.versionCode = versionCode;
   fs.writeFileSync(appJsonPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-}
-
-/**
- * @param {string} javaHome
- * @param {string} androidSdkRoot
- * @returns {NodeJS.ProcessEnv}
- */
-function buildEnvironment(javaHome, androidSdkRoot) {
-  const environment = {
-    ...process.env,
-    CI: "1",
-    EXPO_NO_TELEMETRY: "1",
-    JAVA_HOME: javaHome,
-    ANDROID_HOME: androidSdkRoot,
-    ANDROID_SDK_ROOT: androidSdkRoot,
-    PATH: [
-      path.join(javaHome, "bin"),
-      path.join(androidSdkRoot, "platform-tools"),
-      path.join(androidSdkRoot, "cmdline-tools", "latest", "bin"),
-      process.env.PATH || ""
-    ]
-      .filter(Boolean)
-      .join(path.delimiter)
-  };
-  delete environment.FORCE_COLOR;
-  delete environment.NO_COLOR;
-  return environment;
 }
 
 /**
