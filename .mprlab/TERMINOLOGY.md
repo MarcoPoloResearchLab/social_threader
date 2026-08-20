@@ -72,12 +72,16 @@ Give each term one meaning. Use the same term for the same concept in all docume
 Add repository-specific technical nouns below this line.
 
 - `application profile`: A config record that defines one browser, API, TAuth, cookie, CORS, DNS, and runtime topology.
+- `environment`: The values that one process gives to another process.
 - `fake LLM Proxy`: A local service that implements the necessary LLM Proxy HTTP boundary without a provider call.
 - `idempotency record`: A short-lived memory record that connects one authenticated subject and request ID to one result.
 - `LLM Proxy`: The MPR Lab service that owns model-provider routing and provider credentials.
 - `local stack`: The app-owned Docker Compose topology for local development and black-box validation.
 - `mpr-ui`: The shared browser component library that owns the TAuth browser lifecycle.
 - `prompt catalog`: The server-owned set of versioned thread transformation instructions.
+- `regression test`: A test that checks one defect after a change to the source code.
+- `release`: One sealed build of the repository.
+- `release receipt`: The record that shows that one release completed its build steps.
 - `TAuth`: The shared authentication service that issues and validates profile-specific sessions.
 - `thread transformation`: One server-owned text edit that uses a closed product operation.
 - `transformation coordinator`: The browser module that owns transformation UI state and request cancellation.
