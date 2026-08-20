@@ -8,6 +8,35 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [ ] [B001] (P1) Remove NODE_ENV from the `npm ci` step of the mobile client build
+  Goal:
+  The Android release build fails in Metro. Metro cannot find `babel-preset-expo`. The Ansible task `build-selected-release-mobile-platform.yml` sets `NODE_ENV: production` for the build. The build tool `mobile/scripts/build-android-bundle.mjs` uses that value in its `npm ci` step. npm does not install `devDependencies` when `NODE_ENV` has the value `production`. The `mobile/package.json` has `babel-preset-expo` in its `devDependencies`.
+  The release process fails with the value 2. The build records no release receipt. The end user can operate `make release` again. The build tool already sets `NODE_ENV=production` for the Gradle step. The `mprlab-gateway` value is not necessary for that step. The release builds this repository at `64c1fc0` and `mprlab-gateway` at `7d7603e`.
+
+  Requirements:
+  - Remove `NODE_ENV` from the environment in `buildEnvironment` in `mobile/scripts/build-android-bundle.mjs`.
+  - Keep the `NODE_ENV=production` value for the Gradle step.
+  - Keep `babel-preset-expo` in the `devDependencies` of `mobile/package.json`.
+  - Keep the change in this repository.
+  - Make the build tool operate under any environment.
+  - Add a regression test for the `npm ci` step under `NODE_ENV=production`.
+  - Verify that `babel-preset-expo` is in `node_modules` after the step.
+
+  Deliverables:
+  - A change to `buildEnvironment` in `mobile/scripts/build-android-bundle.mjs` that removes `NODE_ENV` from the environment.
+  - A regression test that verifies the `npm ci` step installs `devDependencies` under `NODE_ENV=production`.
+  - Documentation in `mobile/README.md` that records the build environment contract.
+
+  Verification:
+  - Operate the regression test before the change.
+  - Make sure that the test fails before the change and shows the correct result after the change.
+  - Operate `make mobile-check`.
+  - Operate `make ci` one time after the last change.
+  - Operate `git diff --check`.
+  - The end user operates `make release`.
+  - Make sure that the release records the Android AAB.
+  - Make sure that Metro shows no error.
+
 ## Improvements
 
 ## Maintenance

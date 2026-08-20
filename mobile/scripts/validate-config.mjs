@@ -26,6 +26,7 @@ const deploymentManifestSource = fs.readFileSync(
 );
 const appSource = fs.readFileSync(path.join(MOBILE_ROOT, "App.js"), "utf8");
 const androidBuildSource = fs.readFileSync(path.join(MOBILE_ROOT, "scripts", "build-android-bundle.mjs"), "utf8");
+const androidBuildEnvironmentSource = fs.readFileSync(path.join(MOBILE_ROOT, "scripts", "lib", "build-environment.mjs"), "utf8");
 const androidPublishSource = fs.readFileSync(path.join(MOBILE_ROOT, "scripts", "publish-android-play.mjs"), "utf8");
 const jestConfigSource = fs.readFileSync(path.join(MOBILE_ROOT, "jest.config.js"), "utf8");
 
@@ -160,7 +161,11 @@ assertIncludes(androidBuildSource, "NativeModulesProxyModule.kt", "Android bundl
 assertIncludes(androidBuildSource, "ModuleRegistryAdapter.java", "Android bundle builder must patch Expo ReactPackage Java deprecations");
 assertIncludes(androidBuildSource, "EventEmitterModule.java", "Android bundle builder must patch Expo event dispatcher Java deprecations");
 assertIncludes(androidBuildSource, "-Xlint:none", "Android bundle builder must suppress upstream Expo Java deprecation notes");
-assertIncludes(androidBuildSource, "delete environment.FORCE_COLOR", "Android bundle builder must avoid Metro color environment warnings");
+assertIncludes(androidBuildSource, "./lib/build-environment.mjs", "Android bundle builder must import the shared build environment module");
+assertIncludes(androidBuildSource, "...NPM_CI_ARGUMENTS", "Android bundle builder must use the shared npm ci arguments");
+assertIncludes(androidBuildEnvironmentSource, "delete environment.FORCE_COLOR", "Android bundle builder must avoid Metro color environment warnings");
+assertIncludes(androidBuildEnvironmentSource, "delete environment.NODE_ENV", "Android bundle builder must keep the npm ci step free of the caller NODE_ENV");
+assertIncludes(androidBuildEnvironmentSource, '"--include=dev"', "Android bundle builder must force npm to install dev dependencies");
 
 console.log("Social Threader mobile config validation passed.");
 

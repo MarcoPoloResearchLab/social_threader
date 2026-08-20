@@ -43,6 +43,8 @@ make submit-android
 
 `make build-ios` uses the `production` EAS profile. `make build-android` is a lower-level development helper. Expo prebuilds Android in a temporary directory. Gradle creates a signed App Bundle. The script writes a checked build manifest beside the `.aab`.
 
+The Android build tool removes `NODE_ENV` and operates `npm ci --include=dev`. This command installs all devDependencies in every environment. The Gradle step sets `NODE_ENV` to `production`.
+
 `make run-ios` starts Metro through `scripts/ios-run.mjs`. It selects an available Expo port before startup. Then, `scripts/expo-run.expect` accepts known Expo Go upgrades and rejects unexpected port changes.
 
 `make run-android` starts Metro through `scripts/android-run.mjs`. It starts an Android AVD when necessary and installs a compatible Expo Go build. Then, it configures `adb reverse`, opens the local Expo address, and verifies the Social Threader UI. Override the Metro port with `MOBILE_PORT=8082 make run-ios` or `MOBILE_PORT=8082 make run-android`.
