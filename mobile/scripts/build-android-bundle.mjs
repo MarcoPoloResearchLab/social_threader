@@ -9,7 +9,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { buildEnvironment } from "./lib/build-environment.mjs";
+import { buildEnvironment, NPM_CI_ARGUMENTS } from "./lib/build-environment.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -176,7 +176,7 @@ function buildAndroidBundle(args) {
   patchAndroidVersionCodeInAppJson(buildMobileDir, versionCodeResolution.versionCode);
 
   const env = buildEnvironment(args.javaHome, args.androidSdkRoot);
-  run(["npm", "ci"], { cwd: buildMobileDir, env });
+  run(["npm", ...NPM_CI_ARGUMENTS], { cwd: buildMobileDir, env });
   patchGeneratedAndroidDependencySources(buildMobileDir);
   run(["npx", "--no-install", "expo", "prebuild", "--platform", "android", "--no-install"], { cwd: buildMobileDir, env });
   writeLocalProperties(path.join(buildMobileDir, "android", "local.properties"), args.androidSdkRoot);

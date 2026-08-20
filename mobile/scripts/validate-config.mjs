@@ -162,8 +162,10 @@ assertIncludes(androidBuildSource, "ModuleRegistryAdapter.java", "Android bundle
 assertIncludes(androidBuildSource, "EventEmitterModule.java", "Android bundle builder must patch Expo event dispatcher Java deprecations");
 assertIncludes(androidBuildSource, "-Xlint:none", "Android bundle builder must suppress upstream Expo Java deprecation notes");
 assertIncludes(androidBuildSource, "./lib/build-environment.mjs", "Android bundle builder must import the shared build environment module");
+assertIncludes(androidBuildSource, "...NPM_CI_ARGUMENTS", "Android bundle builder must use the shared npm ci arguments");
 assertIncludes(androidBuildEnvironmentSource, "delete environment.FORCE_COLOR", "Android bundle builder must avoid Metro color environment warnings");
 assertIncludes(androidBuildEnvironmentSource, "delete environment.NODE_ENV", "Android bundle builder must keep the npm ci step free of the caller NODE_ENV");
+assertIncludes(androidBuildEnvironmentSource, '"--include=dev"', "Android bundle builder must force npm to install dev dependencies");
 
 console.log("Social Threader mobile config validation passed.");
 

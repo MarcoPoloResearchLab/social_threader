@@ -1,6 +1,9 @@
 // @ts-check
 import path from "node:path";
 
+/** @type {readonly string[]} */
+export const NPM_CI_ARGUMENTS = Object.freeze(["ci", "--include=dev"]);
+
 /**
  * Build the environment for the Android bundle build steps.
  *
