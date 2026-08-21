@@ -111,7 +111,7 @@ Browser analytics must not receive source text, transformed text, prompts, or cr
 
 `docker-compose.yml` owns local orchestration. It connects Caddy, the API, TAuth, and the fake LLM Proxy.
 
-`.mprlab/deploy/resources.yml` owns production orchestration. It declares schema-v4 resources for the sibling gateway.
+`.mprlab/deploy/resources.yml` owns production orchestration. It declares the permanent versionless resources for the sibling gateway.
 
 The manifest owns the SemVer release scheme. The removed `.mprlab/release.yml` file does not define a second release contract.
 

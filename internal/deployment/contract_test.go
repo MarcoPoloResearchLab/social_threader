@@ -16,10 +16,9 @@ type manifestDocument struct {
 }
 
 type manifestEnvelope struct {
-	SchemaVersion int                `yaml:"schema_version"`
-	Owner         string             `yaml:"owner"`
-	Release       manifestRelease    `yaml:"release"`
-	Resources     []manifestResource `yaml:"resources"`
+	Owner     string             `yaml:"owner"`
+	Release   manifestRelease    `yaml:"release"`
+	Resources []manifestResource `yaml:"resources"`
 }
 
 type manifestRelease struct {
@@ -31,7 +30,6 @@ type manifestResource struct {
 	ID          string            `yaml:"id"`
 	BuildSystem string            `yaml:"build_system"`
 	Build       map[string]string `yaml:"build"`
-	Publish     map[string]string `yaml:"publish"`
 }
 
 type localComposeDocument struct {
@@ -70,8 +68,24 @@ func TestProductionLifecycleContract(t *testing.T) {
 	if unmarshalError := yaml.Unmarshal(manifestBytes, &document); unmarshalError != nil {
 		t.Fatalf("deployment manifest must be valid YAML: %v", unmarshalError)
 	}
-	if document.Resources.SchemaVersion != 4 {
-		t.Fatalf("schema version = %d, want 4", document.Resources.SchemaVersion)
+	var manifestShape map[string]any
+	if unmarshalError := yaml.Unmarshal(manifestBytes, &manifestShape); unmarshalError != nil {
+		t.Fatalf("deployment manifest shape must be valid YAML: %v", unmarshalError)
+	}
+	resourceEnvelopeShape, shapeOK := manifestShape["mprlab_resources"].(map[string]any)
+	if !shapeOK {
+		t.Fatal("deployment manifest must contain the mprlab_resources mapping")
+	}
+	if len(resourceEnvelopeShape) != 3 {
+		t.Fatalf("manifest envelope keys = %#v, want owner, release, and resources", resourceEnvelopeShape)
+	}
+	for _, requiredKey := range []string{"owner", "release", "resources"} {
+		if _, present := resourceEnvelopeShape[requiredKey]; !present {
+			t.Fatalf("manifest envelope lacks %q", requiredKey)
+		}
+	}
+	if _, present := resourceEnvelopeShape["schema_version"]; present {
+		t.Fatal("selected manifest must not declare schema_version")
 	}
 	if document.Resources.Owner != "social-threader" {
 		t.Fatalf("manifest owner = %q, want social-threader", document.Resources.Owner)
@@ -111,9 +125,6 @@ func TestProductionLifecycleContract(t *testing.T) {
 		}
 		if resource.Build["android"] != "mobile/scripts/build-android-bundle.mjs" {
 			t.Errorf("mobile Android build script = %q", resource.Build["android"])
-		}
-		if resource.Publish["android"] != "mobile/scripts/publish-android-play.mjs" {
-			t.Errorf("mobile Android publish script = %q", resource.Publish["android"])
 		}
 	}
 

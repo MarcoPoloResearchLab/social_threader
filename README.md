@@ -170,11 +170,11 @@ Run the mobile validation gate:
 make mobile-check
 ```
 
-The schema-v4 manifest preserves the Android store artifact. Native thread transformation needs its own TAuth profile and session contract.
+The versionless manifest preserves the Android store artifact. Native thread transformation needs its own TAuth profile and session contract.
 
 ## Release, Publish, And Deployment
 
-`.mprlab/deploy/resources.yml` is the only tracked production deployment manifest. It uses `schema_version: 4` and the SemVer release scheme.
+`.mprlab/deploy/resources.yml` is the only tracked production deployment manifest. Its permanent versionless contract uses the SemVer release scheme.
 
 The manifest declares these resources:
 
@@ -185,7 +185,7 @@ The manifest declares these resources:
 - The TAuth tenant contribution.
 - The dedicated private values.
 
-The Android resource uses repository-owned local build and publish scripts. The publisher supports preflight, exact reconciliation, and submission.
+The Android resource uses the repository-owned local build script. The store tooling supports preflight, exact reconciliation, and submission.
 
 The gateway adds `CNAME`, `.nojekyll`, and the release marker to the Pages artifact. Application source does not own these files.
 
