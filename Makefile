@@ -82,9 +82,7 @@ container-check:
 	docker build --target pages .
 
 mobile-install:
-	@if [ ! -d "$(MOBILE_DIR)/node_modules" ]; then \
-		cd "$(MOBILE_DIR)" && $(MOBILE_NPM) install; \
-	fi
+	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) ci
 
 mobile-check: mobile-install
 	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) run check
