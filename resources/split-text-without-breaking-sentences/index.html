@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split Text Without Breaking Sentences | Social Threader</title>
+    <meta name="description" content="Split long text into character-limited chunks while preserving sentence and paragraph boundaries. Follow a tested Social Threader workflow.">
+    <meta name="author" content="MPR Lab">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://threader.mprlab.com/resources/split-text-without-breaking-sentences/">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+    <link rel="stylesheet" href="/assets/css/resources.css">
+    <link rel="stylesheet" href="/assets/css/resource-components.css">
+
+    <meta property="og:title" content="Split Text Without Breaking Sentences | Social Threader">
+    <meta property="og:description" content="A tested workflow for turning long drafts into character-limited chunks while preserving readable sentence and paragraph boundaries.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Social Threader">
+    <meta property="og:url" content="https://threader.mprlab.com/resources/split-text-without-breaking-sentences/">
+    <meta property="og:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+    <meta property="article:published_time" content="2026-07-30">
+    <meta property="article:modified_time" content="2026-07-30">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Split Text Without Breaking Sentences | Social Threader">
+    <meta name="twitter:description" content="Preserve readable sentence and paragraph boundaries while splitting long drafts into character-limited chunks.">
+    <meta name="twitter:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta name="twitter:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Article",
+                "@id": "https://threader.mprlab.com/resources/split-text-without-breaking-sentences/#article",
+                "mainEntityOfPage": "https://threader.mprlab.com/resources/split-text-without-breaking-sentences/",
+                "headline": "Split Text Without Breaking Sentences",
+                "description": "Split long text into character-limited chunks while preserving sentence and paragraph boundaries.",
+                "datePublished": "2026-07-30",
+                "dateModified": "2026-07-30",
+                "author": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "image": "https://threader.mprlab.com/assets/img/social-threader-og.png"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "https://threader.mprlab.com/resources/split-text-without-breaking-sentences/#breadcrumbs",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Social Threader",
+                        "item": "https://threader.mprlab.com/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "Resources",
+                        "item": "https://threader.mprlab.com/resources/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": "Split Text Without Breaking Sentences",
+                        "item": "https://threader.mprlab.com/resources/split-text-without-breaking-sentences/"
+                    }
+                ]
+            },
+            {
+                "@type": "FAQPage",
+                "@id": "https://threader.mprlab.com/resources/split-text-without-breaking-sentences/#faq",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "How do I split text without breaking sentences?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Paste the draft into Social Threader, select a maximum length, and enable Sentences. The tool keeps complete sentences together when they fit within that maximum."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "What happens when one sentence is longer than the limit?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "The sentence must still be divided. Social Threader looks backward for a space or punctuation boundary and uses a hard character cut only when no usable boundary exists."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Can Social Threader preserve paragraph boundaries too?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Yes. When the input contains multiple paragraphs, enable Paragraphs to process each paragraph separately before applying the selected character limit."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does sentence-aware mode rewrite my words?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. The documented engine divides the supplied text and normalizes spacing; it does not summarize, paraphrase, or generate replacement copy."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does Social Threader post the resulting thread?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. The web workflow lets you copy each resulting chunk. Posting, scheduling, and account integration remain outside the documented product behavior."
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="brand-link" href="/">Social Threader</a>
+            <nav class="site-nav" aria-label="Primary navigation">
+                <a href="/">Thread splitter</a>
+                <a href="/resources/" aria-current="page">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+                <li><a href="/">Social Threader</a></li>
+                <li><a href="/resources/">Resources</a></li>
+                <li aria-current="page">Sentence-aware splitting</li>
+            </ol>
+        </nav>
+
+        <article>
+            <header class="hero">
+                <p class="eyebrow">Sentence-aware workflow</p>
+                <h1>Split text without breaking sentences</h1>
+                <p class="hero__lede">
+                    Split text without breaking sentences that still fit inside your
+                    chosen maximum. Social Threader can prefer complete sentence and
+                    paragraph boundaries, then use smaller boundaries only when a
+                    sentence is too long to fit.
+                </p>
+                <div class="quick-verdict" aria-label="Quick verdict">
+                    <p>
+                        <strong>Quick verdict</strong>
+                        Turn on <em>Sentences</em> for prose and <em>Paragraphs</em>
+                        for multi-section drafts. Every text chunk still obeys the
+                        selected maximum, so an over-limit sentence must be divided.
+                    </p>
+                    <p><strong>Primary audience</strong>Long-form writers</p>
+                    <p><strong>Core outcome</strong>More readable chunk boundaries</p>
+                </div>
+                <p class="byline">
+                    Written by
+                    <a href="https://github.com/MarcoPoloResearchLab">MPR Lab</a>
+                    · Verified against the public Social Threader repository
+                    · Updated <time datetime="2026-07-30">July 30, 2026</time>
+                </p>
+                <div class="hero-actions">
+                    <a class="button-link" href="/">Split a draft now</a>
+                    <a class="button-link button-link--secondary" href="#workflow">See the workflow</a>
+                </div>
+            </header>
+
+            <div class="content-layout">
+                <div class="content-stack">
+                    <section class="content-card">
+                        <h2>The problem with raw character cuts</h2>
+                        <p>
+                            A strict substring can stop halfway through a clause, leave
+                            closing punctuation behind, or separate a short lead-in from
+                            the sentence it introduces. That makes a thread harder to
+                            review and forces manual repair after every cut.
+                        </p>
+                        <p>
+                            Social Threader first groups words into sentences when
+                            sentence-aware mode is enabled. It recognizes the documented
+                            abbreviation, decimal, ellipsis, and wrapping-punctuation
+                            cases before combining sentences that still fit inside the
+                            maximum. Paragraph mode adds another boundary: each paragraph
+                            is processed separately.
+                        </p>
+                        <div class="callout">
+                            <p>
+                                <strong>Important:</strong> sentence-aware means
+                                boundary-aware, not language understanding. A sentence
+                                longer than the maximum cannot remain intact.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section id="workflow" class="content-card">
+                        <h2>How to split text without breaking sentences</h2>
+                        <ol class="steps">
+                            <li>Paste or type the complete draft into the Social Threader editor.</li>
+                            <li>Select Twitter/X, Bluesky, Threads/Mastodon, or enter a custom maximum.</li>
+                            <li>Enable <strong>Sentences</strong>; enable <strong>Paragraphs</strong> when the draft has multiple sections.</li>
+                            <li>Optionally enable <strong>Enumerate</strong>, then review and copy the resulting chunks in order.</li>
+                        </ol>
+                        <p>
+                            The repository’s table-driven tests exercise the public
+                            configuration contract. The sentence grouping and over-limit
+                            fallback below are copied from the deployed chunking engine:
+                        </p>
+                        <pre><code>const sentencesArray = buildSentences(wordsArray, options.breakOnSentences);
+/** @type {string[]} */
+const baseChunks = [];
+let currentChunk = "";
+
+for (const sentence of sentencesArray) {
+    if (sentence.length &gt; availableLength) {
+        if (currentChunk.length &gt; 0) {
+            baseChunks.push(currentChunk);
+            currentChunk = "";
+        }
+        baseChunks.push(...chunkByLength(sentence, availableLength));
+        continue;
+    }
+
+    const potentialChunk = currentChunk.length &gt; 0 ? `${currentChunk} ${sentence}` : sentence;
+    if (potentialChunk.length &lt;= availableLength) {
+        currentChunk = potentialChunk;
+    } else {
+        if (currentChunk.length &gt; 0) {
+            baseChunks.push(currentChunk);
+        }
+        currentChunk = sentence;
+    }
+}</code></pre>
+                        <p>
+                            See the
+                            <a href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/js/core/chunking.js">chunking engine on GitHub</a>
+                            and its linked repository tests for the complete implementation.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Feature-to-benefit map</h2>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Feature</th>
+                                        <th scope="col">Why it matters here</th>
+                                        <th scope="col">Concrete use</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Sentence boundary preference</td>
+                                        <td>Keeps complete thoughts together when they fit.</td>
+                                        <td>Combine several short sentences into one post without cutting a sentence early.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Paragraph-first processing</td>
+                                        <td>Prevents unrelated sections from being merged merely because space remains.</td>
+                                        <td>Keep an introduction, list, and conclusion as separate thread segments.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Maximum-length enforcement</td>
+                                        <td>Preserves the actual character constraint after boundary selection.</td>
+                                        <td>Divide an unusually long sentence at a usable space or punctuation mark.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Live statistics</td>
+                                        <td>Makes the source structure visible before splitting.</td>
+                                        <td>Confirm that pasted blank lines produced the expected paragraph count.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Three boundary cases worth reviewing</h2>
+                        <div class="example-grid">
+                            <div>
+                                <h3>Abbreviations and decimals</h3>
+                                <p>
+                                    The tests cover tokens such as <code>Dr.</code>,
+                                    <code>approx.</code>, <code>5.5</code>, and
+                                    <code>p.m.</code> so they do not automatically inflate
+                                    the sentence count in the documented cases.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>Ellipses and closing quotes</h3>
+                                <p>
+                                    The heuristic considers the next meaningful character
+                                    and removes wrapping quote or bracket characters before
+                                    classifying sentence endings.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>Lists and paragraph breaks</h3>
+                                <p>
+                                    Paragraph-aware mode recognizes blank-line boundaries
+                                    and documented list markers, making it useful for
+                                    agendas or multi-part announcements.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>One over-limit sentence</h3>
+                                <p>
+                                    When a sentence itself exceeds the maximum, the engine
+                                    searches backward for a space or punctuation boundary.
+                                    A hard cut is the final fallback.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Objections and limitations</h2>
+                        <h3>Is this a writing or rewriting assistant?</h3>
+                        <p>
+                            No. Social Threader divides and formats supplied text. The
+                            repository does not document summarization, paraphrasing,
+                            tone changes, or generated transitions.
+                        </p>
+                        <h3>Will it preserve every sentence in every language?</h3>
+                        <p>
+                            No such guarantee is supported. The implementation uses
+                            punctuation and abbreviation heuristics documented in the
+                            source and tests. Review the output, especially for languages
+                            or conventions outside those examples.
+                        </p>
+                        <h3>What about privacy and data handling?</h3>
+                        <p>
+                            The chunking engine is browser-side JavaScript in the public
+                            repository. The hosted root also loads analytics and a
+                            feedback integration, and the repository does not publish a
+                            privacy guarantee. Review the source and your own requirements
+                            before entering sensitive text.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Frequently asked questions</h2>
+                        <div class="faq-list">
+                            <details>
+                                <summary>How do I split text without breaking sentences?</summary>
+                                <p>Paste the draft into Social Threader, select a maximum length, and enable Sentences. The tool keeps complete sentences together when they fit within that maximum.</p>
+                            </details>
+                            <details>
+                                <summary>What happens when one sentence is longer than the limit?</summary>
+                                <p>The sentence must still be divided. Social Threader looks backward for a space or punctuation boundary and uses a hard character cut only when no usable boundary exists.</p>
+                            </details>
+                            <details>
+                                <summary>Can Social Threader preserve paragraph boundaries too?</summary>
+                                <p>Yes. When the input contains multiple paragraphs, enable Paragraphs to process each paragraph separately before applying the selected character limit.</p>
+                            </details>
+                            <details>
+                                <summary>Does sentence-aware mode rewrite my words?</summary>
+                                <p>No. The documented engine divides the supplied text and normalizes spacing; it does not summarize, paraphrase, or generate replacement copy.</p>
+                            </details>
+                            <details>
+                                <summary>Does Social Threader post the resulting thread?</summary>
+                                <p>No. The web workflow lets you copy each resulting chunk. Posting, scheduling, and account integration remain outside the documented product behavior.</p>
+                            </details>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Related Social Threader guides</h2>
+                        <div class="related-grid">
+                            <article class="resource-card">
+                                <h3>Compare character limits</h3>
+                                <p>Adapt one draft for 280, 300, 500, or custom maximums.</p>
+                                <a href="/resources/social-media-character-limit-splitter/">Open the character-limit guide</a>
+                            </article>
+                            <article class="resource-card">
+                                <h3>Read the JavaScript algorithm</h3>
+                                <p>Trace the boundary and enumeration logic in the public ES module.</p>
+                                <a href="/resources/javascript-split-text-by-character-limit/">Open the developer guide</a>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="side-card">
+                    <h2>On this page</h2>
+                    <ul>
+                        <li><a href="#workflow">Four-step workflow</a></li>
+                        <li><a href="/resources/social-media-character-limit-splitter/">Character limits</a></li>
+                        <li><a href="/resources/javascript-split-text-by-character-limit/">Implementation details</a></li>
+                        <li><a href="/">Open the tool</a></li>
+                    </ul>
+                </aside>
+            </div>
+
+            <section class="cta-panel">
+                <h2>Keep the readable boundaries that fit</h2>
+                <p>
+                    Paste your draft, choose its maximum, and enable sentence or
+                    paragraph handling before copying the finished chunks.
+                </p>
+                <div class="cta-actions">
+                    <a class="button-link" href="/">Split text with Social Threader</a>
+                </div>
+            </section>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <p>Social Threader is an open-source MPR Lab project.</p>
+            <nav aria-label="Footer navigation">
+                <a href="/">Tool</a>
+                <a href="/resources/">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">Source code</a>
+            </nav>
+        </div>
+    </footer>
+</body>
+</html>
