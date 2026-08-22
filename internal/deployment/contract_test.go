@@ -141,6 +141,12 @@ func TestProductionLifecycleContract(t *testing.T) {
 	if strings.Contains(makefile, "scripts/release") {
 		t.Error("Makefile retains the obsolete application-owned release path")
 	}
+	if !strings.Contains(makefile, `cd "$(MOBILE_DIR)" && $(MOBILE_NPM) ci`) {
+		t.Error("mobile-install does not install the exact mobile dependency lock")
+	}
+	if strings.Contains(makefile, `if [ ! -d "$(MOBILE_DIR)/node_modules" ]`) {
+		t.Error("mobile-install skips dependency installation when node_modules exists")
+	}
 	for _, obsoleteScript := range []string{
 		"deploy_pages_artifact.sh",
 		"prepare_pages_artifact.sh",

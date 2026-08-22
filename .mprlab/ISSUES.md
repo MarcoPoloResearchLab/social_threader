@@ -8,6 +8,34 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B002] (P0) Install the exact mobile dependency lock in CI
+  Goal:
+  Canonical CI must validate the mobile dependencies that the current lockfile specifies.
+
+  Evidence:
+  - The current lockfile specifies Expo 57.0.15 and Expo Image Picker 57.0.12.
+  - The local `node_modules` directory contains the prior package versions.
+  - The `mobile-install` target skips installation when that directory exists.
+  - Expo rejects the stale installed versions during `make ci`.
+
+  Requirements:
+  - Run `npm ci` for each `mobile-install` operation.
+  - Use `mobile/package-lock.json` as the only dependency installation contract.
+  - Remove the directory-presence condition.
+  - Do not add a second dependency path.
+
+  Validation:
+  - Add a Makefile contract test for the exact `npm ci` command.
+  - Reproduce the stale dependency failure before the change.
+  - Run `make go-test`, `make mobile-check`, and `make ci`.
+
+  Resolution:
+  - The `mobile-install` target runs one exact `npm ci` operation.
+  - The target does not use the prior `node_modules` directory as dependency evidence.
+  - The first `make go-test` run rejected both prior Makefile behaviors.
+  - The focused `make go-test` and `make mobile-check` gates passed after the change.
+  - The final `make ci` gate passed under the five-minute operation limit.
+
 - [ ] [B001] (P1) Remove NODE_ENV from the `npm ci` step of the mobile client build
   Goal:
   The Android release build fails in Metro. Metro cannot find `babel-preset-expo`. The Ansible task `build-selected-release-mobile-platform.yml` sets `NODE_ENV: production` for the build. The build tool `mobile/scripts/build-android-bundle.mjs` uses that value in its `npm ci` step. npm does not install `devDependencies` when `NODE_ENV` has the value `production`. The `mobile/package.json` has `babel-preset-expo` in its `devDependencies`.
