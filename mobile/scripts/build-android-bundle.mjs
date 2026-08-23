@@ -10,6 +10,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { buildEnvironment, NPM_CI_ARGUMENTS } from "./lib/build-environment.mjs";
+import { releaseBuildNumber } from "./release-build-number.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -151,7 +152,7 @@ function parseLifecycleVersioning(artifactVersion, releaseTimestamp) {
  */
 function buildAndroidBundle(args) {
   const appConfig = readAppConfig(args.mobileDir);
-  const versionCodeResolution = resolveVersionCode(args.versionCode, appConfig, args.quotaProject);
+  const versionCodeResolution = resolveBuildVersionCode(args, appConfig);
   const signing = readSigningProperties(args.keystoreProperties, args.keystore);
   const expectedUploadKeySha256 = readExpectedUploadKeySha256(args.mobileDir);
   const uploadKeySha256 = verifyUploadKeyFingerprint(signing, args.javaHome, expectedUploadKeySha256);
@@ -250,6 +251,27 @@ function buildAndroidBundle(args) {
   }
   metadata.buildManifest = writeBuildManifest(outputPath, metadata);
   return metadata;
+}
+
+/**
+ * @param {BundleArgs} args
+ * @param {{ versionCode: number; packageName: string }} appConfig
+ * @returns {{ versionCode: number; source: string; policy: string; googlePlayMaxVersionCode: number | null }}
+ */
+function resolveBuildVersionCode(args, appConfig) {
+  if (!args.versioning) {
+    return resolveVersionCode(args.versionCode, appConfig, args.quotaProject);
+  }
+  try {
+    return {
+      versionCode: releaseBuildNumber(args.versioning.releaseTimestamp),
+      source: "release_timestamp",
+      policy: "UTC release timestamp seconds since 2020-01-01",
+      googlePlayMaxVersionCode: null
+    };
+  } catch (error) {
+    throw new BuildError(error instanceof Error ? error.message : String(error));
+  }
 }
 
 /**

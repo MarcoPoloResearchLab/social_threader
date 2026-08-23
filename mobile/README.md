@@ -59,7 +59,8 @@ Keep App Store Connect keys, Google service account JSON files, Android upload k
   - iOS bundle identifier: `com.mprlab.socialthreader`
   - Android package name: `com.mprlab.socialthreader`
 - [ ] Confirm the Apple Developer agreement and Google Play Console account setup are current.
-- [ ] Update `expo.version`, `ios.buildNumber`, and `android.versionCode` in `app.json`.
+- [ ] Update `expo.version` and `ios.buildNumber` in `app.json`.
+- [ ] Let the gateway release timestamp set the Android `versionCode`.
 - [ ] Confirm privacy policy URL, support URL, description, screenshots, app category, content rating, and release notes are ready in both stores.
 - [ ] Run:
 
