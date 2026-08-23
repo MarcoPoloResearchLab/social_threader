@@ -143,6 +143,11 @@ assertIncludes(deploymentManifestSource, "track: production", "the mobile resour
 assertIncludes(androidBuildSource, "releaseIdentity.googleCloudProjectId", "Android bundle builder must use the release identity quota project");
 assertIncludes(androidBuildSource, "MPRLAB_ARTIFACT_VERSION", "Android bundle builder must seal the gateway artifact version");
 assertIncludes(androidBuildSource, "releaseTimestamp", "Android bundle builder must seal the gateway release timestamp");
+assertIncludes(
+  androidBuildSource,
+  "releaseBuildNumber(args.versioning.releaseTimestamp)",
+  "Android release version code must use the sealed gateway release timestamp"
+);
 assertIncludes(androidPublishSource, "PROVIDER_MODES.RECONCILE", "Android publisher must reconcile an interrupted publication");
 assertIncludes(androidPublishSource, 'publisherAccess: "verified"', "Android publisher must report verified provider access");
 assertIncludes(

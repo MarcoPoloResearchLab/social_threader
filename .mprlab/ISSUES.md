@@ -8,6 +8,34 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B003] (P0) Derive the Android version code from the release timestamp
+  Goal:
+  Each sealed Android release must use a new store build number.
+
+  Evidence:
+  - The release builder used the permanent `versionCode: 1` value from `mobile/app.json`.
+  - Google Play already contains version code 1 with a different Android App Bundle.
+  - Google Play does not permit a replacement for an existing version code.
+
+  Requirements:
+  - Derive the release version code from the sealed UTC release timestamp.
+  - Use seconds since `2020-01-01T00:00:00Z` as the build number.
+  - Keep the source app config for local development builds only.
+  - Reject a timestamp that cannot produce a valid Google Play version code.
+
+  Validation:
+  - Add deterministic tests for valid, invalid, early, and out-of-range timestamps.
+  - Run `make mobile-check` after the test change.
+  - Run `make ci` after the last source change.
+  - Release, publish, and deploy the successor with the repository lifecycle.
+
+  Resolution:
+  - The release builder derives the Android version code from the sealed UTC release timestamp.
+  - Local development builds continue to use the source app config.
+  - The first focused gate failed because the build-number module was absent.
+  - The focused gate passed all 32 mobile tests after the source change.
+  - The final `make ci` gate passed after the last source change.
+
 - [x] [B002] (P0) Install the exact mobile dependency lock in CI
   Goal:
   Canonical CI must validate the mobile dependencies that the current lockfile specifies.
