@@ -8,6 +8,36 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B005] (P0) Align the mobile dependencies with Expo 57
+  Goal:
+  Canonical CI must accept the exact mobile dependency lock.
+
+  Evidence:
+  - `make ci` passed each browser, Go, lint, module, and mobile test.
+  - The Expo compatibility check rejected three installed dependency versions.
+  - Expo requires `expo` 57.0.17, `expo-image-picker` 57.0.14, and `react-native` 0.86.3.
+  - Expected result: the current lock passes the Expo compatibility check.
+  - Actual result: `make ci` stops after all mobile tests pass.
+
+  Requirements:
+  - Pin `expo` to 57.0.17.
+  - Pin `expo-image-picker` to 57.0.14.
+  - Pin `react-native` to 0.86.3.
+  - Update `mobile/package-lock.json` with the exact dependency graph.
+  - Keep all other mobile dependency declarations unchanged.
+
+  Validation:
+  - Run `make mobile-check` after the lock change.
+  - Run `make ci` after the last source change.
+  - Run `git diff --check`.
+
+  Resolution:
+  - The mobile package and configuration validator use the three Expo-compatible versions.
+  - The canonical lock contains the exact updated dependency graph.
+  - The first focused gate rejected the obsolete validator versions.
+  - The focused `make mobile-check` gate passed after the validator change.
+  - The final `make ci` gate passed after the last source change.
+
 - [-] [B004] (P0) Exclude private deployment input from the Docker context
   Goal:
   The production Docker context must exclude the private deployment input without a negation.
