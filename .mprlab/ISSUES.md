@@ -38,7 +38,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - The focused `make mobile-check` gate passed after the validator change.
   - The final `make ci` gate passed after the last source change.
 
-- [-] [B004] (P0) Exclude private deployment input from the Docker context
+- [x] [B004] (P0) Exclude private deployment input from the Docker context
   Goal:
   The production Docker context must exclude the private deployment input without a negation.
 
@@ -61,6 +61,16 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Run `make go-test`.
   - Run `make ci` after the last source change.
   - Run `make deploy` after the change lands.
+
+  Resolution:
+  - Removed the Docker ignore negation in pull request 63.
+  - Kept each private environment pattern excluded from the Docker context.
+  - Added a container contract test that rejects each Docker ignore negation.
+  - Passed `make go-test` after the source change.
+  - Passed complete CI at the released successor after the dependency fix.
+  - Released and published version `v1.0.2` from commit
+    `5b9ed264861bf13d3cb486848b3074b4b9ce014b`.
+  - Completed the canonical deployment at gateway revision 123.
 
 - [x] [B003] (P0) Derive the Android version code from the release timestamp
   Goal:
