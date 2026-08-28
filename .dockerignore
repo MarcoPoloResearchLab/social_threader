@@ -3,7 +3,6 @@
 .DS_Store
 .env
 .env.*
-!.env.example
 .mprlab/deploy/.env
 configs/AuthKey_*.p8
 configs/*service-account*.json
