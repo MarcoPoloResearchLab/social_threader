@@ -8,6 +8,30 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [-] [B004] (P0) Exclude private deployment input from the Docker context
+  Goal:
+  The production Docker context must exclude the private deployment input without a negation.
+
+  Evidence:
+  - `.dockerignore` excludes `.mprlab/deploy/.env`.
+  - `.dockerignore` also contains the `!.env.example` negation.
+  - The gateway rejects all negations because they can include private files again.
+  - Expected result: the Docker context has an unambiguous private input exclusion.
+  - Actual result: deployment stops before state allocation.
+
+  Requirements:
+  - Remove the `.env.example` negation from `.dockerignore`.
+  - Keep `.env.*` excluded from each Docker context.
+  - Keep the exact private credential exclusions.
+  - Add a regression test that rejects each Docker ignore negation.
+  - Keep local environment file behavior unchanged.
+
+  Validation:
+  - Run the regression test before and after the source change.
+  - Run `make go-test`.
+  - Run `make ci` after the last source change.
+  - Run `make deploy` after the change lands.
+
 - [x] [B003] (P0) Derive the Android version code from the release timestamp
   Goal:
   Each sealed Android release must use a new store build number.

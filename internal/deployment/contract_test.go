@@ -205,6 +205,11 @@ func TestLocalBlackBoxStackContract(t *testing.T) {
 	}
 
 	dockerIgnore := string(readRepositoryFile(t, repositoryRoot, ".dockerignore"))
+	for _, line := range strings.Split(dockerIgnore, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "!") {
+			t.Errorf(".dockerignore contains a private-input negation %q", line)
+		}
+	}
 	for _, ignoredValue := range []string{
 		".env",
 		".mprlab/deploy/.env",
