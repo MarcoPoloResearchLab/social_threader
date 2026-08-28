@@ -8,6 +8,30 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [-] [B006] (P1) Align Expo with its current patch release
+  Goal:
+  Hosted mobile CI must accept the exact Expo dependency set.
+
+  Evidence:
+  - Hosted run `33202860282` passed all 32 mobile tests.
+  - The same run passed mobile configuration validation.
+  - The Expo dependency check requires `expo` version `~57.0.18`.
+  - The current package and lock use version `57.0.17`.
+  - Expected result: the exact dependency check passes.
+  - Actual result: the mobile job stops after the configuration check.
+
+  Requirements:
+  - Pin `expo` to version `57.0.18`.
+  - Update the package lock with the exact dependency graph.
+  - Update the repository configuration validator.
+  - Keep each other mobile dependency declaration unchanged.
+  - Keep the exact Expo dependency check.
+
+  Validation:
+  - Run `make mobile-check` after the dependency change.
+  - Run `make ci` after the last source change.
+  - Run `git diff --check`.
+
 - [x] [B005] (P0) Align the mobile dependencies with Expo 57
   Goal:
   Canonical CI must accept the exact mobile dependency lock.
@@ -38,7 +62,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - The focused `make mobile-check` gate passed after the validator change.
   - The final `make ci` gate passed after the last source change.
 
-- [-] [B004] (P0) Exclude private deployment input from the Docker context
+- [x] [B004] (P0) Exclude private deployment input from the Docker context
   Goal:
   The production Docker context must exclude the private deployment input without a negation.
 
@@ -61,6 +85,16 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Run `make go-test`.
   - Run `make ci` after the last source change.
   - Run `make deploy` after the change lands.
+
+  Resolution:
+  - Removed the Docker ignore negation in pull request 63.
+  - Kept each private environment pattern excluded from the Docker context.
+  - Added a container contract test that rejects each Docker ignore negation.
+  - Passed `make go-test` after the source change.
+  - Passed complete CI at the released successor after the dependency fix.
+  - Released and published version `v1.0.2` from commit
+    `5b9ed264861bf13d3cb486848b3074b4b9ce014b`.
+  - Completed the canonical deployment at gateway revision 123.
 
 - [x] [B003] (P0) Derive the Android version code from the release timestamp
   Goal:
