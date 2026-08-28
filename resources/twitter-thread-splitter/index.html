@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Thread Splitter Tool for 280-Character Posts</title>
+    <meta name="description" content="Turn long text into 280-character thread posts, reserve room for numbering, and copy each chunk in order with Social Threader.">
+    <meta name="author" content="MPR Lab">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://threader.mprlab.com/resources/twitter-thread-splitter/">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+    <link rel="stylesheet" href="/assets/css/resources.css">
+    <link rel="stylesheet" href="/assets/css/resource-components.css">
+
+    <meta property="og:title" content="Twitter Thread Splitter Tool for 280-Character Posts">
+    <meta property="og:description" content="Prepare a numbered 280-character thread, reserve suffix space, and copy every post in sequence.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Social Threader">
+    <meta property="og:url" content="https://threader.mprlab.com/resources/twitter-thread-splitter/">
+    <meta property="og:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+    <meta property="article:published_time" content="2026-07-30">
+    <meta property="article:modified_time" content="2026-07-30">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Twitter Thread Splitter Tool for 280-Character Posts">
+    <meta name="twitter:description" content="Prepare a numbered 280-character thread, reserve suffix space, and copy every post in sequence.">
+    <meta name="twitter:image" content="https://threader.mprlab.com/assets/img/social-threader-og.png">
+    <meta name="twitter:image:alt" content="Social Threader text cards arranged as an ordered social media thread">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Article",
+                "@id": "https://threader.mprlab.com/resources/twitter-thread-splitter/#article",
+                "mainEntityOfPage": "https://threader.mprlab.com/resources/twitter-thread-splitter/",
+                "headline": "Twitter Thread Splitter for 280-Character Threads",
+                "description": "Turn long text into 280-character thread posts, reserve room for numbering, and copy each chunk in order.",
+                "datePublished": "2026-07-30",
+                "dateModified": "2026-07-30",
+                "author": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "MPR Lab",
+                    "url": "https://github.com/MarcoPoloResearchLab"
+                },
+                "image": "https://threader.mprlab.com/assets/img/social-threader-og.png"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "https://threader.mprlab.com/resources/twitter-thread-splitter/#breadcrumbs",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Social Threader",
+                        "item": "https://threader.mprlab.com/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "Resources",
+                        "item": "https://threader.mprlab.com/resources/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": "Twitter Thread Splitter",
+                        "item": "https://threader.mprlab.com/resources/twitter-thread-splitter/"
+                    }
+                ]
+            },
+            {
+                "@type": "FAQPage",
+                "@id": "https://threader.mprlab.com/resources/twitter-thread-splitter/#faq",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "What maximum does the Twitter thread splitter use?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Social Threader's Twitter/X preset uses the repository's configured maximum of 280 characters for each resulting text chunk."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Will numbering push a post beyond 280 characters?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Not in the documented enumeration flow. Social Threader reserves space for suffixes such as (1/6), recalculates when the chunk count changes, and returns final chunks within the selected maximum."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "How do I keep track of which post I copied?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Use each chunk's Copy button. The browser UI marks copied chunks with the order in which they were copied so you can follow the posting sequence."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Can I preserve sentences in a 280-character thread?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Yes, when a complete sentence fits. Enable Sentences to prefer sentence boundaries, but any sentence longer than the available maximum still has to be divided."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does the tool publish or schedule the Twitter thread?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. Social Threader prepares and copies the chunks. Posting, scheduling, analytics, and account integration are outside the documented product behavior."
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="brand-link" href="/">Social Threader</a>
+            <nav class="site-nav" aria-label="Primary navigation">
+                <a href="/">Thread splitter</a>
+                <a href="/resources/" aria-current="page">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+                <li><a href="/">Social Threader</a></li>
+                <li><a href="/resources/">Resources</a></li>
+                <li aria-current="page">Twitter thread splitter</li>
+            </ol>
+        </nav>
+
+        <article>
+            <header class="hero">
+                <p class="eyebrow">280-character workflow</p>
+                <h1>Prepare posts with a Twitter thread splitter</h1>
+                <p class="hero__lede">
+                    Use Social Threader’s configured 280-character preset to turn a
+                    long draft into manually posted chunks. Optional numbering stays
+                    inside the selected maximum, and visible copy markers help you
+                    keep the posting sequence straight.
+                </p>
+                <div class="quick-verdict" aria-label="Quick verdict">
+                    <p>
+                        <strong>Quick verdict</strong>
+                        Enable <em>Enumerate</em> before final review so suffixes such
+                        as <code>(1/6)</code> are included in every length calculation.
+                        Copy in order, then post manually; the tool does not connect to
+                        a Twitter/X account.
+                    </p>
+                    <p><strong>Primary audience</strong>Manual thread posters</p>
+                    <p><strong>Core outcome</strong>Ordered 280-character chunks</p>
+                </div>
+                <p class="byline">
+                    Written by
+                    <a href="https://github.com/MarcoPoloResearchLab">MPR Lab</a>
+                    · Verified against the public Social Threader repository
+                    · Updated <time datetime="2026-07-30">July 30, 2026</time>
+                </p>
+                <div class="hero-actions">
+                    <a class="button-link" href="/">Build a 280-character thread</a>
+                    <a class="button-link button-link--secondary" href="#workflow">Review the copy sequence</a>
+                </div>
+            </header>
+
+            <div class="content-layout">
+                <div class="content-stack">
+                    <section class="content-card">
+                        <h2>The 280-character problem is more than division</h2>
+                        <p>
+                            Dividing the source text is the easy part. A usable thread
+                            also needs readable boundaries, room for optional sequence
+                            labels, and a reliable way to remember which chunk comes
+                            next. Changing the chunk count can even change the number of
+                            characters required by the suffix.
+                        </p>
+                        <p>
+                            Social Threader handles that circular dependency by
+                            recalculating the available text length until the final
+                            enumeration overhead stabilizes. The browser then renders
+                            each chunk with its own Copy button and marks copied chunks
+                            in copy order.
+                        </p>
+                    </section>
+
+                    <section id="workflow" class="content-card">
+                        <h2>How to use the Twitter thread splitter</h2>
+                        <ol class="steps">
+                            <li>Paste the complete thread draft into the editor and review its paragraph and sentence counts.</li>
+                            <li>Select <strong>Twitter/X (280)</strong>, then choose sentence or paragraph boundaries when they suit the draft.</li>
+                            <li>Enable <strong>Enumerate</strong> before editing the final wording so the displayed suffixes consume real space.</li>
+                            <li>Review every chunk, use the Copy buttons from first to last, and post the copied content manually.</li>
+                        </ol>
+                        <p>
+                            The enumeration implementation below is copied directly
+                            from the public chunking engine:
+                        </p>
+                        <pre><code>function enumerateChunk(chunkText, chunkIndex, totalChunks) {
+    return TEXT_CONTENT.ENUMERATION_TEMPLATE
+        .replace("{text}", chunkText)
+        .replace("{current}", String(chunkIndex + 1))
+        .replace("{total}", String(totalChunks));
+}</code></pre>
+                        <p>
+                            Review the
+                            <a href="https://github.com/MarcoPoloResearchLab/social_threader/blob/master/js/core/chunking.js">complete enumeration loop on GitHub</a>
+                            to see how suffix space is reserved.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Feature-to-benefit map</h2>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Feature</th>
+                                        <th scope="col">Why it matters here</th>
+                                        <th scope="col">Example</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Twitter/X preset</td>
+                                        <td>Applies the repository’s configured 280-character maximum consistently.</td>
+                                        <td>Re-run a revised draft without re-entering the limit.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Enumeration-aware recalculation</td>
+                                        <td>Includes suffix characters in the final maximum.</td>
+                                        <td>Keep <code>Closing thought. (6/6)</code> within 280.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Copy-order markers</td>
+                                        <td>Makes the manual posting sequence visible.</td>
+                                        <td>The first copied chunk receives marker 1, then the next copied chunk receives marker 2.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Sentence preference</td>
+                                        <td>Reduces awkward mid-sentence endings when complete sentences fit.</td>
+                                        <td>Keep a short opening sentence and its punctuation together.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Three thread-review scenarios</h2>
+                        <div class="example-grid">
+                            <div>
+                                <h3>A numbered explanation</h3>
+                                <p>
+                                    Turn on enumeration from the start. If late edits
+                                    change the number of chunks, Social Threader
+                                    recalculates the suffix space and rebuilds the output.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>An unnumbered narrative</h3>
+                                <p>
+                                    Leave enumeration off when the prose itself provides
+                                    enough continuity. The full 280-character maximum is
+                                    then available to the supplied text.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>A multi-paragraph announcement</h3>
+                                <p>
+                                    Enable paragraph handling when the draft has a clear
+                                    opening, details, and closing. Each paragraph is
+                                    processed before smaller length-based cuts.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>A long single sentence</h3>
+                                <p>
+                                    Sentence mode cannot keep an over-limit sentence
+                                    whole. Review the fallback boundary and edit the
+                                    wording manually if the split changes the meaning.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Objections and limitations</h2>
+                        <h3>Is 280 guaranteed to match every current Twitter/X rule?</h3>
+                        <p>
+                            It is the preset configured in Social Threader’s repository.
+                            External platform rules, content types, and account behavior
+                            can change. Verify the destination when that distinction
+                            matters.
+                        </p>
+                        <h3>Does the copy marker publish anything?</h3>
+                        <p>
+                            No. It records copy order in the page so you can follow the
+                            sequence manually. It is not an account connection, posting
+                            queue, or scheduler.
+                        </p>
+                        <h3>Will the tool improve reach or engagement?</h3>
+                        <p>
+                            No such claim is supported. The tool prepares chunk lengths
+                            and copy order; editorial quality and platform performance
+                            remain separate concerns.
+                        </p>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Frequently asked questions</h2>
+                        <div class="faq-list">
+                            <details>
+                                <summary>What maximum does the Twitter thread splitter use?</summary>
+                                <p>Social Threader's Twitter/X preset uses the repository's configured maximum of 280 characters for each resulting text chunk.</p>
+                            </details>
+                            <details>
+                                <summary>Will numbering push a post beyond 280 characters?</summary>
+                                <p>Not in the documented enumeration flow. Social Threader reserves space for suffixes such as (1/6), recalculates when the chunk count changes, and returns final chunks within the selected maximum.</p>
+                            </details>
+                            <details>
+                                <summary>How do I keep track of which post I copied?</summary>
+                                <p>Use each chunk's Copy button. The browser UI marks copied chunks with the order in which they were copied so you can follow the posting sequence.</p>
+                            </details>
+                            <details>
+                                <summary>Can I preserve sentences in a 280-character thread?</summary>
+                                <p>Yes, when a complete sentence fits. Enable Sentences to prefer sentence boundaries, but any sentence longer than the available maximum still has to be divided.</p>
+                            </details>
+                            <details>
+                                <summary>Does the tool publish or schedule the Twitter thread?</summary>
+                                <p>No. Social Threader prepares and copies the chunks. Posting, scheduling, analytics, and account integration are outside the documented product behavior.</p>
+                            </details>
+                        </div>
+                    </section>
+
+                    <section class="content-card">
+                        <h2>Related Social Threader guides</h2>
+                        <div class="related-grid">
+                            <article class="resource-card">
+                                <h3>Compare all configured limits</h3>
+                                <p>See how one draft changes at 280, 300, 500, and custom maximums.</p>
+                                <a href="/resources/social-media-character-limit-splitter/">Open the cross-platform guide</a>
+                            </article>
+                            <article class="resource-card">
+                                <h3>Preserve sentence boundaries</h3>
+                                <p>Understand abbreviations, long sentences, paragraphs, and boundary fallbacks.</p>
+                                <a href="/resources/split-text-without-breaking-sentences/">Open the sentence-aware guide</a>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="side-card">
+                    <h2>On this page</h2>
+                    <ul>
+                        <li><a href="#workflow">Copy workflow</a></li>
+                        <li><a href="/resources/social-media-character-limit-splitter/">Compare limits</a></li>
+                        <li><a href="/resources/split-text-without-breaking-sentences/">Sentence boundaries</a></li>
+                        <li><a href="/">Open the tool</a></li>
+                    </ul>
+                </aside>
+            </div>
+
+            <section class="cta-panel">
+                <h2>Build the thread with numbering already accounted for</h2>
+                <p>
+                    Select the 280-character preset, decide whether the draft needs
+                    sentence or paragraph boundaries, and copy the final chunks in order.
+                </p>
+                <div class="cta-actions">
+                    <a class="button-link" href="/">Create a 280-character thread</a>
+                </div>
+            </section>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <p>Social Threader is an open-source MPR Lab project.</p>
+            <nav aria-label="Footer navigation">
+                <a href="/">Tool</a>
+                <a href="/resources/">Resources</a>
+                <a href="https://github.com/MarcoPoloResearchLab/social_threader">Source code</a>
+            </nav>
+        </div>
+    </footer>
+</body>
+</html>
