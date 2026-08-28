@@ -8,7 +8,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
-- [-] [B006] (P1) Align Expo with its current patch release
+- [x] [B006] (P1) Align Expo with its current patch release
   Goal:
   Hosted mobile CI must accept the exact Expo dependency set.
 
@@ -31,6 +31,13 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Run `make mobile-check` after the dependency change.
   - Run `make ci` after the last source change.
   - Run `git diff --check`.
+
+  Resolution:
+  - Pinned `expo` to version `57.0.18`.
+  - Updated the exact package lock and repository validator.
+  - Kept each other direct mobile dependency unchanged.
+  - Passed `make mobile-check` after the dependency change.
+  - Passed complete `make ci` after the last source change.
 
 - [x] [B005] (P0) Align the mobile dependencies with Expo 57
   Goal:
