@@ -28,6 +28,9 @@ export const PUBLIC_SEO_PATHS = Object.freeze({
     RESOURCE_HUB: "/resources/"
 });
 
+export const LOOPAWARE_PIXEL_URL_PREFIX = "https://www.loopaware.com/pixel.js?site_id=";
+export const PUBLIC_LOOPAWARE_SITE_ID = "2ca5a755-02e2-462c-8bdf-16e5bc303042";
+
 export const PUBLIC_SEO_KINDS = Object.freeze({
     WEB_APPLICATION: "WebApplication",
     COLLECTION_PAGE: "CollectionPage",
@@ -81,6 +84,7 @@ export const PUBLIC_SEO_KINDS = Object.freeze({
  * @property {string[]} internalPaths
  * @property {string[]} relatedPaths
  * @property {string[]} resourceCardPaths
+ * @property {string[]} loopAwareSiteIds
  */
 
 /**
@@ -156,7 +160,7 @@ export async function inspectPublicPage(page, pageUrl) {
     );
 
     return /** @type {Promise<PublicPageSnapshot>} */ (
-        page.evaluate((rootPath) => {
+        page.evaluate((rootPath, loopAwarePixelUrlPrefix) => {
             const metadataContent = (selector) =>
                 document.querySelector(selector)?.getAttribute("content")?.trim() || "";
             const canonical =
@@ -192,6 +196,14 @@ export async function inspectPublicPage(page, pageUrl) {
                             window.location.origin
                         ).pathname
                 );
+            const loopAwareSiteIds = Array.from(
+                document.querySelectorAll(
+                    `script[src^="${loopAwarePixelUrlPrefix}"]`
+                )
+            ).map((scriptElement) => {
+                const source = scriptElement.getAttribute("src") || "";
+                return new URL(source, window.location.origin).searchParams.get("site_id") || "";
+            });
 
             return {
                 title: document.title.trim(),
@@ -215,13 +227,14 @@ export async function inspectPublicPage(page, pageUrl) {
                 structuredDataItems,
                 faqDetails,
                 structuredFaqs,
+                loopAwareSiteIds,
                 internalPaths: Array.from(new Set(pathsForSelector('a[href^="/"]'))),
                 relatedPaths: Array.from(new Set(pathsForSelector('.related-grid a[href^="/"]'))),
                 resourceCardPaths: Array.from(
                     new Set(pathsForSelector('.resource-grid a[href^="/"]'))
                 )
             };
-        }, PUBLIC_SEO_PATHS.ROOT)
+        }, PUBLIC_SEO_PATHS.ROOT, LOOPAWARE_PIXEL_URL_PREFIX)
     );
 }
 

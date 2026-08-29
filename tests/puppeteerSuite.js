@@ -10,6 +10,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
 import { runPublicPagesSeoSuite } from "./publicPagesSeoSuite.js";
+import { LOOPAWARE_PIXEL_URL_PREFIX } from "./publicPagesSeoSupport.js";
 import {
     runTransformationBrowserSuite,
     startTransformationApiServer
@@ -446,11 +447,23 @@ async function main() {
     const indexUrl = `${staticServer.origin}/index.html`;
     const browser = await puppeteer.launch({ headless: HEADLESS_MODE, args: PUPPETEER_ARGS });
     const page = await browser.newPage();
+    /** @param {import("puppeteer").HTTPRequest} request */
+    const blockLoopAwarePixel = (request) => {
+        if (request.url().startsWith(LOOPAWARE_PIXEL_URL_PREFIX)) {
+            void request.abort();
+            return;
+        }
+        void request.continue();
+    };
     const { pass, fail, summarize } = createResultRecorder();
 
     try {
+        await page.setRequestInterception(true);
+        page.on("request", blockLoopAwarePixel);
         await runInputStatisticsSuite(page, pass, fail, indexUrl);
         await runPublicPagesSeoSuite(page, pass, fail, staticServer.origin);
+        page.off("request", blockLoopAwarePixel);
+        await page.setRequestInterception(false);
         await runTransformationBrowserSuite(
             page,
             pass,
@@ -460,6 +473,7 @@ async function main() {
             transformationApiServer
         );
     } finally {
+        page.off("request", blockLoopAwarePixel);
         await browser.close();
         await transformationApiServer.close();
         await staticServer.close();
