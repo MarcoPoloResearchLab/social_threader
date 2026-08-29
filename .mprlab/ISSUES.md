@@ -8,6 +8,34 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B007] (P1) Add missing Social Threader LoopAware telemetry
+  Goal:
+  Every published Social Threader page must report to the current production LoopAware site.
+
+  Evidence:
+  - Production LoopAware assigns Social Threader site ID `2ca5a755-02e2-462c-8bdf-16e5bc303042`.
+  - The Pages artifact publishes seven HTML entry points.
+  - No published page currently loads the LoopAware pixel.
+  - Expected result: each published page loads exactly one pixel with the current site ID.
+  - Actual result: Social Threader produces no LoopAware page telemetry.
+
+  Requirements:
+  - Add the current Social Threader LoopAware pixel to each published HTML page.
+  - Add a browser-level regression check for the exact production site ID.
+  - Reject missing, duplicate, or different LoopAware site identities.
+
+  Validation:
+  - Run `make browser-test` before and after the source change.
+  - Run `make ci` after the last source change.
+  - Run `git diff --check`.
+
+  Resolution:
+  - Added the current production pixel to all seven published pages.
+  - Added a browser contract for one exact Social Threader site identity on each page.
+  - Kept browser validation independent from the remote pixel response.
+  - Confirmed that the focused gate failed before the page updates.
+  - Passed `make browser-test` and complete `make ci` after the last source change.
+
 - [x] [B006] (P1) Align Expo with its current patch release
   Goal:
   Hosted mobile CI must accept the exact Expo dependency set.

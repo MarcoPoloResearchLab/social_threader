@@ -4,6 +4,7 @@
  */
 
 import {
+    PUBLIC_LOOPAWARE_SITE_ID,
     PUBLIC_SEO_KINDS,
     PUBLIC_SEO_PATHS,
     SEO_TEST_LIMITS,
@@ -72,6 +73,11 @@ function assertPageIdentity(pageDefinition, pageSnapshot, publicOrigin) {
     assertCondition(
         pageSnapshot.openGraphImage === `${publicOrigin}${PUBLIC_SEO_PATHS.OG_IMAGE}`,
         `${pageDefinition.path} Open Graph image drifted`
+    );
+    assertCondition(
+        pageSnapshot.loopAwareSiteIds.length === 1 &&
+            pageSnapshot.loopAwareSiteIds[0] === PUBLIC_LOOPAWARE_SITE_ID,
+        `${pageDefinition.path} has an invalid LoopAware site identity`
     );
     assertCondition(
         !pageSnapshot.robots.toLowerCase().includes("noindex"),
