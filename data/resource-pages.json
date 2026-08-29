@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "publicOrigin": "https://threader.mprlab.com",
+  "significantUpdatePolicy": "lastModified records the most recent change to a page's main content, structured data, or crawlable internal links. Deployment-only and copyright-only changes do not update it.",
+  "pages": [
+    {
+      "source": "index.html",
+      "path": "/",
+      "canonical": "https://threader.mprlab.com/",
+      "title": "Social Threader – Perfectly Sized Social Media Threads",
+      "description": "Split your text into platform-friendly chunks. Social Threader is a free, fast tool for creating perfectly sized social media threads.",
+      "kind": "WebApplication",
+      "lastModified": "2026-07-30",
+      "primaryKeyword": "social media thread splitter",
+      "conversionGoal": "Start splitting text",
+      "relatedPaths": [
+        "/resources/"
+      ]
+    },
+    {
+      "source": "resources/index.html",
+      "path": "/resources/",
+      "canonical": "https://threader.mprlab.com/resources/",
+      "title": "Social Threader Resources for Better Thread Writing",
+      "description": "Practical, repository-backed guides for splitting long text, preserving sentences, adapting character limits, handling images, and using JavaScript.",
+      "kind": "CollectionPage",
+      "lastModified": "2026-07-30",
+      "primaryKeyword": "social media thread writing guides",
+      "conversionGoal": "Choose a workflow guide",
+      "evidenceSource": "js/constants.js",
+      "relatedPaths": [
+        "/",
+        "/resources/split-text-without-breaking-sentences/",
+        "/resources/social-media-character-limit-splitter/",
+        "/resources/twitter-thread-splitter/",
+        "/resources/image-and-text-social-threads/",
+        "/resources/javascript-split-text-by-character-limit/"
+      ]
+    },
+    {
+      "source": "resources/split-text-without-breaking-sentences/index.html",
+      "path": "/resources/split-text-without-breaking-sentences/",
+      "canonical": "https://threader.mprlab.com/resources/split-text-without-breaking-sentences/",
+      "title": "Split Text Without Breaking Sentences | Social Threader",
+      "description": "Split long text into character-limited chunks while preserving sentence and paragraph boundaries. Follow a tested Social Threader workflow.",
+      "kind": "Article",
+      "lastModified": "2026-07-30",
+      "primaryKeyword": "split text without breaking sentences",
+      "secondaryKeywords": [
+        "sentence-aware text splitter",
+        "paragraph text splitter",
+        "split long text into chunks"
+      ],
+      "audience": "People adapting essays, announcements, and multi-paragraph writing for social threads",
+      "searchIntent": "Instructional and tool-seeking",
+      "conversionGoal": "Split a long draft with sentence or paragraph boundaries",
+      "evidenceSource": "js/core/chunking.js",
+      "differentiation": "Focuses on readable linguistic boundaries, abbreviations, decimals, ellipses, and over-limit sentences rather than platform comparison.",
+      "allowedClaims": [
+        "Social Threader can prefer sentence and paragraph boundaries.",
+        "Every resulting text chunk stays within the selected maximum length.",
+        "The tested sentence heuristic handles documented abbreviations, decimals, and ellipses."
+      ],
+      "forbiddenClaims": [
+        "Perfect sentence detection in every language",
+        "AI rewriting or summarization",
+        "Direct social network publishing"
+      ],
+      "relatedPaths": [
+        "/",
+        "/resources/",
+        "/resources/social-media-character-limit-splitter/",
+        "/resources/javascript-split-text-by-character-limit/"
+      ]
+    },
+    {
+      "source": "resources/social-media-character-limit-splitter/index.html",
+      "path": "/resources/social-media-character-limit-splitter/",
+      "canonical": "https://threader.mprlab.com/resources/social-media-character-limit-splitter/",
+      "title": "Social Media Character Limit Splitter | Social Threader",
+      "description": "Compare 280, 300, 500, and custom character limits, then adapt one source text into readable threads with Social Threader.",
+      "kind": "Article",
+      "lastModified": "2026-07-30",
+      "primaryKeyword": "social media character limit splitter",
+      "secondaryKeywords": [
+        "Twitter and Bluesky character limits",
+        "cross-platform thread splitter",
+        "custom character limit text splitter"
+      ],
+      "audience": "People adapting the same source text for multiple character-limited platforms",
+      "searchIntent": "Comparison, planning, and tool-seeking",
+      "conversionGoal": "Compare preset output and choose the right limit",
+      "evidenceSource": "js/constants.js",
+      "differentiation": "Uses one source draft to compare 280, 300, 500, and custom output instead of teaching a single-platform posting workflow.",
+      "allowedClaims": [
+        "The web app provides 280, 300, 500, and custom character-limit controls.",
+        "Enumeration reserves room inside the selected maximum.",
+        "Users copy the resulting chunks manually."
+      ],
+      "forbiddenClaims": [
+        "Automatic cross-posting",
+        "Guaranteed current platform policies beyond the configured presets",
+        "Social network account integration"
+      ],
+      "relatedPaths": [
+        "/",
+        "/resources/",
+        "/resources/split-text-without-breaking-sentences/",
+        "/resources/twitter-thread-splitter/"
+      ]
+    },
+    {
+      "source": "resources/twitter-thread-splitter/index.html",
+      "path": "/resources/twitter-thread-splitter/",
+      "canonical": "https://threader.mprlab.com/resources/twitter-thread-splitter/",
+      "title": "Twitter Thread Splitter Tool for 280-Character Posts",
+      "description": "Turn long text into 280-character thread posts, reserve room for numbering, and copy each chunk in order with Social Threader.",
+      "kind": "Article",
+      "lastModified": "2026-07-30",
+      "primaryKeyword": "Twitter thread splitter",
+      "secondaryKeywords": [
+        "split text into tweets",
+        "280-character text splitter",
+        "number a Twitter thread"
+      ],
+      "audience": "People preparing manually posted X or Twitter threads",
+      "searchIntent": "Transactional and instructional",
+      "conversionGoal": "Create and copy a numbered 280-character thread",
+      "evidenceSource": "js/core/chunking.js",
+      "differentiation": "Concentrates on the 280-character preset, numbering overhead, copy sequence, and manual posting rather than general character-limit comparison.",
+      "allowedClaims": [
+        "The Twitter/X preset uses a 280-character maximum.",
+        "Numbering is included within the maximum length.",
+        "Copied chunks receive visible sequence markers."
+      ],
+      "forbiddenClaims": [
+        "Direct posting to X or Twitter",
+        "Thread scheduling",
+        "Optimization for engagement or reach"
+      ],
+      "relatedPaths": [
+        "/",
+        "/resources/",
+        "/resources/social-media-character-limit-splitter/",
+        "/resources/split-text-without-breaking-sentences/"
+      ]
+    },
+    {
+      "source": "resources/image-and-text-social-threads/index.html",
+      "path": "/resources/image-and-text-social-threads/",
+      "canonical": "https://threader.mprlab.com/resources/image-and-text-social-threads/",
+      "title": "Create Image and Text Social Threads | Social Threader",
+      "description": "Build image-and-text threads with ordered chunks, browser clipboard support, mobile image picking, and honest compatibility guidance.",
+      "kind": "Article",
+      "lastModified": "2026-07-30",
+      "primaryKeyword": "image and text social threads",
+      "secondaryKeywords": [
+        "social media thread with images",
+        "copy image thread chunks",
+        "image thread workflow"
+      ],
+      "audience": "People preparing screenshot, diagram, or image-led social threads",
+      "searchIntent": "Workflow and troubleshooting",
+      "conversionGoal": "Arrange and copy a mixed image-and-text thread",
+      "evidenceSource": "js/core/richText.js",
+      "differentiation": "Documents image anchoring, web and mobile input differences, rich clipboard behavior, and compatibility limitations.",
+      "allowedClaims": [
+        "Pasted or dropped browser images become separate ordered chunks.",
+        "The mobile app can select images and copy image payloads.",
+        "Text-only copying remains available when rich clipboard behavior is restricted."
+      ],
+      "forbiddenClaims": [
+        "Automatic image upload to social networks",
+        "Universal rich-image clipboard support",
+        "Cloud image storage"
+      ],
+      "relatedPaths": [
+        "/",
+        "/resources/",
+        "/resources/twitter-thread-splitter/",
+        "/resources/split-text-without-breaking-sentences/"
+      ]
+    },
+    {
+      "source": "resources/javascript-split-text-by-character-limit/index.html",
+      "path": "/resources/javascript-split-text-by-character-limit/",
+      "canonical": "https://threader.mprlab.com/resources/javascript-split-text-by-character-limit/",
+      "title": "JavaScript: Split Text by Character Limit | Threader",
+      "description": "Learn how Social Threader splits text by character limit in JavaScript while preserving words, sentences, paragraphs, and numbering space.",
+      "kind": "TechArticle",
+      "lastModified": "2026-07-30",
+      "primaryKeyword": "split text by character limit in JavaScript",
+      "secondaryKeywords": [
+        "preserve sentence boundaries in JavaScript",
+        "JavaScript text chunking algorithm",
+        "split long strings without breaking words"
+      ],
+      "audience": "Developers studying or adapting a browser-based text chunking algorithm",
+      "searchIntent": "Technical instructional",
+      "conversionGoal": "Inspect the open-source implementation and try the working tool",
+      "evidenceSource": "js/core/chunking.js",
+      "differentiation": "Explains the actual ES-module algorithm, configuration contract, enumeration loop, and tested edge cases without presenting it as a published package.",
+      "allowedClaims": [
+        "The chunking engine is an ES module in the public repository.",
+        "The engine accepts maximum length, sentence, paragraph, and enumeration options.",
+        "Repository tests cover documented boundary and punctuation cases."
+      ],
+      "forbiddenClaims": [
+        "Published npm package",
+        "Stable third-party API guarantee",
+        "Natural-language understanding or AI semantics"
+      ],
+      "relatedPaths": [
+        "/",
+        "/resources/",
+        "/resources/split-text-without-breaking-sentences/",
+        "/resources/social-media-character-limit-splitter/"
+      ]
+    }
+  ]
+}
