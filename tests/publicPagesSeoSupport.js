@@ -10,6 +10,7 @@ export const SEO_TEST_LIMITS = Object.freeze({
     MINIMUM_DESCRIPTION_LENGTH: 120,
     MAXIMUM_DESCRIPTION_LENGTH: 155,
     MINIMUM_ROOT_WORD_COUNT: 25,
+    MINIMUM_LEGAL_WORD_COUNT: 250,
     MINIMUM_COLLECTION_WORD_COUNT: 150,
     MINIMUM_ARTICLE_WORD_COUNT: 500,
     MINIMUM_CODE_LENGTH: 20,
@@ -25,6 +26,7 @@ export const PUBLIC_SEO_PATHS = Object.freeze({
     ROBOTS: "/robots.txt",
     OG_IMAGE: "/assets/img/social-threader-og.png",
     ROOT: "/",
+    PRIVACY: "/privacy/",
     RESOURCE_HUB: "/resources/"
 });
 
@@ -33,6 +35,7 @@ export const PUBLIC_LOOPAWARE_SITE_ID = "2ca5a755-02e2-462c-8bdf-16e5bc303042";
 
 export const PUBLIC_SEO_KINDS = Object.freeze({
     WEB_APPLICATION: "WebApplication",
+    LEGAL_PAGE: "WebPage",
     COLLECTION_PAGE: "CollectionPage",
     ARTICLES: Object.freeze(new Set(["Article", "TechArticle"]))
 });
@@ -124,6 +127,9 @@ export function minimumWordCountForKind(pageKind) {
     }
     if (pageKind === PUBLIC_SEO_KINDS.COLLECTION_PAGE) {
         return SEO_TEST_LIMITS.MINIMUM_COLLECTION_WORD_COUNT;
+    }
+    if (pageKind === PUBLIC_SEO_KINDS.LEGAL_PAGE) {
+        return SEO_TEST_LIMITS.MINIMUM_LEGAL_WORD_COUNT;
     }
     return SEO_TEST_LIMITS.MINIMUM_ARTICLE_WORD_COUNT;
 }

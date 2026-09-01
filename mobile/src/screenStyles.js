@@ -68,6 +68,7 @@ export const screenStyles = StyleSheet.create({
   footer: {
     paddingTop: LAYOUT_VALUES.FOOTER_TOP_PADDING,
     paddingBottom: LAYOUT_VALUES.FOOTER_BOTTOM_PADDING,
+    gap: LAYOUT_VALUES.FOOTER_LINK_GAP,
     alignItems: "center"
   },
   builtByLine: {

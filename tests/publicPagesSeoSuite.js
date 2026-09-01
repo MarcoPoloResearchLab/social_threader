@@ -163,6 +163,26 @@ function assertArticleContract(pageDefinition, pageSnapshot) {
 }
 
 /**
+ * @param {import("./publicPagesSeoSupport.js").PublicPageSnapshot} pageSnapshot
+ * @returns {void}
+ */
+function assertPrivacyPolicyContract(pageSnapshot) {
+    const requiredIdentityValues = [
+        "Social Threader",
+        "com.mprlab.socialthreader",
+        "Vadym Tyemirov",
+        "Marco Polo Research Lab LLC",
+        "legal@mprlab.com"
+    ];
+    for (const requiredIdentityValue of requiredIdentityValues) {
+        assertCondition(
+            pageSnapshot.mainText.includes(requiredIdentityValue),
+            `Privacy policy does not identify ${requiredIdentityValue}`
+        );
+    }
+}
+
+/**
  * @param {Set<string>} titles
  * @param {Set<string>} descriptions
  * @param {Set<string>} headings
@@ -221,7 +241,10 @@ export async function runPublicPagesSeoSuite(page, pass, fail, publicOrigin) {
             pageSnapshots.set(pageDefinition.path, pageSnapshot);
             assertPageIdentity(pageDefinition, pageSnapshot, pageCatalog.publicOrigin);
 
-            if (pageDefinition.kind !== PUBLIC_SEO_KINDS.WEB_APPLICATION) {
+            if (
+                pageDefinition.kind !== PUBLIC_SEO_KINDS.WEB_APPLICATION &&
+                pageDefinition.kind !== PUBLIC_SEO_KINDS.LEGAL_PAGE
+            ) {
                 assertCondition(
                     typeof pageDefinition.evidenceSource === "string",
                     `${pageDefinition.path} lacks an evidence source`
@@ -237,6 +260,14 @@ export async function runPublicPagesSeoSuite(page, pass, fail, publicOrigin) {
             if (PUBLIC_SEO_KINDS.ARTICLES.has(pageDefinition.kind)) {
                 assertArticleContract(pageDefinition, pageSnapshot);
             }
+            if (pageDefinition.path === PUBLIC_SEO_PATHS.PRIVACY) {
+                assertPrivacyPolicyContract(pageSnapshot);
+            }
+
+            assertCondition(
+                pageSnapshot.internalPaths.includes(PUBLIC_SEO_PATHS.PRIVACY),
+                `${pageDefinition.path} lacks the privacy policy link`
+            );
 
             assertUniquePageCopy(titles, descriptions, headings, pageDefinition, pageSnapshot);
             for (const internalPath of pageSnapshot.internalPaths) {
