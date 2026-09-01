@@ -143,6 +143,13 @@ export async function runTransformationBrowserSuite(page, pass, fail, indexUrl, 
             });
             return;
         }
+        if (
+            requestUrl.origin !== publicOrigin &&
+            requestUrl.origin !== transformationApiServer.origin
+        ) {
+            await httpRequest.abort();
+            return;
+        }
         await httpRequest.continue();
     };
 

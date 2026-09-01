@@ -245,6 +245,15 @@ function ThreaderScreen() {
     }
   };
 
+  const handlePrivacyPolicyLinkPress = async () => {
+    try {
+      await dependencies.linking.openURL(MOBILE_EXTERNAL_URLS.PRIVACY_POLICY);
+      setErrorMessage("");
+    } catch (caughtError) {
+      setErrorMessage(MOBILE_COPY.ERROR_OPEN_PRIVACY_POLICY_FAILED);
+    }
+  };
+
   const handleRemoveImagePress = (imageIndex) => {
     setImageRecords((currentImageRecords) =>
       currentImageRecords.filter((_imageRecord, currentIndex) => currentIndex !== imageIndex)
@@ -389,6 +398,15 @@ function ThreaderScreen() {
             >
               {MOBILE_COPY.MPR_LAB_NAME}
             </Text>
+          </Text>
+          <Text
+            testID={MOBILE_TEST_IDS.PRIVACY_POLICY_LINK}
+            accessibilityRole="link"
+            accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.PRIVACY_POLICY_LINK}
+            style={styles.builtByLink}
+            onPress={handlePrivacyPolicyLinkPress}
+          >
+            {MOBILE_COPY.PRIVACY_POLICY_LABEL}
           </Text>
         </View>
       </ScrollView>

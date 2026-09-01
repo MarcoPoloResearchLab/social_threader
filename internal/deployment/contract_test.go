@@ -182,6 +182,9 @@ func TestLocalBlackBoxStackContract(t *testing.T) {
 			t.Errorf("Dockerfile target marker %q is missing", target)
 		}
 	}
+	if !strings.Contains(dockerfile, "COPY privacy /privacy") {
+		t.Error("Pages image does not contain the Social Threader privacy policy")
+	}
 	for _, reservedPagePath := range []string{".nojekyll", "CNAME"} {
 		if strings.Contains(dockerfile, reservedPagePath) {
 			t.Errorf("Pages image claims gateway-owned path %q", reservedPagePath)

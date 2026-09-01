@@ -54,6 +54,7 @@ COPY index.html robots.txt sitemap.xml config-app.json config-ui.yaml /
 COPY assets /assets
 COPY data /data
 COPY js /js
+COPY privacy /privacy
 COPY resources /resources
 
 FROM caddy:2.10.2-alpine AS local-web

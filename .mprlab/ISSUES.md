@@ -8,6 +8,40 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [!] [B008] (P0) Publish the Social Threader privacy policy
+  Goal:
+  Google Play rejects the Social Threader production submission because the declared privacy policy has incorrect identity information.
+
+  Evidence:
+  - Google Play reports `App or developer details do not match`.
+  - The rejected app has the package name `com.mprlab.socialthreader`.
+  - The declared URL is `https://mprlab.com/privacy/`.
+  - The declared page does not identify Social Threader or the matching publisher.
+  - Expected result: The privacy policy identifies the app, publisher, and operating legal entity.
+  - Actual result: Google Play rejects the app and makes it unavailable.
+
+  Requirements:
+  - Publish a policy at `https://threader.mprlab.com/privacy/`.
+  - Identify Social Threader and `com.mprlab.socialthreader`.
+  - Identify the Google Play publisher and Marco Polo Research Lab LLC.
+  - Describe the current browser and mobile data flows.
+  - Add a policy link to each public page.
+  - Add a policy link to the mobile client.
+  - Include the policy in the Pages artifact and sitemap.
+
+  Validation:
+  - Add a Puppeteer contract for the public policy page and links.
+  - Add a mobile test for the policy link.
+  - Run `make browser-test` during the change.
+  - Run `make mobile-check` during the change.
+  - Run `make ci` after the last source change.
+  - Run `git diff --check`.
+
+  Blocked:
+  - The source implementation and complete CI validation completed.
+  - Public acceptance requires the user-owned production lifecycle.
+  - Google acceptance requires the published policy URL and a new Play review.
+
 - [x] [B007] (P1) Add missing Social Threader LoopAware telemetry
   Goal:
   Every published Social Threader page must report to the current production LoopAware site.

@@ -10,10 +10,25 @@
       "title": "Social Threader – Perfectly Sized Social Media Threads",
       "description": "Split your text into platform-friendly chunks. Social Threader is a free, fast tool for creating perfectly sized social media threads.",
       "kind": "WebApplication",
-      "lastModified": "2026-07-30",
+      "lastModified": "2026-09-01",
       "primaryKeyword": "social media thread splitter",
       "conversionGoal": "Start splitting text",
       "relatedPaths": [
+        "/resources/"
+      ]
+    },
+    {
+      "source": "privacy/index.html",
+      "path": "/privacy/",
+      "canonical": "https://threader.mprlab.com/privacy/",
+      "title": "Social Threader Privacy Policy and Data Practices | MPR Lab",
+      "description": "Learn how Social Threader handles app and website data, including local drafts, optional AI edits, authentication, analytics, and deletion requests.",
+      "kind": "WebPage",
+      "lastModified": "2026-09-01",
+      "primaryKeyword": "Social Threader privacy policy",
+      "conversionGoal": "Understand Social Threader data practices",
+      "relatedPaths": [
+        "/",
         "/resources/"
       ]
     },
@@ -24,7 +39,7 @@
       "title": "Social Threader Resources for Better Thread Writing",
       "description": "Practical, repository-backed guides for splitting long text, preserving sentences, adapting character limits, handling images, and using JavaScript.",
       "kind": "CollectionPage",
-      "lastModified": "2026-07-30",
+      "lastModified": "2026-09-01",
       "primaryKeyword": "social media thread writing guides",
       "conversionGoal": "Choose a workflow guide",
       "evidenceSource": "js/constants.js",
@@ -44,7 +59,7 @@
       "title": "Split Text Without Breaking Sentences | Social Threader",
       "description": "Split long text into character-limited chunks while preserving sentence and paragraph boundaries. Follow a tested Social Threader workflow.",
       "kind": "Article",
-      "lastModified": "2026-07-30",
+      "lastModified": "2026-09-01",
       "primaryKeyword": "split text without breaking sentences",
       "secondaryKeywords": [
         "sentence-aware text splitter",
@@ -80,7 +95,7 @@
       "title": "Social Media Character Limit Splitter | Social Threader",
       "description": "Compare 280, 300, 500, and custom character limits, then adapt one source text into readable threads with Social Threader.",
       "kind": "Article",
-      "lastModified": "2026-07-30",
+      "lastModified": "2026-09-01",
       "primaryKeyword": "social media character limit splitter",
       "secondaryKeywords": [
         "Twitter and Bluesky character limits",
@@ -116,7 +131,7 @@
       "title": "Twitter Thread Splitter Tool for 280-Character Posts",
       "description": "Turn long text into 280-character thread posts, reserve room for numbering, and copy each chunk in order with Social Threader.",
       "kind": "Article",
-      "lastModified": "2026-07-30",
+      "lastModified": "2026-09-01",
       "primaryKeyword": "Twitter thread splitter",
       "secondaryKeywords": [
         "split text into tweets",
@@ -152,7 +167,7 @@
       "title": "Create Image and Text Social Threads | Social Threader",
       "description": "Build image-and-text threads with ordered chunks, browser clipboard support, mobile image picking, and honest compatibility guidance.",
       "kind": "Article",
-      "lastModified": "2026-07-30",
+      "lastModified": "2026-09-01",
       "primaryKeyword": "image and text social threads",
       "secondaryKeywords": [
         "social media thread with images",
@@ -188,7 +203,7 @@
       "title": "JavaScript: Split Text by Character Limit | Threader",
       "description": "Learn how Social Threader splits text by character limit in JavaScript while preserving words, sentences, paragraphs, and numbering space.",
       "kind": "TechArticle",
-      "lastModified": "2026-07-30",
+      "lastModified": "2026-09-01",
       "primaryKeyword": "split text by character limit in JavaScript",
       "secondaryKeywords": [
         "preserve sentence boundaries in JavaScript",

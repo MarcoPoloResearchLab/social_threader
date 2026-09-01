@@ -26,6 +26,7 @@ export const MOBILE_COPY = Object.freeze({
   CLEAR_BUTTON_LABEL: "Clear",
   BUILT_BY_PREFIX: "Built by ",
   MPR_LAB_NAME: "Marco Polo Research Lab",
+  PRIVACY_POLICY_LABEL: "Privacy Policy",
   PARAGRAPH_TOGGLE_LABEL: "Paragraphs",
   SENTENCE_TOGGLE_LABEL: "Sentences",
   ENUMERATION_TOGGLE_LABEL: "Enumerate",
@@ -35,6 +36,7 @@ export const MOBILE_COPY = Object.freeze({
   ERROR_SHARE_FAILED: "Unable to open the share sheet.",
   ERROR_IMAGE_PICK_FAILED: "Unable to attach that image.",
   ERROR_OPEN_MPR_LAB_FAILED: "Unable to open Marco Polo Research Lab.",
+  ERROR_OPEN_PRIVACY_POLICY_FAILED: "Unable to open the Privacy Policy.",
   ATTACHED_IMAGE_ALT: "Attached image",
   IMAGE_CHUNK_LABEL: "Image chunk",
   ENUMERATION_TEMPLATE: TEXT_CONTENT.ENUMERATION_TEMPLATE,
@@ -61,7 +63,8 @@ export const MOBILE_TEST_IDS = Object.freeze({
   ATTACH_IMAGE_BUTTON: "attach-image-button",
   CLEAR_BUTTON: "clear-button",
   BUILT_BY_LINE: "built-by-line",
-  BUILT_BY_LINK: "built-by-link"
+  BUILT_BY_LINK: "built-by-link",
+  PRIVACY_POLICY_LINK: "privacy-policy-link"
 });
 
 export const MOBILE_ACCESSIBILITY_LABELS = Object.freeze({
@@ -72,11 +75,13 @@ export const MOBILE_ACCESSIBILITY_LABELS = Object.freeze({
   BREAK_ON_PARAGRAPHS: MOBILE_COPY.PARAGRAPH_TOGGLE_LABEL,
   BREAK_ON_SENTENCES: MOBILE_COPY.SENTENCE_TOGGLE_LABEL,
   ENUMERATE: MOBILE_COPY.ENUMERATION_TOGGLE_LABEL,
-  MPR_LAB_LINK: "Open Marco Polo Research Lab"
+  MPR_LAB_LINK: "Open Marco Polo Research Lab",
+  PRIVACY_POLICY_LINK: "Open Social Threader Privacy Policy"
 });
 
 export const MOBILE_EXTERNAL_URLS = Object.freeze({
-  MPR_LAB: "https://mprlab.com"
+  MPR_LAB: "https://mprlab.com",
+  PRIVACY_POLICY: "https://threader.mprlab.com/privacy/"
 });
 
 export const LAYOUT_VALUES = Object.freeze({
@@ -97,6 +102,7 @@ export const LAYOUT_VALUES = Object.freeze({
   IMAGE_PREVIEW_HEIGHT: 120,
   FOOTER_TOP_PADDING: 10,
   FOOTER_BOTTOM_PADDING: 18,
+  FOOTER_LINK_GAP: 6,
   TIMELINE_RAIL_WIDTH: 32,
   TIMELINE_MARKER_SIZE: 22,
   TIMELINE_LINE_WIDTH: 2,

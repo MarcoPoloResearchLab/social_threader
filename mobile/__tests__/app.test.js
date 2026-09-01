@@ -309,6 +309,21 @@ describe("Social Threader mobile app", () => {
     await pressLinkAsync(component, MOBILE_ACCESSIBILITY_LABELS.MPR_LAB_LINK);
     expect(findText(component, MOBILE_COPY.ERROR_OPEN_MPR_LAB_FAILED)).toBeTruthy();
   });
+
+  it("opens the Social Threader privacy policy from the mobile footer", async () => {
+    const dependencies = createDependencies();
+    const component = renderApp(dependencies);
+    const privacyLink = findLink(component, MOBILE_ACCESSIBILITY_LABELS.PRIVACY_POLICY_LINK);
+
+    expect(privacyLink.props.children).toBe(MOBILE_COPY.PRIVACY_POLICY_LABEL);
+
+    await pressLinkAsync(component, MOBILE_ACCESSIBILITY_LABELS.PRIVACY_POLICY_LINK);
+    expect(dependencies.linking.openURL).toHaveBeenCalledWith(MOBILE_EXTERNAL_URLS.PRIVACY_POLICY);
+
+    dependencies.linking.openURL.mockRejectedValueOnce(new Error("link_down"));
+    await pressLinkAsync(component, MOBILE_ACCESSIBILITY_LABELS.PRIVACY_POLICY_LINK);
+    expect(findText(component, MOBILE_COPY.ERROR_OPEN_PRIVACY_POLICY_FAILED)).toBeTruthy();
+  });
 });
 
 function createDependencies() {
