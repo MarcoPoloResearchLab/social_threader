@@ -9,8 +9,10 @@ It does not enter authentication, usage, audit, or admission paths.
 
 The local frontend serves the static `healthz` resource with no-store.
 Its probe tests the frontend artifact, not the API origin.
-The Pages image contains the same resource. GitHub Pages controls production
-cache headers. I002 keeps that requirement open until a hosting decision is made.
+The Pages image contains the same resource. GitHub Pages uses its production cache policy for the static health resource.
+The operator approved this exception on 2026-09-04. API and local health
+responses still require `Cache-Control: no-store`.
+A cached Pages response proves artifact availability, not current API readiness.
 
 Docker probes use GET and keep failure output. Each probe has a one-second
 startup interval, a 30-second steady interval, and a 30-second startup period.

@@ -252,7 +252,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## Improvements
 
-- [!] [I002] (P1) Standardize HTTP health at `/healthz`.
+- [x] [I002] (P1) Standardize HTTP health at `/healthz`.
   Goal:
   Make `/healthz` the canonical health endpoint for the Social Threader API
   and static web origins. Use the endpoint for readiness without application requests.
@@ -262,7 +262,8 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Publish a static `/healthz` resource for the GitHub Pages origin.
   - Return `200` only when each origin can serve its current application contract.
   - Return a non-success status when a required runtime dependency prevents API service.
-  - Send `Cache-Control: no-store` on every health response.
+  - Send `Cache-Control: no-store` on API and local health responses.
+  - Use the GitHub Pages cache policy for production static health responses.
   - Keep each response free from credentials and internal state.
   - Do not call a paid provider or mutate application state during a probe.
   - Do not record a probe as application usage or an audit event.
@@ -277,7 +278,8 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Update the API, static artifact, orchestration, manifest, documentation, and black-box tests.
 
   Validation:
-  - Verify unauthenticated `GET /healthz` returns `200` and `Cache-Control: no-store` on each origin.
+  - Verify unauthenticated `GET /healthz` returns `200` on each origin.
+  - Verify API and local health responses use `Cache-Control: no-store`.
   - Verify a required dependency failure returns a non-success API status without a provider call.
   - Verify the static publication artifact contains `/healthz`.
   - Verify Docker probes use the required startup and steady intervals.
@@ -285,11 +287,15 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Verify failed probes retain diagnostic evidence.
   - Run `make ci`.
 
-  Blocked:
-  GitHub Pages cannot set the no-store response header. I002 needs a hosting decision.
-  Full CI stops at the existing Expo dependency audit.
-  API, browser, and all 33 mobile tests passed. All container builds passed.
-  The local container returned the static health resource with no-store.
+  Cache policy:
+  The operator approved the GitHub Pages cache-policy exception on 2026-09-04.
+  This exception applies only to production static health responses.
+  API and local health responses still require `Cache-Control: no-store`.
+
+  Resolution:
+  Full `make ci` passed, including API, browser, mobile, and bundle checks.
+  Updated Expo and the image picker to the required patch versions.
+  The approved Pages cache exception removes the remaining contract blocker.
 
 
 - [x] [I001] (P1) Freeze the selected manifest as a versionless contract
