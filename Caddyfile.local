@@ -11,7 +11,9 @@
 	}
 
 	handle /healthz {
-		reverse_proxy social-threader-api:8080
+		root * /srv
+		header Cache-Control no-store
+		file_server
 	}
 
 	handle /auth/* {

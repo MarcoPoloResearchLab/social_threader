@@ -100,6 +100,7 @@ func TestProductionLifecycleContract(t *testing.T) {
 		"http":           "runtime_capability",
 		"public-api":     "caddy_route",
 		"public-health":  "health_check",
+		"website-health": "health_check",
 		"website":        "github_pages",
 		"mobile":         "mobile_application",
 		"authentication": "tauth_tenant",
