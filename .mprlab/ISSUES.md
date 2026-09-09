@@ -327,7 +327,8 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Four real-header checks and the obsolete-snapshot regression failed before the corresponding source changes.
   - The page exposed mpr-ui B066. Shared PR #212 corrects the account-menu viewport position.
   - Final CI passed 44 headless checks, ten browser checks, backend checks, lint, module verification, and 33 mobile tests.
-  - Candidate revision `7c2f9e36453c6081db7641b7efae00c6e271fa39` passed all four local and hosted browser flows.
+  - Final B069 candidate `768f25936497c5aabd426197d21c2100b6e5d9a1` passed local CI and all four browser flows.
+  - Local CI includes the separate Apple branch and B009 correction; the committed I003 branch retains those qualification gates.
   Blocked:
   - B009 prevents the complete mobile CI gate.
   - Hosted run `34301824325` passed browser, API, container, and local-stack checks at `e83e2a5feddd6449213351a27b77623d0a64c531`.

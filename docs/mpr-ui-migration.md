@@ -2,7 +2,7 @@
 
 I003 prepares Social Threader for mpr-ui I009.
 The application source starts at `e64b52587ade8761f1ab580be32de4c3c802e6ae`.
-The shared candidate is `7c2f9e36453c6081db7641b7efae00c6e271fa39`.
+The shared candidate is `768f25936497c5aabd426197d21c2100b6e5d9a1`.
 Its three SHA-256 values are defined in `tests/sharedUiCandidate.js`.
 
 ## Release Unit
@@ -45,6 +45,16 @@ It verifies Google credential exchange, tenant headers, session restoration, too
 The Google SDK and TAuth protocol responses are controlled external boundaries.
 Existing browser and Go suites verify the application transformation contract.
 These checks do not establish live Google acceptance.
+
+## Final Candidate Qualification
+
+B069 passed local `make ci` in the primary checkout.
+The log is `/tmp/social-i003-b069-ci.log`.
+The result includes 44 headless checks, ten browser checks, backend validation, and full mobile validation.
+The checkout includes the separate Apple commit `483bd5f` and its B009 dependency correction.
+Those Apple and mobile changes remain outside the I003 migration PR.
+The browser files match the I003 branch except for the final candidate update.
+The committed I003 branch retains B009 and exact-commit hosted qualification as separate gates.
 
 ## Publication And Acceptance
 
