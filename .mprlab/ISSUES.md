@@ -13,7 +13,9 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   Evidence:
   - Initial `make ci` passed browser, backend, lint, module, and 33 mobile tests.
   - The Expo check requires `expo` version `~57.0.21` and `expo-image-picker` version `~57.0.16`.
-  - The current dependency lock uses `57.0.18` and `57.0.14`, respectively.
+  - The initial dependency lock used `57.0.18` and `57.0.14`, respectively.
+  - Current master updates the image picker to `57.0.16` and Expo to `57.0.20`.
+  - CI after the merge still requires Expo `~57.0.21`.
   Requirements:
   - Update the dependency declarations, lock, and matching config validator.
   - Verify the resulting mobile application contract.

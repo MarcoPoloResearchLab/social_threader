@@ -33,7 +33,9 @@ Its sign-out control extended beyond the left viewport edge.
 B066 [PR #212](https://github.com/MarcoPoloResearchLab/mpr-ui/pull/212) corrects the shared menu calculation and verifies open-menu resize behavior.
 All four candidate flows passed against that correction.
 Final `make ci` passed 44 headless checks, ten browser checks, backend checks, lint, module verification, and 33 mobile tests.
-It then stopped at the same B009 Expo dependency check.
+Current master `7fc9f62e7bf82d8d58fa29e0d9c3b189126b7ca8` was merged forward to resolve the tracker conflict.
+CI after the merge passed the same browser, backend, and mobile tests.
+The updated image picker passes its dependency check. Expo `57.0.20` still requires `~57.0.21` under B009.
 Hosted CI remains pending.
 
 The new browser suite loads all three real shared candidate assets and verifies their SHA-256 values.
