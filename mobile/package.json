@@ -22,7 +22,7 @@
     "check": "npm run sync-shared && npm run test:coverage && node scripts/validate-config.mjs && npx --no-install expo config --type public >/dev/null && npx --no-install expo install --check && npm run bundle:check"
   },
   "dependencies": {
-    "expo": "57.0.20",
+    "expo": "57.0.21",
     "expo-clipboard": "57.0.1",
     "expo-image-picker": "57.0.16",
     "expo-status-bar": "57.0.1",

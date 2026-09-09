@@ -1,12 +1,6 @@
 MOBILE_DIR ?= mobile
 MOBILE_NPM ?= npm
-MOBILE_EAS ?= npx eas-cli
-MOBILE_BUILD_PROFILE ?= production
-MOBILE_IOS_BUILD_PROFILE ?= $(MOBILE_BUILD_PROFILE)
-MOBILE_BUILD_ARGS ?=
-MOBILE_IOS_BUILD_ARGS ?=
-MOBILE_SUBMIT_ARGS ?=
-MOBILE_IOS_SUBMIT_ARGS ?=
+MOBILE_APPLE_BUILD_ARGS ?=
 MOBILE_ANDROID_BUILD_DIR ?= /tmp/social-threader-mobile-android-aab
 MOBILE_ANDROID_VERSION_CODE ?= local
 MOBILE_ANDROID_BUNDLE_ARGS ?=
@@ -21,7 +15,7 @@ ANDROID_HOME ?= $(ANDROID_SDK_ROOT)
 ANDROID_STUDIO_JAVA_HOME ?= /Applications/Android Studio.app/Contents/jbr/Contents/Home
 ANDROID_TOOL_PATH := $(ANDROID_SDK_ROOT)/emulator:$(ANDROID_SDK_ROOT)/platform-tools:$(ANDROID_SDK_ROOT)/cmdline-tools/latest/bin:$(ANDROID_SDK_ROOT)/tools/bin
 
-.PHONY: test browser-test go-test go-vet go-format-check shell-check lint go-mod-verify ci release publish deploy local-config local-up local-down local-logs local-smoke container-check mobile-install mobile-check run-ios run-android build-ios build-android mobile-android-bundle submit-ios submit-android
+.PHONY: test browser-test go-test go-vet go-format-check shell-check lint go-mod-verify ci release publish deploy local-config local-up local-down local-logs local-smoke container-check mobile-install mobile-check run-ios run-android build-ios build-android mobile-android-bundle submit-android
 
 browser-test:
 	npm test
@@ -46,7 +40,7 @@ go-mod-verify:
 
 test: browser-test go-test
 
-ci: test lint go-mod-verify mobile-check
+ci: test lint go-mod-verify mobile-check test-apple-cloud
 
 release publish deploy:
 	@application_root="$$(git rev-parse --show-toplevel)"; \
@@ -93,8 +87,8 @@ run-ios: mobile-install
 run-android: mobile-install
 	@cd "$(MOBILE_DIR)" && ANDROID_HOME="$(ANDROID_HOME)" ANDROID_SDK_ROOT="$(ANDROID_SDK_ROOT)" SOCIAL_THREADER_MOBILE_PORT="$(MOBILE_PORT)" PATH="$(ANDROID_TOOL_PATH):$$PATH" $(MOBILE_NPM) run android -- --port "$(MOBILE_PORT)" --localhost --clear
 
-build-ios: mobile-check
-	@cd "$(MOBILE_DIR)" && EAS_BUILD_PROFILE="$(MOBILE_IOS_BUILD_PROFILE)" $(MOBILE_EAS) build --platform ios --profile "$(MOBILE_IOS_BUILD_PROFILE)" $(MOBILE_BUILD_ARGS) $(MOBILE_IOS_BUILD_ARGS)
+build-ios:
+	@/bin/sh "$(CURDIR)/$(MOBILE_DIR)/scripts/build-ios.sh" $(MOBILE_APPLE_BUILD_ARGS)
 
 build-android: mobile-android-bundle
 
@@ -102,9 +96,14 @@ mobile-android-bundle: mobile-check
 	@echo "==> [mobile-android-bundle] Building signed Social Threader Android App Bundle"
 	@ANDROID_HOME="$(ANDROID_HOME)" ANDROID_SDK_ROOT="$(ANDROID_SDK_ROOT)" ANDROID_STUDIO_JAVA_HOME="$(ANDROID_STUDIO_JAVA_HOME)" node "$(MOBILE_ANDROID_BUNDLE_SCRIPT)" --mobile-dir "$(MOBILE_DIR)" --build-dir "$(MOBILE_ANDROID_BUILD_DIR)" --android-sdk-root "$(ANDROID_SDK_ROOT)" --version-code "$(MOBILE_ANDROID_VERSION_CODE)" $(MOBILE_ANDROID_BUNDLE_ARGS)
 
-submit-ios: mobile-check
-	@cd "$(MOBILE_DIR)" && $(MOBILE_EAS) submit --platform ios --latest $(MOBILE_SUBMIT_ARGS) $(MOBILE_IOS_SUBMIT_ARGS)
-
 submit-android:
 	@echo "==> [submit-android] Submitting Social Threader Android App Bundle to Google Play"
 	@node "$(MOBILE_ANDROID_PUBLISH_SCRIPT)" --mobile-dir "$(MOBILE_DIR)" $(MOBILE_ANDROID_PUBLISH_ARGS)
+
+.PHONY: test-apple-cloud
+test-apple-cloud:
+	node --test mobile/scripts/apple-cloud.integration.mjs
+
+.PHONY: mobile-resolve-dependencies
+mobile-resolve-dependencies:
+	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) install --package-lock-only --ignore-scripts

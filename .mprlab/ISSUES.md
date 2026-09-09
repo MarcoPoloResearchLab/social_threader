@@ -8,7 +8,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
-- [ ] [B009] (P1) Update the Expo dependency set
+- [x] [B009] (P1) Update the Expo dependency set
   Goal: The canonical mobile dependency check passes.
   Evidence:
   - Initial `make ci` passed browser, backend, lint, module, and 33 mobile tests.
@@ -21,6 +21,11 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Verify the resulting mobile application contract.
   Validation:
   - Run `make mobile-check` and `make ci`.
+  Resolution:
+  Expo and its lock now use 57.0.21. The source config validator requires the same version.
+  The focused mobile check and final CI passed.
+  The suite includes 33 mobile tests with full coverage, both production JavaScript bundles, and three Apple adapter tests.
+  The final log is `/tmp/social-apple-final-ci-corrected.log`.
 
 - [!] [B008] (P0) Publish the Social Threader privacy policy
   Goal:
@@ -265,6 +270,54 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Make sure that Metro shows no error.
 
 ## Improvements
+
+- [ ] [I005] (P1) Resolve the mobile dependency audit findings
+  Goal:
+  Qualify the declared mobile runtime and build dependencies.
+
+  Evidence:
+  The audit after B009 reports 13 affected production-dependency packages and 14 packages with development dependencies included.
+  The complete dependency set has 11 moderate and three high findings.
+  Direct advisories affect baseline-browser-mapping, brace-expansion, browserslist, js-yaml, and uuid.
+  Some reported production dependencies supply Expo build tooling. Package classification alone does not prove installed-app exposure.
+  The audit recommends an obsolete Expo downgrade for some transitive findings. This is not the selected correction.
+  The logs are `/tmp/social-apple-runtime-dependency-audit.json` and `/tmp/social-apple-build-dependency-audit.json`.
+
+  Requirements:
+  - Update affected dependencies within the current Expo contract.
+  - Verify application bundles and the final repository CI.
+  - Record any remaining advisory and its actual application or build exposure.
+
+- [-] [I004] (P1) Use the shared Xcode Cloud release flow
+  Goal:
+  Build Apple release artifacts through the single MPR Lab Xcode Cloud flow.
+
+  Requirements:
+  - Apply the shared Apple guide from MPR Governor.
+  - Declare each native project and shared scheme in `.mprlab/apple-build.json`.
+  - Use the shared Gateway cloud operation and its recorded Apple build number.
+  - Use the App Store Connect build that Xcode Cloud submits.
+  - Remove local Apple release signing during the migration.
+  - Keep public store release under operator control.
+
+  Implementation:
+  The shared Apple guide and related mobile rules are installed.
+  Gateway F010 supplies the shared operation.
+  The Apple build target now forwards the canonical shell adapter.
+  The EAS build and submission commands and their configuration are removed.
+  The public adapter tests and final CI passed.
+  Native preparation and product declaration remain open.
+  Apple account setup and a hosted build remain required provider acceptance steps.
+
+  Validation:
+  The shared Apple and mobile guide checks passed.
+  The full Governor check retains unrelated differences observed before this migration.
+  The current iOS bundle identifier differs from the existing App Store Connect record.
+  The three new integration tests first failed against the EAS implementation.
+  The shared shell adapter preserves exact arguments, provider output, and exit status with an empty tool search path.
+  B009 corrects the dependency mismatch that blocked mobile validation.
+  The final log is `/tmp/social-apple-final-ci-corrected.log`.
+  I005 records the remaining dependency audit findings.
 
 - [x] [I002] (P1) Standardize HTTP health at `/healthz`.
   Goal:
