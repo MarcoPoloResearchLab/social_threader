@@ -164,6 +164,7 @@ export const HTTP_VALUES = Object.freeze({
 
 /** @type {Readonly<Record<string, string>>} */
 export const LOG_MESSAGES = Object.freeze({
+    AUTH_SNAPSHOT_FAILURE: "Shared authentication snapshot failed.",
     COPY_FAILURE: "Failed to copy chunk to clipboard",
     CLIPBOARD_UNAVAILABLE: "Clipboard API is not available",
     IMAGE_READ_FAILURE: "Unable to read file as data URL",

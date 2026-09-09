@@ -3,17 +3,8 @@
  * @fileoverview Reconciles documented mpr-ui startup snapshots with lifecycle consumers.
  */
 
-import { AUTH_LIFECYCLE_STATUS } from "../constants.js";
-
-const AUTH_PROFILE_KEYS = Object.freeze([
-    "user_email",
-    "email",
-    "user_display_name",
-    "display",
-    "user_id",
-    "user_avatar_url",
-    "avatar_url"
-]);
+import { AUTH_LIFECYCLE_STATUS, LOG_MESSAGES } from "../constants.js";
+import { loggingAdapter } from "../utils/logging.js";
 
 /**
  * Reconciles an already-settled mpr-ui lifecycle without reading component internals.
@@ -38,8 +29,8 @@ export async function reconcileMprUiAuthLifecycle(input) {
         } else if (snapshotStatus === AUTH_LIFECYCLE_STATUS.UNAUTHENTICATED) {
             input.handleUnauthenticated();
         }
-    } catch {
-        // Document lifecycle events remain authoritative when optional snapshot reconciliation fails.
+    } catch (error) {
+        loggingAdapter.reportError(LOG_MESSAGES.AUTH_SNAPSHOT_FAILURE, error);
     }
 }
 
@@ -61,41 +52,11 @@ function isMprUiSnapshotNamespace(namespace) {
  * @returns {string}
  */
 function readSnapshotStatus(snapshot) {
-    if (typeof snapshot !== "object" || snapshot === null) {
+    if (typeof snapshot !== "object" || snapshot === null || !("status" in snapshot)) {
         return AUTH_LIFECYCLE_STATUS.UNKNOWN;
     }
-    if (
-        ("status" in snapshot && snapshot.status === AUTH_LIFECYCLE_STATUS.AUTHENTICATED) ||
-        ("authenticated" in snapshot && snapshot.authenticated === true)
-    ) {
-        return AUTH_LIFECYCLE_STATUS.AUTHENTICATED;
-    }
-    if (
-        ("status" in snapshot && snapshot.status === AUTH_LIFECYCLE_STATUS.UNAUTHENTICATED) ||
-        ("authenticated" in snapshot && snapshot.authenticated === false)
-    ) {
-        return AUTH_LIFECYCLE_STATUS.UNAUTHENTICATED;
-    }
-    if (
-        ("profile" in snapshot && looksLikeProfile(snapshot.profile)) ||
-        looksLikeProfile(snapshot)
-    ) {
-        return AUTH_LIFECYCLE_STATUS.AUTHENTICATED;
+    if (snapshot.status === AUTH_LIFECYCLE_STATUS.AUTHENTICATED || snapshot.status === AUTH_LIFECYCLE_STATUS.UNAUTHENTICATED) {
+        return snapshot.status;
     }
     return AUTH_LIFECYCLE_STATUS.UNKNOWN;
-}
-
-/**
- * @param {unknown} value Documented profile-shaped snapshot value.
- * @returns {boolean}
- */
-function looksLikeProfile(value) {
-    if (typeof value !== "object" || value === null) {
-        return false;
-    }
-    const profileRecord = /** @type {Record<string, unknown>} */ (value);
-    return AUTH_PROFILE_KEYS.some((profileKey) => {
-        const profileValue = profileRecord[profileKey];
-        return typeof profileValue === "string" && profileValue.trim() !== "";
-    });
 }

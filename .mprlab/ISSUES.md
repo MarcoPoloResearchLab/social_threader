@@ -8,6 +8,18 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [ ] [B009] (P1) Update the Expo dependency set
+  Goal: The canonical mobile dependency check passes.
+  Evidence:
+  - Initial `make ci` passed browser, backend, lint, module, and 33 mobile tests.
+  - The Expo check requires `expo` version `~57.0.21` and `expo-image-picker` version `~57.0.16`.
+  - The current dependency lock uses `57.0.18` and `57.0.14`, respectively.
+  Requirements:
+  - Update the dependency declarations, lock, and matching config validator.
+  - Verify the resulting mobile application contract.
+  Validation:
+  - Run `make mobile-check` and `make ci`.
+
 - [!] [B008] (P0) Publish the Social Threader privacy policy
   Goal:
   Google Play rejects the Social Threader production submission because the declared privacy policy has incorrect identity information.
@@ -251,6 +263,26 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Make sure that Metro shows no error.
 
 ## Improvements
+
+- [!] [I003] (P1) {B009} Adopt the shared provider-map contract
+  Goal: Social Threader uses the current mpr-ui config and authentication lifecycle.
+  Requirements:
+  - Convert both config environments and their dependent fixtures to the provider map.
+  - Preserve the Google client, tenant, origins, and session endpoint.
+  - Verify the real shared header through controlled Google and TAuth boundaries.
+  - Preserve guest splitting and authenticated transformation behavior.
+  Validation:
+  - Run focused browser checks before production changes.
+  - Run final `make ci` and inspect hosted CI.
+  - Complete shared publication, cache transition, and real Google acceptance before activation.
+  Results:
+  - Four real-header checks and the obsolete-snapshot regression failed before the corresponding source changes.
+  - The page exposed mpr-ui B066. Shared PR #212 corrects the account-menu viewport position.
+  - Final CI passed 44 headless checks, ten browser checks, backend checks, lint, module verification, and 33 mobile tests.
+  - Candidate revision `7c2f9e36453c6081db7641b7efae00c6e271fa39` passed all four local and hosted browser flows.
+  Blocked:
+  - B009 prevents the complete mobile CI gate. Hosted CI remains pending.
+  - Shared publication, cache transition, and real Google acceptance remain pending.
 
 - [x] [I001] (P1) Freeze the selected manifest as a versionless contract
   Resolved: removed the numbered manifest envelope and stale mobile publication member, kept only current typed resources, and added a contract test that rejects numbered envelope drift.
