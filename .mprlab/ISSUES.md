@@ -329,7 +329,9 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Final CI passed 44 headless checks, ten browser checks, backend checks, lint, module verification, and 33 mobile tests.
   - Candidate revision `7c2f9e36453c6081db7641b7efae00c6e271fa39` passed all four local and hosted browser flows.
   Blocked:
-  - B009 prevents the complete mobile CI gate. Hosted CI remains pending.
+  - B009 prevents the complete mobile CI gate.
+  - Hosted run `34301824325` passed browser, API, container, and local-stack checks at `e83e2a5feddd6449213351a27b77623d0a64c531`.
+  - Its mobile job reports the same Expo dependency mismatch.
   - Shared publication, cache transition, and real Google acceptance remain pending.
 
 - [x] [I001] (P1) Freeze the selected manifest as a versionless contract

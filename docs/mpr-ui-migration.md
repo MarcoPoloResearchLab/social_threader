@@ -36,7 +36,8 @@ Final `make ci` passed 44 headless checks, ten browser checks, backend checks, l
 Current master `7fc9f62e7bf82d8d58fa29e0d9c3b189126b7ca8` was merged forward to resolve the tracker conflict.
 CI after the merge passed the same browser, backend, and mobile tests.
 The updated image picker passes its dependency check. Expo `57.0.20` still requires `~57.0.21` under B009.
-Hosted CI remains pending.
+Hosted CI at `e83e2a5feddd6449213351a27b77623d0a64c531` passed browser, API, container, and local-stack checks.
+The [hosted run](https://github.com/MarcoPoloResearchLab/social_threader/actions/runs/34301824325) confirms the same Expo failure under B009.
 
 The new browser suite loads all three real shared candidate assets and verifies their SHA-256 values.
 It covers local and hosted environments at 390 and 1280 pixels.
