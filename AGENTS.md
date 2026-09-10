@@ -119,6 +119,7 @@ Read these files before editing:
 - `.mprlab/issues-md-format.md`: issue tracker format and recurring identifier rules.
 - `.mprlab/ISSUES.md`: active issue tracker.
 - `.mprlab/AGENTS.GIT.md`: Git and pull request workflow.
+- `.mprlab/AGENTS.APPLE.md`: Apple application builds and distribution.
 - `.mprlab/AGENTS.API.md`: RESTful HTTP and gRPC API guidance.
 - `.mprlab/AGENTS.GO.md`: Go guidance.
 - `.mprlab/AGENTS.MOBILE.md`: mobile client guidance.

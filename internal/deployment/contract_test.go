@@ -50,13 +50,24 @@ type browserUIConfig struct {
 		Description string   `yaml:"description"`
 		Origins     []string `yaml:"origins"`
 		Auth        struct {
-			TAuthURL       string `yaml:"tauthUrl"`
-			GoogleClientID string `yaml:"googleClientId"`
-			TenantID       string `yaml:"tenantId"`
-			LoginPath      string `yaml:"loginPath"`
-			LogoutPath     string `yaml:"logoutPath"`
-			NoncePath      string `yaml:"noncePath"`
-			SessionPath    string `yaml:"sessionPath"`
+			TAuthURL    string `yaml:"tauthUrl"`
+			TenantID    string `yaml:"tenantId"`
+			LogoutPath  string `yaml:"logoutPath"`
+			SessionPath string `yaml:"sessionPath"`
+			Providers   struct {
+				Google struct {
+					Enabled   bool   `yaml:"enabled"`
+					ClientID  string `yaml:"clientId"`
+					LoginPath string `yaml:"loginPath"`
+					NoncePath string `yaml:"noncePath"`
+				} `yaml:"google"`
+				Apple struct {
+					Enabled bool `yaml:"enabled"`
+				} `yaml:"apple"`
+				Password struct {
+					Enabled bool `yaml:"enabled"`
+				} `yaml:"password"`
+			} `yaml:"providers"`
 		} `yaml:"auth"`
 	} `yaml:"environments"`
 }
@@ -301,11 +312,14 @@ func TestBrowserProfileAndMprUIContract(t *testing.T) {
 		t.Fatalf("hosted mpr-ui profile=%+v", hostedUIProfile)
 	}
 	for _, environment := range uiConfig.Environments {
-		if environment.Auth.GoogleClientID == "" ||
+		if !environment.Auth.Providers.Google.Enabled ||
+			environment.Auth.Providers.Apple.Enabled ||
+			environment.Auth.Providers.Password.Enabled ||
+			environment.Auth.Providers.Google.ClientID == "" ||
 			environment.Auth.TenantID != "social-threader" ||
-			environment.Auth.LoginPath != "/auth/google" ||
+			environment.Auth.Providers.Google.LoginPath != "/auth/google" ||
 			environment.Auth.LogoutPath != "/auth/logout" ||
-			environment.Auth.NoncePath != "/auth/nonce" ||
+			environment.Auth.Providers.Google.NoncePath != "/auth/nonce" ||
 			environment.Auth.SessionPath != "/auth/session" {
 			t.Errorf("mpr-ui auth profile is incomplete: %+v", environment.Auth)
 		}

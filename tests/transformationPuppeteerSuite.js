@@ -133,12 +133,19 @@ export async function runTransformationBrowserSuite(page, pass, fail, indexUrl, 
                     `      - "${publicOrigin}"`,
                     "    auth:",
                     "      tauthUrl: \"\"",
-                    "      googleClientId: \"browser-test.apps.googleusercontent.com\"",
                     "      tenantId: \"social-threader\"",
-                    "      loginPath: \"/auth/google\"",
                     "      logoutPath: \"/auth/logout\"",
-                    "      noncePath: \"/auth/nonce\"",
-                    "      sessionPath: \"/auth/session\""
+                    "      sessionPath: \"/auth/session\"",
+                    "      providers:",
+                    "        google:",
+                    "          enabled: true",
+                    "          clientId: \"browser-test.apps.googleusercontent.com\"",
+                    "          loginPath: \"/auth/google\"",
+                    "          noncePath: \"/auth/nonce\"",
+                    "        apple:",
+                    "          enabled: false",
+                    "        password:",
+                    "          enabled: false"
                 ].join("\n")
             });
             return;

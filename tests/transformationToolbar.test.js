@@ -102,4 +102,22 @@ export async function runTransformationToolbarTests(runTest) {
         );
         assertEqual(fixture.gateway.requests.length, 0, "Startup reconciliation should not probe the protected API");
     });
+
+    await runTest("obsolete snapshot shapes keep protected toolbar controls disabled", async () => {
+        for (const snapshot of [{ authenticated: true }, { user_id: "test-user" }, { profile: { user_id: "test-user" } }]) {
+            const fixture = createCoordinatorFixture();
+            enterText(fixture.editorElement, SOURCE_TEXT);
+            await reconcileMprUiAuthLifecycle({
+                namespace: {
+                    async whenAutoOrchestrationReady() {},
+                    async resolveAuthProfileSnapshot() { return snapshot; }
+                },
+                target: "#socialThreaderHeader",
+                handleAuthenticated: () => fixture.coordinator.handleAuthenticatedLifecycle(),
+                handleUnauthenticated: () => fixture.coordinator.handleUnauthenticatedLifecycle()
+            });
+            assertEqual(getOperationButton(fixture.toolbarElement, "polish").disabled, true, "Only the canonical status field can enable protected controls");
+            assertEqual(fixture.gateway.requests.length, 0, "An obsolete snapshot cannot send a protected request");
+        }
+    });
 }
