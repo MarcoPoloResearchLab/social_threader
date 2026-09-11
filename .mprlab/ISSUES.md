@@ -8,6 +8,29 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B010] (P1) Correct the mobile CI dependency versions
+  Goal: The mobile CI dependency check passes.
+  Evidence:
+  - Hosted run `34632566979` and local `make ci` passed all 33 mobile tests.
+  - The Expo dependency check rejected three installed versions.
+  - Expected result: The installed dependencies satisfy the Expo requirements.
+  - Actual result: The mobile CI job fails at `expo install --check`.
+  Requirements:
+  - Use `expo` version `57.0.22`.
+  - Use `expo-clipboard` version `57.0.2`.
+  - Use `expo-image-picker` version `57.0.17`.
+  - Update the dependency lock and config assertions.
+  - Keep the Expo dependency check.
+  Validation:
+  - Confirm that the updated config assertions reject the previous versions.
+  - Run `make mobile-check` and `make ci`.
+  Resolution:
+  - The three dependencies, lock, and config assertions use the required versions.
+  - The updated config validator rejected the previous Expo version before the dependency change.
+  - `make mobile-check` and the final `make ci` completed with exit code zero.
+  - Validation includes 33 mobile tests with full coverage and both mobile JavaScript bundles.
+  - The final CI log is `/tmp/social-threader-ci-final.log`.
+
 - [x] [B009] (P1) Update the Expo dependency set
   Goal: The canonical mobile dependency check passes.
   Evidence:
