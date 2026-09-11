@@ -271,23 +271,6 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## Improvements
 
-- [ ] [I005] (P1) Resolve the mobile dependency audit findings
-  Goal:
-  Qualify the declared mobile runtime and build dependencies.
-
-  Evidence:
-  The audit after B009 reports 13 affected production-dependency packages and 14 packages with development dependencies included.
-  The complete dependency set has 11 moderate and three high findings.
-  Direct advisories affect baseline-browser-mapping, brace-expansion, browserslist, js-yaml, and uuid.
-  Some reported production dependencies supply Expo build tooling. Package classification alone does not prove installed-app exposure.
-  The audit recommends an obsolete Expo downgrade for some transitive findings. This is not the selected correction.
-  The logs are `/tmp/social-apple-runtime-dependency-audit.json` and `/tmp/social-apple-build-dependency-audit.json`.
-
-  Requirements:
-  - Update affected dependencies within the current Expo contract.
-  - Verify application bundles and the final repository CI.
-  - Record any remaining advisory and its actual application or build exposure.
-
 - [-] [I004] (P1) Use the shared Xcode Cloud release flow
   Goal:
   Build Apple release artifacts through the single MPR Lab Xcode Cloud flow.
@@ -318,6 +301,23 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   B009 corrects the dependency mismatch that blocked mobile validation.
   The final log is `/tmp/social-apple-final-ci-corrected.log`.
   I005 records the remaining dependency audit findings.
+
+- [ ] [I005] (P1) Resolve the mobile dependency audit findings
+  Goal:
+  Qualify the declared mobile runtime and build dependencies.
+
+  Evidence:
+  The audit after B009 reports 13 affected production-dependency packages and 14 packages with development dependencies included.
+  The complete dependency set has 11 moderate and three high findings.
+  Direct advisories affect baseline-browser-mapping, brace-expansion, browserslist, js-yaml, and uuid.
+  Some reported production dependencies supply Expo build tooling. Package classification alone does not prove installed-app exposure.
+  The audit recommends an obsolete Expo downgrade for some transitive findings. This is not the selected correction.
+  The logs are `/tmp/social-apple-runtime-dependency-audit.json` and `/tmp/social-apple-build-dependency-audit.json`.
+
+  Requirements:
+  - Update affected dependencies within the current Expo contract.
+  - Verify application bundles and the final repository CI.
+  - Record any remaining advisory and its actual application or build exposure.
 
 - [x] [I002] (P1) Standardize HTTP health at `/healthz`.
   Goal:
@@ -401,12 +401,13 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Cadence: run weekly during active development and before each release cut.
   - Validate section names, identifier prefixes, recurrence suffixes, priority markers, dependencies, and duplicate IDs against the current `issues-md-format.md`.
   - Reconcile stale statuses, duplicate issues, broken references, obsolete instructions, and entries filed under the wrong section.
-  - Move completed non-recurring history to the repository issue archive or durable documentation when the active tracker becomes noisy.
+  - Before archival, update source documents with durable results from each resolved non-recurring issue.
+  - Preserve the complete issue entry and its ID in the repository archive.
   - Keep active, blocked, planning, and recurring entries visible in `ISSUES.md`.
 
   Deliverables:
   - Normalized `ISSUES.md` structure and statuses.
-  - Updated issue archive or docs when completed entries are removed from the active tracker.
+  - Updated archive with complete entries removed from the active tracker.
   - A short `Last run:` note summarizing the cleanup and any follow-up issues filed.
 
   Validation:
@@ -443,11 +444,11 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Cadence: run monthly, before large refactors, and after major framework or runtime changes.
   - Review the codebase, docs, and workflow against `AGENTS.md`, `POLICY.md`, stack guides, and the current architecture notes.
   - Look for drift from forward-only contracts, edge-validation boundaries, smart-constructor usage, testing policy, and module ownership.
-  - Record findings as new Maintenance issues with concrete scope, priority, and validation.
+  - Classify each finding by its requested outcome. Record concrete scope, priority, and validation.
   - Close the pass with a no-action note only when the review finds no actionable drift.
 
   Deliverables:
-  - New Maintenance issues for each actionable architecture or policy drift finding.
+  - Correctly classified issues for each actionable architecture or policy drift finding.
   - Updated notes on areas reviewed and areas intentionally left unchanged.
   - A short `Last run:` note with the review scope and outcome.
 
@@ -463,9 +464,9 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   Requirements:
   - Cadence: run weekly for active apps and before each release cut.
   - Inspect package managers, lockfiles, language toolchains, container bases, and generated clients for known vulnerabilities or stale direct dependencies.
-  - Review auth, secret, CORS, CSP, SQL, network, and permission-sensitive configuration for drift from the current contract.
+  - Review auth, secret, CORS, CSP, SQL, network, and service-authorization configuration for drift from the current contract.
   - Prefer current supported dependencies; do not add compatibility shims for obsolete dependency behavior.
-  - File separate Maintenance or BugFix issues for each actionable vulnerability, unsupported runtime, or security-contract gap.
+  - File each actionable vulnerability, unsupported runtime, or security-contract gap under its outcome-based issue section.
 
   Deliverables:
   - Documented audit commands or data sources used for the pass.
@@ -506,7 +507,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Cadence: run monthly and before large refactors.
   - Scan for dead code, unused exports, duplicated literals, silent fallbacks, legacy aliases, compatibility reads, and zero-but-invalid domain states.
   - Check static analysis, coverage, schema, and contract guards that are supposed to prevent drift.
-  - File focused Maintenance issues for each concrete violation instead of broad cleanup placeholders.
+  - File each concrete violation under its outcome-based issue section.
   - Keep the current canonical contract only; do not preserve obsolete behavior unless a product requirement explicitly says so.
 
   Deliverables:
