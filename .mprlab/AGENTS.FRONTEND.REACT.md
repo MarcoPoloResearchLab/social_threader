@@ -36,6 +36,9 @@ Framework guidance for React frontends. Use this only when the repo actually use
 
 ## Testing
 
+- For a behavior change, start with an integration test through the real page or app shell.
+- Use dependency injection for integration scenarios that are difficult to reproduce.
+- Keep the product logic under test real.
 - Prefer integration and end-to-end coverage through the real page or app shell.
 - For backend-adapter changes, add adapter contract tests before broader UI assertions.
 - For visible workflow changes, assert rendered behavior, DOM state, emitted events, requests, or downloaded artifacts.
