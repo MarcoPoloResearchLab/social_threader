@@ -5,21 +5,35 @@ environments:
       - "http://localhost:4173"
     auth:
       tauthUrl: ""
-      googleClientId: "991677581607-r0dj8q6irjagipali0jpca7nfp8sfj9r.apps.googleusercontent.com"
       tenantId: "social-threader"
-      loginPath: "/auth/google"
       logoutPath: "/auth/logout"
-      noncePath: "/auth/nonce"
       sessionPath: "/auth/session"
+      providers:
+        google:
+          enabled: true
+          clientId: "991677581607-r0dj8q6irjagipali0jpca7nfp8sfj9r.apps.googleusercontent.com"
+          loginPath: "/auth/google"
+          noncePath: "/auth/nonce"
+        apple:
+          enabled: false
+        password:
+          enabled: false
 
   - description: "Social Threader Hosted"
     origins:
       - "https://threader.mprlab.com"
     auth:
       tauthUrl: "https://tauth-api.mprlab.com"
-      googleClientId: "991677581607-r0dj8q6irjagipali0jpca7nfp8sfj9r.apps.googleusercontent.com"
       tenantId: "social-threader"
-      loginPath: "/auth/google"
       logoutPath: "/auth/logout"
-      noncePath: "/auth/nonce"
       sessionPath: "/auth/session"
+      providers:
+        google:
+          enabled: true
+          clientId: "991677581607-r0dj8q6irjagipali0jpca7nfp8sfj9r.apps.googleusercontent.com"
+          loginPath: "/auth/google"
+          noncePath: "/auth/nonce"
+        apple:
+          enabled: false
+        password:
+          enabled: false

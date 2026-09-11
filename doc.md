@@ -38,7 +38,7 @@ LLM Proxy owns model-provider routing and provider credentials. Social Threader 
 
 `js/core/transformationCoordinator.js` owns request state and editor revisions. It reacts only to the documented `mpr-ui` authentication lifecycle.
 
-`js/core/authLifecycle.js` uses the documented public `mpr-ui` snapshot when that optional helper is present. It reconciles an already-settled session without inspecting component state, cookies, or tokens.
+`js/core/authLifecycle.js` uses the documented public `mpr-ui` snapshot when that optional helper is present. It reads the canonical `status` field to reconcile an existing session. Guest controls remain available when the shared helper is absent. Snapshot failures include operation context in the application log.
 
 `js/core/gateway.js` is the only browser transport adapter. It includes credentials, validates JSON, and propagates cancellation.
 

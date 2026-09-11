@@ -14,7 +14,8 @@ import (
 
 func TestAPIContractThroughRealHTTPListener(testingInstance *testing.T) {
 	transformer := &fakeTransformer{response: responseWithText("listener result")}
-	api := newTestAPI(testingInstance, transformer, defaultPolicy(), &bytes.Buffer{})
+	var logs bytes.Buffer
+	api := newTestAPI(testingInstance, transformer, defaultPolicy(), &logs)
 	testServer := httptest.NewServer(api)
 	defer testServer.Close()
 
@@ -25,6 +26,9 @@ func TestAPIContractThroughRealHTTPListener(testingInstance *testing.T) {
 	closeResponseBody(testingInstance, healthResponse)
 	if healthResponse.StatusCode != http.StatusOK {
 		testingInstance.Fatalf("health status=%d", healthResponse.StatusCode)
+	}
+	if healthResponse.Header.Get("Cache-Control") != "no-store" || logs.Len() != 0 {
+		testingInstance.Fatal("health response must not be cached or logged as usage")
 	}
 
 	transformationRequest, requestError := http.NewRequest(

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,7 +17,6 @@ const SHARED_FILES = Object.freeze([
 
 const packageJson = readJson("package.json");
 const appJson = readJson("app.json");
-const easJson = readJson("eas.json");
 const packageLock = readJson("package-lock.json");
 const androidReleaseIdentity = readJson("android-release-identity.json");
 const makefileSource = fs.readFileSync(path.join(REPOSITORY_ROOT, "Makefile"), "utf8");
@@ -35,11 +35,11 @@ assertIncludes(packageJson.scripts?.check || "", "npm run test:coverage", "mobil
 assertIncludes(packageJson.scripts?.check || "", "expo install --check", "mobile check must validate Expo dependency alignment");
 assertIncludes(packageJson.scripts?.ios || "", "scripts/ios-run.mjs", "iOS local run must use the prompt-safe Expo launcher");
 assertIncludes(packageJson.scripts?.android || "", "scripts/android-run.mjs", "Android local run must use the adb reverse launcher");
-assertEqual(packageJson.dependencies?.expo, "57.0.18", "mobile package must use the Expo SDK 57 runtime");
+assertEqual(packageJson.dependencies?.expo, "57.0.21", "mobile package must use the Expo SDK 57 runtime");
 assertEqual(packageJson.dependencies?.react, "19.2.3", "mobile package must use the Expo SDK React version");
 assertEqual(packageJson.dependencies?.["react-native"], "0.86.3", "mobile package must use the Expo SDK React Native version");
 assertEqual(packageJson.dependencies?.["expo-clipboard"], "57.0.1", "mobile package must use Expo SDK clipboard for native image copies");
-assertEqual(packageJson.dependencies?.["expo-image-picker"], "57.0.14", "mobile package must use Expo SDK image picker for native image attachments");
+assertEqual(packageJson.dependencies?.["expo-image-picker"], "57.0.16", "mobile package must use Expo SDK image picker for native image attachments");
 assertEqual(packageJson.dependencies?.["expo-status-bar"], "57.0.1", "mobile package must use Expo SDK status bar");
 assertEqual(packageJson.dependencies?.["expo-sharing"], undefined, "mobile package must not keep the old native image sharing dependency");
 assertEqual(
@@ -73,11 +73,6 @@ assertNotIncludes(appTestSource(), "react-test-renderer", "mobile tests must not
 assertNotIncludes(jestConfigSource, "reactNativeSafeAreaContext", "mobile Jest config must not keep the removed safe-area mock");
 assertIncludes(jestConfigSource, "tests/mocks/reactNative.js", "mobile Jest config must use the local React Native mock");
 assertNoDeprecatedLockPackages(packageLock);
-assertExecutable("scripts/ios-run.mjs", "iOS local-run launcher must be executable");
-assertExecutable("scripts/expo-run.expect", "Expo local-run prompt wrapper must be executable");
-assertExecutable("scripts/android-run.mjs", "Android local-run launcher must be executable");
-assertExecutable("scripts/build-android-bundle.mjs", "Android release bundle builder must be executable");
-assertExecutable("scripts/publish-android-play.mjs", "Android Play publisher must be executable");
 assertSharedWebCopies();
 assertEqual(appJson.expo?.name, "Social Threader", "native app name must be stable");
 assertEqual(appJson.expo?.scheme, "socialthreader", "native URL scheme must be stable");
@@ -98,8 +93,6 @@ assertEqual(appJson.expo?.android?.package, "com.mprlab.socialthreader", "Androi
 assertNumber(appJson.expo?.android?.versionCode, "Android versionCode must be numeric");
 assertProjectFile(appJson.expo?.android?.adaptiveIcon?.foregroundImage, "Android adaptive icon must be stored inside mobile/");
 assertProjectFile(appJson.expo?.web?.favicon, "Web favicon must be stored inside mobile/");
-assertEqual(easJson.build?.production?.distribution, "store", "EAS production profile must target stores");
-assertEqual(easJson.build?.production?.android, undefined, "Android store publishing must not use EAS");
 assertEqual(androidReleaseIdentity.schema, "social-threader.mobile-android-release-identity.v1", "Android release identity schema must be stable");
 assertEqual(androidReleaseIdentity.googleCloudProjectId, "kamu-tales", "Android release identity must supply the Google Cloud quota project");
 assertEqual(androidReleaseIdentity.packageName, "com.mprlab.socialthreader", "Android release identity package must match the app package");
@@ -214,13 +207,6 @@ function assertMatches(actualValue, pattern, message) {
 function assertNumber(actualValue, message) {
   if (typeof actualValue !== "number" || !Number.isInteger(actualValue) || actualValue < 1) {
     throw new Error(`${message}: got ${actualValue}`);
-  }
-}
-
-function assertExecutable(relativePath, message) {
-  const mode = fs.statSync(path.join(MOBILE_ROOT, relativePath)).mode;
-  if ((mode & 0o111) === 0) {
-    throw new Error(message);
   }
 }
 

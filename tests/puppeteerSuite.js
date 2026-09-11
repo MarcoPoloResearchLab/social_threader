@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
 import { runPublicPagesSeoSuite } from "./publicPagesSeoSuite.js";
 import { LOOPAWARE_PIXEL_URL_PREFIX } from "./publicPagesSeoSupport.js";
+import { runSharedUiMigrationSuite } from "./sharedUiMigrationSuite.js";
 import {
     runTransformationBrowserSuite,
     startTransformationApiServer
@@ -472,6 +473,7 @@ async function main() {
             staticServer.origin,
             transformationApiServer
         );
+        await runSharedUiMigrationSuite(browser, pass, fail, staticServer.origin);
     } finally {
         page.off("request", blockLoopAwarePixel);
         await browser.close();

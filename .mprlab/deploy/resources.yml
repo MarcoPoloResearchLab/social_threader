@@ -95,6 +95,11 @@ mprlab_resources:
       protocol: http
       url: https://threader-api.mprlab.com/healthz
       expected_status: 200
+    - kind: health_check
+      id: website-health
+      protocol: http
+      url: https://threader.mprlab.com/healthz
+      expected_status: 200
     - kind: github_pages
       id: website
       repository: marcopoloresearchlab/social_threader

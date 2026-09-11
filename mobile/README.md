@@ -37,11 +37,17 @@ make run-ios
 make run-android
 make build-ios
 make build-android
-make submit-ios
 make submit-android
 ```
 
-`make build-ios` uses the `production` EAS profile. `make build-android` is a lower-level development helper. Expo prebuilds Android in a temporary directory. Gradle creates a signed App Bundle. The script writes a checked build manifest beside the `.aab`.
+`make build-ios` forwards the shared Gateway cloud operation through the repository shell adapter.
+Its arguments come from `MOBILE_APPLE_BUILD_ARGS`, and `MPRLAB_GATEWAY_EXECUTABLE` selects the authoritative compiled executable.
+I004 retains the native project, product declaration, account setup, and hosted acceptance gates.
+
+`make build-android` is a lower-level development helper. Expo prebuilds Android in a temporary directory. Gradle creates a signed App Bundle. The script writes a checked build manifest beside the `.aab`.
+
+Use `make mobile-resolve-dependencies` after a mobile dependency declaration changes.
+Then run `make mobile-check` and `make ci`.
 
 The Android build tool removes `NODE_ENV` and operates `npm ci --include=dev`. This command installs all devDependencies in every environment. The Gradle step sets `NODE_ENV` to `production`.
 
@@ -59,7 +65,8 @@ Keep App Store Connect keys, Google service account JSON files, Android upload k
   - iOS bundle identifier: `com.mprlab.socialthreader`
   - Android package name: `com.mprlab.socialthreader`
 - [ ] Confirm the Apple Developer agreement and Google Play Console account setup are current.
-- [ ] Update `expo.version` and `ios.buildNumber` in `app.json`.
+- [ ] Commit the Apple release version before the cloud build.
+- [ ] Use the build number that Xcode Cloud assigns.
 - [ ] Let the gateway release timestamp set the Android `versionCode`.
 - [ ] Confirm privacy policy URL, support URL, description, screenshots, app category, content rating, and release notes are ready in both stores.
 - [ ] Run:
@@ -71,24 +78,22 @@ make mobile-check
 
 ### Apple App Store / TestFlight
 
-- [ ] Keep the App Store Connect API key outside git. For the local key currently named `AuthKey_D2TZFYN2V2.p8`, the key id is `D2TZFYN2V2`.
-- [ ] Get the matching App Store Connect issuer id and numeric App Store Connect app id from App Store Connect.
-- [ ] Configure EAS Submit for iOS interactively or in `eas.json` with the required App Store Connect fields.
-- [ ] Do not commit a real private key.
-- [ ] Build the iOS app:
+I004 migrates Apple release builds to the shared Xcode Cloud flow.
+The current source uses `com.mprlab.socialthreader`.
+The existing App Store app uses `com.mprlab.threader`.
+The owner must select the product identity before native preparation and cloud setup.
 
-```sh
-make build-ios
-```
+After the identity decision:
 
-- [ ] After the EAS iOS build finishes, submit it:
+1. Prepare and commit the native project and shared scheme.
+2. Declare the product in `.mprlab/apple-build.json` and the selected application manifest.
+3. Configure the Xcode Cloud workflow through `.mprlab/AGENTS.APPLE.md`.
+4. Put the Apple API credentials in the ignored `configs/.env.social-threader` input.
+5. Run the selected Gateway release lifecycle after source delivery and version alignment.
+6. Verify the successful hosted build and processed App Store Connect record.
 
-```sh
-make submit-ios MOBILE_IOS_SUBMIT_ARGS="--non-interactive --wait"
-```
-
-- [ ] In App Store Connect, wait for processing and answer export compliance if prompted.
-- [ ] Add the build to TestFlight. Submit the app version for App Review when it is ready.
+The shared operation owns build submission, recovery, and provider verification.
+Public App Store release remains under operator control.
 
 ### Google Play
 

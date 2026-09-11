@@ -8,6 +8,25 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B009] (P1) Update the Expo dependency set
+  Goal: The canonical mobile dependency check passes.
+  Evidence:
+  - Initial `make ci` passed browser, backend, lint, module, and 33 mobile tests.
+  - The Expo check requires `expo` version `~57.0.21` and `expo-image-picker` version `~57.0.16`.
+  - The initial dependency lock used `57.0.18` and `57.0.14`, respectively.
+  - Current master updates the image picker to `57.0.16` and Expo to `57.0.20`.
+  - CI after the merge still requires Expo `~57.0.21`.
+  Requirements:
+  - Update the dependency declarations, lock, and matching config validator.
+  - Verify the resulting mobile application contract.
+  Validation:
+  - Run `make mobile-check` and `make ci`.
+  Resolution:
+  Expo and its lock now use 57.0.21. The source config validator requires the same version.
+  The focused mobile check and final CI passed.
+  The suite includes 33 mobile tests with full coverage, both production JavaScript bundles, and three Apple adapter tests.
+  The final log is `/tmp/social-apple-final-ci-corrected.log`.
+
 - [!] [B008] (P0) Publish the Social Threader privacy policy
   Goal:
   Google Play rejects the Social Threader production submission because the declared privacy policy has incorrect identity information.
@@ -251,6 +270,123 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Make sure that Metro shows no error.
 
 ## Improvements
+
+- [ ] [I005] (P1) Resolve the mobile dependency audit findings
+  Goal:
+  Qualify the declared mobile runtime and build dependencies.
+
+  Evidence:
+  The audit after B009 reports 13 affected production-dependency packages and 14 packages with development dependencies included.
+  The complete dependency set has 11 moderate and three high findings.
+  Direct advisories affect baseline-browser-mapping, brace-expansion, browserslist, js-yaml, and uuid.
+  Some reported production dependencies supply Expo build tooling. Package classification alone does not prove installed-app exposure.
+  The audit recommends an obsolete Expo downgrade for some transitive findings. This is not the selected correction.
+  The logs are `/tmp/social-apple-runtime-dependency-audit.json` and `/tmp/social-apple-build-dependency-audit.json`.
+
+  Requirements:
+  - Update affected dependencies within the current Expo contract.
+  - Verify application bundles and the final repository CI.
+  - Record any remaining advisory and its actual application or build exposure.
+
+- [-] [I004] (P1) Use the shared Xcode Cloud release flow
+  Goal:
+  Build Apple release artifacts through the single MPR Lab Xcode Cloud flow.
+
+  Requirements:
+  - Apply the shared Apple guide from MPR Governor.
+  - Declare each native project and shared scheme in `.mprlab/apple-build.json`.
+  - Use the shared Gateway cloud operation and its recorded Apple build number.
+  - Use the App Store Connect build that Xcode Cloud submits.
+  - Remove local Apple release signing during the migration.
+  - Keep public store release under operator control.
+
+  Implementation:
+  The shared Apple guide and related mobile rules are installed.
+  Gateway F010 supplies the shared operation.
+  The Apple build target now forwards the canonical shell adapter.
+  The EAS build and submission commands and their configuration are removed.
+  The public adapter tests and final CI passed.
+  Native preparation and product declaration remain open.
+  Apple account setup and a hosted build remain required provider acceptance steps.
+
+  Validation:
+  The shared Apple and mobile guide checks passed.
+  The full Governor check retains unrelated differences observed before this migration.
+  The current iOS bundle identifier differs from the existing App Store Connect record.
+  The three new integration tests first failed against the EAS implementation.
+  The shared shell adapter preserves exact arguments, provider output, and exit status with an empty tool search path.
+  B009 corrects the dependency mismatch that blocked mobile validation.
+  The final log is `/tmp/social-apple-final-ci-corrected.log`.
+  I005 records the remaining dependency audit findings.
+
+- [x] [I002] (P1) Standardize HTTP health at `/healthz`.
+  Goal:
+  Make `/healthz` the canonical health endpoint for the Social Threader API
+  and static web origins. Use the endpoint for readiness without application requests.
+
+  Requirements:
+  - Keep unauthenticated `GET /healthz` on the API and local frontend origins.
+  - Publish a static `/healthz` resource for the GitHub Pages origin.
+  - Return `200` only when each origin can serve its current application contract.
+  - Return a non-success status when a required runtime dependency prevents API service.
+  - Send `Cache-Control: no-store` on API and local health responses.
+  - Use the GitHub Pages cache policy for production static health responses.
+  - Keep each response free from credentials and internal state.
+  - Do not call a paid provider or mutate application state during a probe.
+  - Do not record a probe as application usage or an audit event.
+  - Do not emit routine information-level request events for successful probes.
+  - Keep failed probe evidence in container and deployment diagnostics.
+  - Use `/healthz` for local Compose, runtime capability, and public health checks.
+  - Set `start_interval: 1s` and `interval: 30s` for Docker probes.
+  - Set bounded `start_period` values for the application startup contracts.
+  - Keep the selected manifest contract unchanged.
+
+  Deliverables:
+  - Update the API, static artifact, orchestration, manifest, documentation, and black-box tests.
+
+  Validation:
+  - Verify unauthenticated `GET /healthz` returns `200` on each origin.
+  - Verify API and local health responses use `Cache-Control: no-store`.
+  - Verify a required dependency failure returns a non-success API status without a provider call.
+  - Verify the static publication artifact contains `/healthz`.
+  - Verify Docker probes use the required startup and steady intervals.
+  - Verify successful probes create no routine request events.
+  - Verify failed probes retain diagnostic evidence.
+  - Run `make ci`.
+
+  Cache policy:
+  The operator approved the GitHub Pages cache-policy exception on 2026-09-04.
+  This exception applies only to production static health responses.
+  API and local health responses still require `Cache-Control: no-store`.
+
+  Resolution:
+  Full `make ci` passed, including API, browser, mobile, and bundle checks.
+  Updated Expo and the image picker to the required patch versions.
+  The approved Pages cache exception removes the remaining contract blocker.
+
+
+- [!] [I003] (P1) {B009} Adopt the shared provider-map contract
+  Goal: Social Threader uses the current mpr-ui config and authentication lifecycle.
+  Requirements:
+  - Convert both config environments and their dependent fixtures to the provider map.
+  - Preserve the Google client, tenant, origins, and session endpoint.
+  - Verify the real shared header through controlled Google and TAuth boundaries.
+  - Preserve guest splitting and authenticated transformation behavior.
+  Validation:
+  - Run focused browser checks before production changes.
+  - Run final `make ci` and inspect hosted CI.
+  - Complete shared publication, cache transition, and real Google acceptance before activation.
+  Results:
+  - Four real-header checks and the obsolete-snapshot regression failed before the corresponding source changes.
+  - The page exposed mpr-ui B066. Shared PR #212 corrects the account-menu viewport position.
+  - Final CI passed 44 headless checks, ten browser checks, backend checks, lint, module verification, and 33 mobile tests.
+  - Final B069 candidate `768f25936497c5aabd426197d21c2100b6e5d9a1` passed local CI and all four browser flows.
+  - Local CI includes the separate Apple branch and B009 correction; the committed I003 branch retains those qualification gates.
+  Blocked:
+  - B009 prevents the complete mobile CI gate.
+  - Hosted run `34301824325` passed browser, API, container, and local-stack checks at `e83e2a5feddd6449213351a27b77623d0a64c531`.
+  - Its mobile job reports the same Expo dependency mismatch.
+  - Shared publication, cache transition, and real Google acceptance remain pending.
 
 - [x] [I001] (P1) Freeze the selected manifest as a versionless contract
   Resolved: removed the numbered manifest envelope and stale mobile publication member, kept only current typed resources, and added a contract test that rejects numbered envelope drift.
