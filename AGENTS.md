@@ -122,6 +122,7 @@ Read each selected guide in full before its first applicable action.
 - For Git operations: `.mprlab/AGENTS.GIT.md`.
 - For Apple application builds and distribution: `.mprlab/AGENTS.APPLE.md`.
 - For HTTP or gRPC API changes: `.mprlab/AGENTS.API.md`.
+- For Python changes: `.mprlab/AGENTS.PY.md`.
 - For Go changes: `.mprlab/AGENTS.GO.md`.
 - For mobile changes: `.mprlab/AGENTS.MOBILE.md`.
 - For Expo changes: `.mprlab/AGENTS.MOBILE.EXPO.md`.
