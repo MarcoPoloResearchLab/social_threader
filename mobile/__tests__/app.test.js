@@ -1,7 +1,6 @@
-import React, { act } from "react";
+// @ts-check
+import { createDependencies, renderApp, renderDefaultApp, findLink, pressableStyle, textInputStyle, press, pressAsync, pressLinkAsync, changeText, findSwitch, toggle, findByTestID, findToggleTrack, findText, findMarkerOrder, markerAccessibilityLabel, lineBackgroundColor, findAll, IMAGE_CLIPBOARD_BASE64, IMAGE_CLIPBOARD_DATA_URL, IMAGE_CLIPBOARD_SIZE } from "../tests/appFlow";
 import { StyleSheet } from "react-native";
-import { createRoot } from "test-renderer";
-import App from "../App";
 import {
   MOBILE_ACCESSIBILITY_LABELS,
   MOBILE_COPY,
@@ -11,13 +10,6 @@ import {
   PRESET_CONFIG,
   PRESET_IDENTIFIERS
 } from "../src/constants";
-
-const IMAGE_CLIPBOARD_BASE64 = "ZmFrZQ==";
-const IMAGE_CLIPBOARD_DATA_URL = `data:image/png;base64,${IMAGE_CLIPBOARD_BASE64}`;
-const IMAGE_CLIPBOARD_SIZE = Object.freeze({
-  width: 1,
-  height: 1
-});
 
 describe("Social Threader mobile app", () => {
   it("renders default Twitter chunks, toggles options, copies text, shares the thread, and clears state", async () => {
@@ -325,155 +317,3 @@ describe("Social Threader mobile app", () => {
     expect(findText(component, MOBILE_COPY.ERROR_OPEN_PRIVACY_POLICY_FAILED)).toBeTruthy();
   });
 });
-
-function createDependencies() {
-  let copiedImageBase64 = "";
-  return {
-    clipboard: {
-      setStringAsync: jest.fn(() => Promise.resolve(true)),
-      setImageAsync: jest.fn((imageBase64) => {
-        copiedImageBase64 = imageBase64;
-        return Promise.resolve();
-      }),
-      getImageAsync: jest.fn(() => Promise.resolve(
-        copiedImageBase64.length > 0
-          ? { data: `data:image/png;base64,${copiedImageBase64}`, size: IMAGE_CLIPBOARD_SIZE }
-          : null
-      ))
-    },
-    imagePicker: {
-      MediaTypeOptions: {
-        Images: "Images"
-      },
-      launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] }))
-    },
-    linking: {
-      openURL: jest.fn(() => Promise.resolve(true))
-    },
-    share: jest.fn(() => Promise.resolve({ action: "sharedAction" }))
-  };
-}
-
-function renderApp(dependencies) {
-  const component = createRoot();
-  act(() => {
-    component.render(<App dependencies={dependencies} />);
-  });
-  return component;
-}
-
-function renderDefaultApp() {
-  const component = createRoot();
-  act(() => {
-    component.render(<App />);
-  });
-  return component;
-}
-
-function findPressable(component, accessibilityLabel) {
-  return findAll(component, (node) => (
-    node.props?.accessibilityRole === "button"
-    && node.props?.accessibilityLabel === accessibilityLabel
-    && typeof node.props?.onPress === "function"
-  ))[0];
-}
-
-function findLink(component, accessibilityLabel) {
-  return findAll(component, (node) => (
-    node.props?.accessibilityRole === "link"
-    && node.props?.accessibilityLabel === accessibilityLabel
-    && typeof node.props?.onPress === "function"
-  ))[0];
-}
-
-function pressableStyle(component, accessibilityLabel) {
-  return StyleSheet.flatten(findPressable(component, accessibilityLabel).props.style);
-}
-
-function textInputStyle(component, testID) {
-  const input = findAll(component, (node) => node.props?.testID === testID)[0];
-  return StyleSheet.flatten(input.props.style);
-}
-
-function press(component, accessibilityLabel) {
-  const pressable = findPressable(component, accessibilityLabel);
-  act(() => {
-    pressable.props.onPress();
-  });
-}
-
-async function pressAsync(component, accessibilityLabel) {
-  const pressable = findPressable(component, accessibilityLabel);
-  await act(async () => {
-    await pressable.props.onPress();
-  });
-}
-
-async function pressLinkAsync(component, accessibilityLabel) {
-  const link = findLink(component, accessibilityLabel);
-  await act(async () => {
-    await link.props.onPress();
-  });
-}
-
-function changeText(component, testID, nextText) {
-  const input = findAll(component, (node) => (
-    node.props?.testID === testID
-    && typeof node.props?.onChangeText === "function"
-  ))[0];
-  act(() => {
-    input.props.onChangeText(nextText);
-  });
-}
-
-function findSwitch(component, accessibilityLabel) {
-  return findAll(component, (node) => (
-    node.props?.accessibilityLabel === accessibilityLabel
-    && node.props?.accessibilityRole === "switch"
-    && typeof node.props?.onPress === "function"
-  ))[0];
-}
-
-function toggle(component, accessibilityLabel, nextValue) {
-  const switchControl = findSwitch(component, accessibilityLabel);
-  act(() => {
-    if (switchControl.props.accessibilityState.checked !== nextValue) {
-      switchControl.props.onPress();
-    }
-  });
-}
-
-function findByTestID(component, testID) {
-  return findAll(component, (node) => node.props?.testID === testID)[0] || null;
-}
-
-function findToggleTrack(component, accessibilityLabel) {
-  return findByTestID(component, `${MOBILE_TEST_IDS.TOGGLE_TRACK_PREFIX}-${accessibilityLabel}`);
-}
-
-function findText(component, expectedText) {
-  return findAll(component, (node) => node.props.children === expectedText)[0] || null;
-}
-
-function findMarkerOrder(component, chunkId, expectedOrder) {
-  const marker = findByTestID(component, `${MOBILE_TEST_IDS.THREAD_CHUNK_MARKER_PREFIX}-${chunkId}`);
-  if (!marker) {
-    return null;
-  }
-  return findAll(marker, (node) => node.props?.children === expectedOrder)[0] || null;
-}
-
-function markerAccessibilityLabel(component, chunkId) {
-  const marker = findByTestID(component, `${MOBILE_TEST_IDS.THREAD_CHUNK_MARKER_PREFIX}-${chunkId}`);
-  return marker?.props.accessibilityLabel || null;
-}
-
-function lineBackgroundColor(component, testID) {
-  const line = findByTestID(component, testID);
-  return StyleSheet.flatten(line.props.style).backgroundColor;
-}
-
-function findAll(component, predicate) {
-  const queryRoot = component.container || component;
-  return queryRoot.queryAll(predicate);
-}

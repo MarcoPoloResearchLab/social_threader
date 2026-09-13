@@ -1,4 +1,20 @@
 // @ts-check
+export const PRODUCT_DIRECTORY = Object.freeze({
+    CATALOG_URL: '/data/product-catalog.json',
+    FOOTER_SELECTOR: 'mpr-footer[data-product-directory]',
+    ERROR_MESSAGE: 'Unable to load the MPR Lab product directory.',
+    ERROR_ID: 'product-directory-error',
+    PRIVACY_HREF: '/privacy/',
+    PRIVACY_LABEL: 'Privacy',
+    FOOTER_LINKS: Object.freeze({
+        alignment: 'left',
+        links: Object.freeze([
+            Object.freeze({ label: 'Built by MPR Lab', href: 'https://mprlab.com/', target: '_blank' }),
+            Object.freeze({ label: 'GitHub', href: 'https://github.com/MarcoPoloResearchLab/social_threader', target: '_blank' }),
+            Object.freeze({ label: 'Resources', href: '/resources/' })
+        ])
+    })
+});
 /**
  * @fileoverview Central location for immutable configuration values and user-facing copy.
  */

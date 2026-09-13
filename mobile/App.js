@@ -16,12 +16,12 @@ import {
   DEFAULT_LENGTHS,
   MOBILE_ACCESSIBILITY_LABELS,
   MOBILE_COPY,
-  MOBILE_EXTERNAL_URLS,
   MOBILE_TEST_IDS,
   PRESET_CONFIG,
   PRESET_IDENTIFIERS
 } from "./src/constants.js";
 import { ControlButton } from "./src/ControlButton.js";
+import { ProductFooter } from "./src/ProductFooter.js";
 import { screenStyles as styles } from "./src/screenStyles.js";
 import { ThreadTimeline } from "./src/ThreadTimeline.js";
 import { ToggleRow } from "./src/ToggleRow.js";
@@ -236,24 +236,6 @@ function ThreaderScreen() {
     setErrorMessage("");
   };
 
-  const handleBuiltByLinkPress = async () => {
-    try {
-      await dependencies.linking.openURL(MOBILE_EXTERNAL_URLS.MPR_LAB);
-      setErrorMessage("");
-    } catch (caughtError) {
-      setErrorMessage(MOBILE_COPY.ERROR_OPEN_MPR_LAB_FAILED);
-    }
-  };
-
-  const handlePrivacyPolicyLinkPress = async () => {
-    try {
-      await dependencies.linking.openURL(MOBILE_EXTERNAL_URLS.PRIVACY_POLICY);
-      setErrorMessage("");
-    } catch (caughtError) {
-      setErrorMessage(MOBILE_COPY.ERROR_OPEN_PRIVACY_POLICY_FAILED);
-    }
-  };
-
   const handleRemoveImagePress = (imageIndex) => {
     setImageRecords((currentImageRecords) =>
       currentImageRecords.filter((_imageRecord, currentIndex) => currentIndex !== imageIndex)
@@ -386,29 +368,7 @@ function ThreaderScreen() {
           onRemoveImagePress={handleRemoveImagePress}
         />
 
-        <View style={styles.footer}>
-          <Text testID={MOBILE_TEST_IDS.BUILT_BY_LINE} style={styles.builtByLine}>
-            {MOBILE_COPY.BUILT_BY_PREFIX}
-            <Text
-              testID={MOBILE_TEST_IDS.BUILT_BY_LINK}
-              accessibilityRole="link"
-              accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.MPR_LAB_LINK}
-              style={styles.builtByLink}
-              onPress={handleBuiltByLinkPress}
-            >
-              {MOBILE_COPY.MPR_LAB_NAME}
-            </Text>
-          </Text>
-          <Text
-            testID={MOBILE_TEST_IDS.PRIVACY_POLICY_LINK}
-            accessibilityRole="link"
-            accessibilityLabel={MOBILE_ACCESSIBILITY_LABELS.PRIVACY_POLICY_LINK}
-            style={styles.builtByLink}
-            onPress={handlePrivacyPolicyLinkPress}
-          >
-            {MOBILE_COPY.PRIVACY_POLICY_LABEL}
-          </Text>
-        </View>
+        <ProductFooter linking={dependencies.linking} onError={setErrorMessage} />
       </ScrollView>
     </View>
   );

@@ -30,6 +30,12 @@ const StyleSheet = Object.freeze({
 });
 
 module.exports = {
+  AccessibilityInfo: { setAccessibilityFocus: jest.fn() },
+  findNodeHandle: () => 1,
+  Modal: function Modal({ visible, children, ...props }) {
+    return visible ? React.createElement('Modal', props, children) : null;
+  },
+  SafeAreaView: createNativeComponent("SafeAreaView"),
   Image: createNativeComponent("Image"),
   Linking: {
     openURL: () => Promise.resolve(true)

@@ -10,6 +10,7 @@ const SHARED_DESTINATION_ROOT = path.join(MOBILE_ROOT, "src", "shared-web");
 const SHARED_FILES = Object.freeze([
   "constants.js",
   "core/chunking.js",
+  "core/productCatalog.js",
   "core/richText.js",
   "types.d.js",
   "utils/templates.js"
@@ -21,3 +22,5 @@ for (const sharedFile of SHARED_FILES) {
   fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
   fs.copyFileSync(sourcePath, destinationPath);
 }
+
+fs.copyFileSync(path.join(REPOSITORY_ROOT, "data", "product-catalog.json"), path.join(SHARED_DESTINATION_ROOT, "product-catalog.json"));
