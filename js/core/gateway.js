@@ -1,4 +1,13 @@
 // @ts-check
+import { PRODUCT_DIRECTORY } from '../constants.js';
+import { createProductMenu } from './productCatalog.js';
+
+/** Load and validate the application snapshot of the shared product catalog. */
+export async function loadProductDirectory(fetchImplementation = globalThis.fetch) {
+    const response = await fetchImplementation(PRODUCT_DIRECTORY.CATALOG_URL);
+    if (!response.ok) throw new Error(PRODUCT_DIRECTORY.ERROR_MESSAGE);
+    return createProductMenu(await response.json());
+}
 /**
  * @fileoverview Sole browser transport adapter for the Social Threader application API.
  */

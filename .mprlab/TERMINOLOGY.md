@@ -83,6 +83,8 @@ Give each term one meaning. Use the same term for the same concept in all docume
 
 ## Repository Technical Nouns
 
+- `snapshot`: A copy of source files with recorded content hashes.
+
 Add repository-specific technical nouns below this line.
 
 - `product catalog`: The shared data that identifies MPR Lab projects, their purposes, categories, and public destinations.

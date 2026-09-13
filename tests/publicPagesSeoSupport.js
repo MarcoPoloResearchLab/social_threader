@@ -164,6 +164,7 @@ export async function inspectPublicPage(page, pageUrl) {
         response.status() === SEO_TEST_LIMITS.HTTP_OK_STATUS,
         `${pageUrl} returned ${response.status()}`
     );
+    await page.waitForSelector('mpr-footer[data-product-directory] footer a[href="/privacy/"]', { visible: true });
 
     return /** @type {Promise<PublicPageSnapshot>} */ (
         page.evaluate((rootPath, loopAwarePixelUrlPrefix) => {
@@ -171,7 +172,8 @@ export async function inspectPublicPage(page, pageUrl) {
                 document.querySelector(selector)?.getAttribute("content")?.trim() || "";
             const canonical =
                 document.querySelector('link[rel="canonical"]')?.getAttribute("href")?.trim() || "";
-            const headingElements = Array.from(document.querySelectorAll("h1"));
+            const headingElements = Array.from(document.querySelectorAll("h1"))
+                .filter(element => element.getClientRects().length > 0);
             const mainText = document.querySelector("main")?.innerText || document.body.innerText;
             const structuredDataItems = Array.from(
                 document.querySelectorAll('script[type="application/ld+json"]')

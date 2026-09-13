@@ -8,6 +8,13 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B011] (P1) Keep narrow pages within the viewport
+  Goal: Keep editor options and resource content within the page width.
+  Evidence: F003 browser checks found overflow at 320 pixels and in resource grids below 1280 pixels.
+  Requirements: Let the option row wrap. Let resource grid tracks shrink around long code and tables.
+  Validation: The checks failed before these layout changes. All 32 page and width combinations passed afterward.
+  Deliverables: Updated the two page stylesheets and retained browser coverage in the F003 suite.
+
 - [x] [B010] (P1) Correct the mobile CI dependency versions
   Goal: The mobile CI dependency check passes.
   Evidence:
@@ -604,7 +611,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## Features
 
-- [ ] [F003] (P1) Add an MPR Lab product directory to web and mobile
+- [!] [F003] (P1) Add an MPR Lab product directory to web and mobile
   Goal:
   Social Threader introduces users to MPR Lab through a shared product directory on web and mobile.
 
@@ -650,6 +657,32 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Run the applicable MPR UI checks and Social Threader `make browser-test`, `make mobile-check`, and final `make ci`.
   - Record source acceptance, public web acceptance, and installed mobile acceptance as separate results.
   - Keep production deployment and app-store publication under user control.
+
+  Implementation:
+  - MPR UI F012 supplies the shared catalog, validator, stylesheet, and public destination evidence.
+  - Social Threader imports their exact bytes and records SHA-256 values in `data/product-catalog-source.json`.
+  - All eight public pages and the native footer consume the same 39-project catalog.
+  - `docs/product-directory.md` defines architecture, updates, and the mobile release boundary.
+  - B011 records the narrow-page overflow exposed by the required browser checks.
+  - The expected failures are in `/tmp/f003-catalog-red.log`, `/tmp/f003-browser-red.log`, and `/tmp/f003-mobile-red.log`.
+  - Both repository `make ci` commands passed with the final 39-project catalog.
+  - Social Threader passed 44 headless tests, 42 browser scenarios, and 35 mobile tests with full coverage.
+  - The directory suite covers all eight public pages at four viewport widths.
+  - Shared MPR UI validation includes 151 browser scenarios in each browser suite.
+  - The Pages artifact contains the shared catalog files. Its consumer files match the source bytes.
+  - Android Expo Go opened Chrome and returned with draft text and the copy marker intact.
+  - Android Back dismissed the expanded sheet without a draft change.
+  - The final Android API 37 run displayed the added Dictator and SVG Tools links from the 39-project snapshot.
+  - Mobile integration tests also retain image bytes, options, and custom size after a product link.
+  - Final CI logs are `/tmp/social-f003-final-ci.log` and `/tmp/mpr-ui-f003-final-ci.log`.
+  - The Governor check reports existing template drift. Changed prose has no mechanical checker findings.
+  - Public web and installed store acceptance remain separate operator steps.
+  - All F003 source changes remain uncommitted. No release, publication, or deployment occurred.
+
+  Blocked:
+  - Public web acceptance requires the operator deployment of this source.
+  - Installed mobile acceptance requires a new app artifact and the operator publication step.
+  - Expo Go verification does not replace installed store acceptance.
 
 - [!] [F001] (P1) Add authenticated LLM-powered thread transformations
   Goal:

@@ -25,8 +25,11 @@ export const MOBILE_COPY = Object.freeze({
   REMOVE_IMAGE_LABEL: "Remove",
   CLEAR_BUTTON_LABEL: "Clear",
   BUILT_BY_PREFIX: "Built by ",
-  MPR_LAB_NAME: "Marco Polo Research Lab",
+  MPR_LAB_NAME: "MPR Lab",
   PRIVACY_POLICY_LABEL: "Privacy Policy",
+  GITHUB_LABEL: "GitHub",
+  DIRECTORY_CLOSE: "Close product directory",
+  DIRECTORY_ERROR: "Unable to open this project. Please try again.",
   PARAGRAPH_TOGGLE_LABEL: "Paragraphs",
   SENTENCE_TOGGLE_LABEL: "Sentences",
   ENUMERATION_TOGGLE_LABEL: "Enumerate",
@@ -81,7 +84,8 @@ export const MOBILE_ACCESSIBILITY_LABELS = Object.freeze({
 
 export const MOBILE_EXTERNAL_URLS = Object.freeze({
   MPR_LAB: "https://mprlab.com",
-  PRIVACY_POLICY: "https://threader.mprlab.com/privacy/"
+  PRIVACY_POLICY: "https://threader.mprlab.com/privacy/",
+  GITHUB: "https://github.com/MarcoPoloResearchLab/social_threader"
 });
 
 export const LAYOUT_VALUES = Object.freeze({

@@ -1,0 +1,29 @@
+/* Shared product directory presentation for the public mpr-dropdown contract. */
+.mpr-product-directory .mpr-dropdown__trigger,
+.mpr-product-directory .mpr-dropdown__section-button,
+.mpr-product-directory .mpr-dropdown__link {
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.mpr-product-directory .mpr-dropdown__panel {
+  width: min(26rem, calc(100vw - 2rem));
+  min-width: 0;
+  max-width: calc(100vw - 2rem);
+  max-height: min(60dvh, 32rem);
+  overscroll-behavior: contain;
+  scroll-padding: 0.5rem;
+}
+.mpr-product-directory .mpr-dropdown__section-button { text-transform: none; letter-spacing: normal; }
+.mpr-product-directory :is(button, a):focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+@media (max-width: 48rem) {
+  .mpr-product-directory .mpr-dropdown__panel {
+    width: calc(100vw - 2rem - env(safe-area-inset-left) - env(safe-area-inset-right));
+    max-width: calc(100vw - 2rem - env(safe-area-inset-left) - env(safe-area-inset-right));
+    max-height: calc(60dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+}

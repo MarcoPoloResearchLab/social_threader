@@ -123,3 +123,9 @@ make release && make publish && make deploy
 ```sh
 MOBILE_ANDROID_PUBLISH_ARGS="--track production --status draft" make submit-android
 ```
+
+## MPR Lab product directory
+
+The footer provides the shared MPR Lab product directory without sign-in.
+Product links keep the current draft when the user returns.
+See the [directory contract](../docs/product-directory.md) for catalog updates and acceptance boundaries.

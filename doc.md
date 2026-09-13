@@ -140,3 +140,9 @@ Go tests validate configuration, official client requests, cancellation, authori
 The local smoke test validates the real Caddy, TAuth, API, and fake-proxy topology. It makes no paid provider call.
 
 Hosted acceptance remains a separate operator activity. Local success does not prove hosted DNS, TLS, sessions, CORS, or provider routing.
+
+## MPR Lab product directory
+
+The footer provides the shared MPR Lab product directory without sign-in.
+Product links keep the current draft when the user returns.
+See the [directory contract](docs/product-directory.md) for catalog updates and acceptance boundaries.

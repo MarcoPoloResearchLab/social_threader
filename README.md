@@ -227,3 +227,9 @@ The [resource library](https://threader.mprlab.com/resources/) documents support
 ## License
 
 Social Threader uses the [MIT License](LICENSE).
+
+## MPR Lab product directory
+
+The footer provides the shared MPR Lab product directory without sign-in.
+Product links keep the current draft when the user returns.
+See the [directory contract](docs/product-directory.md) for catalog updates and acceptance boundaries.

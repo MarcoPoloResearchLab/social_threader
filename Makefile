@@ -20,6 +20,14 @@ ANDROID_TOOL_PATH := $(ANDROID_SDK_ROOT)/emulator:$(ANDROID_SDK_ROOT)/platform-t
 browser-test:
 	npm test
 
+.PHONY: sync-product-catalog test-product-catalog
+sync-product-catalog:
+	python3 scripts/sync-product-catalog.py --source "$(MPR_UI_SOURCE)"
+	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) run sync-shared
+
+test-product-catalog:
+	node --test tests/productCatalogSnapshot.test.js
+
 go-test:
 	go test ./... -count=1 -timeout=45s
 
@@ -42,7 +50,7 @@ go-mod-verify:
 test-installed-gateway:
 	bash tests/installed-gateway.sh
 
-test: test-installed-gateway browser-test go-test
+test: test-installed-gateway test-product-catalog browser-test go-test
 
 ci: test lint go-mod-verify mobile-check test-apple-cloud
 
