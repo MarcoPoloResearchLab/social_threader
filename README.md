@@ -189,13 +189,20 @@ The Android resource uses the repository-owned local build script. The store too
 
 The gateway adds `CNAME`, `.nojekyll`, and the release marker to the Pages artifact. Application source does not own these files.
 
-Root lifecycle commands delegate to the exact sibling `../mprlab-gateway` checkout:
+Root lifecycle commands use the installed `mprlab-gateway` runtime:
 
 ```bash
 make release && make publish && make deploy
 ```
 
-These commands take no arguments. Do not use the removed app-owned Pages scripts.
+These commands take no arguments.
+Each command passes the application Git root through `--app-root`.
+Make sure that `mprlab-gateway` is on `PATH`.
+Use `MPRLAB_GATEWAY_EXECUTABLE` to select an explicit installed command path.
+Keep operator inventory and private config under `MPRLAB_GATEWAY_OPERATOR_ROOT`.
+The default operator root is `$HOME/.config/mprlab-gateway`.
+
+Use `make test-installed-gateway` for the Make wrapper integration checks.
 
 Configure the Android upload key and Google Application Default Credentials before `make release`. See [mobile/README.md](mobile/README.md).
 
