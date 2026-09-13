@@ -21,9 +21,12 @@ From the repository root:
 make release && make publish && make deploy
 ```
 
-The three root lifecycle commands take no arguments. They delegate the selected repository to the exact sibling `../mprlab-gateway` checkout.
+The three root lifecycle commands use the installed `mprlab-gateway` runtime.
+Each command passes the selected Git root through `--app-root`.
+Make sure that `mprlab-gateway` is on `PATH`.
+Use `MPRLAB_GATEWAY_EXECUTABLE` to select an explicit installed command path.
 
-`.mprlab/deploy/resources.yml` declares the Android artifact, Pages frontend, and API service. The sibling gateway owns each lifecycle transaction.
+`.mprlab/deploy/resources.yml` declares the Android artifact, Pages frontend, and API service. The installed Gateway runtime owns each lifecycle transaction.
 
 Release runs the local Android builder with the sealed version and timestamp. Publish preflights Google Play and reconciles an interrupted submission.
 

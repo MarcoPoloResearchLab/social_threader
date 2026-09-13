@@ -141,15 +141,6 @@ func TestProductionLifecycleContract(t *testing.T) {
 	}
 
 	makefile := string(readRepositoryFile(t, repositoryRoot, "Makefile"))
-	if !strings.Contains(makefile, "release publish deploy:") {
-		t.Error("Makefile does not define the three production lifecycle targets together")
-	}
-	if !strings.Contains(makefile, `"app-$@"`) || !strings.Contains(makefile, `MPRLAB_APP_ROOT="$${application_root}"`) {
-		t.Error("Makefile does not delegate the selected lifecycle target to the sibling gateway")
-	}
-	if !strings.Contains(makefile, "required sibling gateway is missing:") {
-		t.Error("Makefile does not explain the exact required sibling gateway location")
-	}
 	if strings.Contains(makefile, "scripts/release") {
 		t.Error("Makefile retains the obsolete application-owned release path")
 	}
