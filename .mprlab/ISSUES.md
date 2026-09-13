@@ -414,6 +414,23 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 - [x] [I001] (P1) Freeze the selected manifest as a versionless contract
   Resolved: removed the numbered manifest envelope and stale mobile publication member, kept only current typed resources, and added a contract test that rejects numbered envelope drift.
 
+- [x] [I006] Use the installed Gateway runtime.
+  Goal: Run the application lifecycle through the installed `mprlab-gateway` command.
+  Requirements:
+  - Keep `make release`, `make publish`, and `make deploy` as the public commands.
+  - Pass the application Git root through `--app-root`.
+  - Use `MPRLAB_GATEWAY_EXECUTABLE` for an explicit installed command path.
+  - Keep inventory and private config under `MPRLAB_GATEWAY_OPERATOR_ROOT`.
+  Validation:
+  - Baseline `make ci` passed.
+  - The public Make integration test reproduced the required sibling-checkout failure.
+  - The installed Gateway v4.0.3 accepted the committed application release plan.
+  - `make test-installed-gateway`, `make go-test`, and final `make ci` passed.
+  - The new Make integration test replaced sibling-checkout assertions in the Go and mobile validators.
+  - Governor reported only the managed-content drift observed before this change.
+  - Release, publication, and deployment were not run.
+
+
 ## Maintenance
 
 - [ ] [M400R] (P2) Backlog hygiene and archive
