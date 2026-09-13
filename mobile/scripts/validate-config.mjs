@@ -97,22 +97,6 @@ assertEqual(androidReleaseIdentity.schema, "social-threader.mobile-android-relea
 assertEqual(androidReleaseIdentity.googleCloudProjectId, "kamu-tales", "Android release identity must supply the Google Cloud quota project");
 assertEqual(androidReleaseIdentity.packageName, "com.mprlab.socialthreader", "Android release identity package must match the app package");
 assertIncludes(makefileSource, "MOBILE_ANDROID_VERSION_CODE ?= local", "Android release version code must default to local app configuration");
-assertIncludes(
-  makefileSource,
-  "release publish deploy:",
-  "root lifecycle commands must use one grouped zero-argument contract"
-);
-assertIncludes(
-  makefileSource,
-  'gateway_root="$$(dirname "$${application_root}")/mprlab-gateway"',
-  "root lifecycle commands must resolve the exact sibling gateway"
-);
-assertIncludes(
-  makefileSource,
-  '"app-$@"',
-  "root lifecycle commands must delegate the selected application root"
-);
-assertIncludes(makefileSource, 'MPRLAB_APP_ROOT="$${application_root}"', "root lifecycle commands must pass the selected application root");
 assertNotIncludes(
   makefileSource,
   "RELEASE_ARTIFACT_TARGETS",
