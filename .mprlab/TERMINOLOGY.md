@@ -85,6 +85,14 @@ Give each term one meaning. Use the same term for the same concept in all docume
 
 Add repository-specific technical nouns below this line.
 
+- `product catalog`: The shared data that identifies MPR Lab projects, their purposes, categories, and public destinations.
+- `product directory`: The user interface that presents the product catalog as sections of links.
+- `drop-up`: A menu that appears above its control.
+- `bottom sheet`: A mobile panel that appears from the bottom of the screen.
+- `safe area`: The screen area available without device controls or display cutouts.
+- `draft`: The current source text, image attachments, and thread state in Social Threader.
+- `screen reader`: Assistive software that presents interface content and controls through speech or another accessible output.
+
 - `application profile`: A config record that defines one browser, API, TAuth, cookie, CORS, DNS, and runtime topology.
 - `environment`: The values that one process gives to another process.
 - `fake LLM Proxy`: A local service that implements the necessary LLM Proxy HTTP boundary without a provider call.

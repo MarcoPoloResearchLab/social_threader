@@ -587,6 +587,53 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## Features
 
+- [ ] [F003] (P1) Add an MPR Lab product directory to web and mobile
+  Goal:
+  Social Threader introduces users to MPR Lab through a shared product directory on web and mobile.
+
+  Requirements:
+  - Use one product catalog maintained in the `mpr-ui` repository for both clients.
+  - Compare the MPR UI footer catalog, the lab website catalog, and other public MPR Lab projects before catalog selection.
+  - Record each selected project's identifier, name, short purpose, category, and verified public destination.
+  - Include all projects with a verified public application, documentation page, repository, or descriptive project page.
+  - Record each excluded candidate and its missing public destination.
+  - Use these initial section labels: `Writing & creativity`, `Business & organization`, `Learning & everyday life`, and `Developer tools`.
+  - Put `About MPR Lab` and `All projects` before the product sections.
+  - Use `Explore MPR Lab` for the directory control.
+  - Show the `Writing & creativity` section expanded initially.
+  - Show the other product sections collapsed initially.
+  - Use a product name and short purpose for each link label.
+  - Keep `Built by MPR Lab`, the Social Threader GitHub link, and `Privacy` visible outside the directory.
+  - Apply the directory to each public Social Threader page and the native mobile footer.
+  - On desktop web, use an anchored drop-up with a height limit and internal scroll behavior.
+  - On mobile web, use a wide panel above the footer within the viewport and safe area.
+  - On native mobile, use a bottom sheet with the same catalog, section order, and initial section states.
+  - Use the device browser for native mobile product links.
+  - Keep the complete draft when users select a product link and return to Social Threader.
+  - Keep directory access available without authentication.
+
+  Deliverables:
+  - A verified product catalog and a documented distribution contract in `mpr-ui`.
+  - Shared MPR UI menu behavior for desktop and mobile web.
+  - A Social Threader web integration and native mobile bottom sheet that consume the same catalog.
+  - A documented catalog update procedure, including the mobile release boundary.
+  - Updated architecture and user documentation for both clients.
+  - One coordinated implementation record in F003 with the MPR UI and Social Threader change references.
+
+  Validation:
+  - Start each behavior change with a failing integration test through a public entry point.
+  - Verify catalog identifiers, category membership, link labels, and identical catalog data across both clients.
+  - Verify each public destination and record its result and check date.
+  - Verify web layouts at widths of 320, 390, 768, and 1280 pixels with Puppeteer.
+  - Verify expanded sections, long labels, internal scroll behavior, safe areas, and page overflow.
+  - Verify keyboard access, focus return, dismissal, screen reader labels, and section state announcements.
+  - Verify touch targets of at least 44 CSS pixels on web and 44 logical units on native mobile.
+  - Verify native link handling, visible errors, Android Back behavior, and complete draft retention through the mobile public interface.
+  - Verify the native sheet and device browser return on an Android emulator or device.
+  - Run the applicable MPR UI checks and Social Threader `make browser-test`, `make mobile-check`, and final `make ci`.
+  - Record source acceptance, public web acceptance, and installed mobile acceptance as separate results.
+  - Keep production deployment and app-store publication under user control.
+
 - [!] [F001] (P1) Add authenticated LLM-powered thread transformations
   Goal:
   Let a user deliberately transform the text in the main Social Threader editor with a small catalog of safe, product-defined operations while preserving the existing free, local thread-splitting workflow and keeping LLM credentials, routing, prompt policy, and paid-compute controls outside browser and mobile runtimes.
