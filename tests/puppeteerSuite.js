@@ -9,6 +9,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
+import { runProductDirectorySuite } from "./productDirectorySuite.js";
 import { runPublicPagesSeoSuite } from "./publicPagesSeoSuite.js";
 import { LOOPAWARE_PIXEL_URL_PREFIX } from "./publicPagesSeoSupport.js";
 import { runSharedUiMigrationSuite } from "./sharedUiMigrationSuite.js";
@@ -446,10 +447,21 @@ async function main() {
     const staticServer = await startStaticServer(repositoryRootPath);
     const transformationApiServer = await startTransformationApiServer(staticServer.origin);
     const indexUrl = `${staticServer.origin}/index.html`;
+    const publicPageUiConfig = (await fs.readFile(path.join(repositoryRootPath, 'config-ui.yaml'), 'utf8'))
+        .replace('http://localhost:4173', staticServer.origin);
     const browser = await puppeteer.launch({ headless: HEADLESS_MODE, args: PUPPETEER_ARGS });
     const page = await browser.newPage();
     /** @param {import("puppeteer").HTTPRequest} request */
-    const blockLoopAwarePixel = (request) => {
+    const handlePublicPageRequest = (request) => {
+        const requestUrl = new URL(request.url());
+        if (requestUrl.origin === staticServer.origin && requestUrl.pathname === '/config-ui.yaml') {
+            void request.respond({ status: 200, contentType: 'text/yaml', body: publicPageUiConfig });
+            return;
+        }
+        if (requestUrl.origin === staticServer.origin && requestUrl.pathname === '/auth/session') {
+            void request.respond({ status: 401, contentType: 'application/json', body: '{"error":"unauthorized"}' });
+            return;
+        }
         if (request.url().startsWith(LOOPAWARE_PIXEL_URL_PREFIX)) {
             void request.abort();
             return;
@@ -459,11 +471,16 @@ async function main() {
     const { pass, fail, summarize } = createResultRecorder();
 
     try {
+        if (process.env.SOCIAL_THREADER_DIRECTORY_ONLY === "1") {
+            await runProductDirectorySuite(browser, pass, fail, staticServer.origin);
+            process.exitCode = summarize() > 0 ? 1 : 0;
+            return;
+        }
         await page.setRequestInterception(true);
-        page.on("request", blockLoopAwarePixel);
+        page.on("request", handlePublicPageRequest);
         await runInputStatisticsSuite(page, pass, fail, indexUrl);
         await runPublicPagesSeoSuite(page, pass, fail, staticServer.origin);
-        page.off("request", blockLoopAwarePixel);
+        page.off("request", handlePublicPageRequest);
         await page.setRequestInterception(false);
         await runTransformationBrowserSuite(
             page,
@@ -474,8 +491,9 @@ async function main() {
             transformationApiServer
         );
         await runSharedUiMigrationSuite(browser, pass, fail, staticServer.origin);
+        await runProductDirectorySuite(browser, pass, fail, staticServer.origin);
     } finally {
-        page.off("request", blockLoopAwarePixel);
+        page.off("request", handlePublicPageRequest);
         await browser.close();
         await transformationApiServer.close();
         await staticServer.close();
