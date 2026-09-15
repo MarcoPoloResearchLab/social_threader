@@ -1,0 +1,11 @@
+/* Application footer geometry; directory controls use the shared stylesheet. */
+mpr-footer[data-product-directory] { display: block; margin-top: auto; }
+mpr-footer[data-product-directory] footer.mpr-footer { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+mpr-footer[data-product-directory] .mpr-footer__horizontal-links a,
+mpr-footer[data-product-directory] .mpr-footer__privacy,
+mpr-footer[data-product-directory] [data-mpr-footer="brand"] a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}

@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "label": "Explore MPR Lab",
+  "overview": {
+    "id": "lab",
+    "label": "MPR Lab",
+    "links": [
+      {
+        "label": "About MPR Lab",
+        "href": "https://mprlab.com/"
+      },
+      {
+        "label": "All projects",
+        "href": "https://mprlab.com/#projects"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "writing",
+      "label": "Writing & creativity",
+      "mode": "expanded"
+    },
+    {
+      "id": "business",
+      "label": "Business & organization",
+      "mode": "collapsed"
+    },
+    {
+      "id": "learning",
+      "label": "Learning & everyday life",
+      "mode": "collapsed"
+    },
+    {
+      "id": "developer",
+      "label": "Developer tools",
+      "mode": "collapsed"
+    }
+  ],
+  "products": [
+    {
+      "id": "issues-md",
+      "name": "ISSUES.md",
+      "purpose": "Automate issue-to-code work",
+      "category": "developer",
+      "href": "https://mprlab.com/#projects"
+    },
+    {
+      "id": "dyd",
+      "name": "Download Your Data",
+      "purpose": "Export your account data",
+      "category": "learning",
+      "href": "https://github.com/MarcoPoloResearchLab/download_your_data"
+    },
+    {
+      "id": "photolab",
+      "name": "Photolab",
+      "purpose": "Search and classify a photo library",
+      "category": "writing",
+      "href": "https://mprlab.com/#projects"
+    },
+    {
+      "id": "ctx",
+      "name": "ctx",
+      "purpose": "Explore code from the terminal",
+      "category": "developer",
+      "href": "https://ctx.mprlab.com"
+    },
+    {
+      "id": "gix",
+      "name": "gix",
+      "purpose": "Maintain Git repositories",
+      "category": "developer",
+      "href": "https://gix.mprlab.com"
+    },
+    {
+      "id": "ghttp",
+      "name": "gHTTP",
+      "purpose": "Serve local files over HTTP",
+      "category": "developer",
+      "href": "https://github.com/tyemirov/ghttp"
+    },
+    {
+      "id": "loopaware",
+      "name": "LoopAware",
+      "purpose": "Collect feedback and site analytics",
+      "category": "business",
+      "href": "https://loopaware.mprlab.com"
+    },
+    {
+      "id": "pinguin",
+      "name": "Pinguin",
+      "purpose": "Send email and SMS notifications",
+      "category": "developer",
+      "href": "https://github.com/tyemirov/pinguin"
+    },
+    {
+      "id": "ets",
+      "name": "Ephemeral Token Service (ETS)",
+      "purpose": "Issue short-lived access tokens",
+      "category": "developer",
+      "href": "https://github.com/tyemirov/ETS"
+    },
+    {
+      "id": "tauth",
+      "name": "TAuth",
+      "purpose": "Manage application sign-in",
+      "category": "developer",
+      "href": "https://tauth.mprlab.com"
+    },
+    {
+      "id": "ledger",
+      "name": "Ledger Service",
+      "purpose": "Track virtual credits",
+      "category": "developer",
+      "href": "https://github.com/tyemirov/ledger"
+    },
+    {
+      "id": "llm-proxy",
+      "name": "llm-proxy",
+      "purpose": "Connect applications to AI providers",
+      "category": "developer",
+      "href": "https://github.com/tyemirov/llm-proxy"
+    },
+    {
+      "id": "product-scanner",
+      "name": "Poodle Scanner",
+      "purpose": "Review online store product pages",
+      "category": "business",
+      "href": "https://mprlab.com/#projects"
+    },
+    {
+      "id": "hecate",
+      "name": "Hecate",
+      "purpose": "Create and play word puzzles",
+      "category": "learning",
+      "href": "https://hecate.mprlab.com"
+    },
+    {
+      "id": "namesignal",
+      "name": "NameSignal",
+      "purpose": "Screen business name candidates",
+      "category": "business",
+      "href": "https://namesignal.mprlab.com"
+    },
+    {
+      "id": "writer-block",
+      "name": "Writer Block",
+      "purpose": "Write and edit text",
+      "category": "writing",
+      "href": "https://writer.mprlab.com"
+    },
+    {
+      "id": "summercan",
+      "name": "SummerCan",
+      "purpose": "Plan family summer camps",
+      "category": "learning",
+      "href": "https://summercan.mprlab.com"
+    },
+    {
+      "id": "mediaops",
+      "name": "MediaOps",
+      "purpose": "Create media and manage video publishing",
+      "category": "writing",
+      "href": "https://mediaops.mprlab.com"
+    },
+    {
+      "id": "gravity-notes",
+      "name": "Gravity Notes",
+      "purpose": "Keep and organize Markdown notes",
+      "category": "writing",
+      "href": "https://gravity.mprlab.com"
+    },
+    {
+      "id": "rsvp",
+      "name": "RSVP",
+      "purpose": "Create invitations and track responses",
+      "category": "business",
+      "href": "https://github.com/MarcoPoloResearchLab/RSVP"
+    },
+    {
+      "id": "prompt-bubbles",
+      "name": "Prompt Bubbles",
+      "purpose": "Browse and organize AI prompts",
+      "category": "writing",
+      "href": "https://prompts.mprlab.com"
+    },
+    {
+      "id": "social-threader",
+      "name": "Social Threader",
+      "purpose": "Split text into social media threads",
+      "category": "writing",
+      "href": "https://threader.mprlab.com"
+    },
+    {
+      "id": "allergy-wheel",
+      "name": "Allergy Wheel",
+      "purpose": "Learn about food allergens",
+      "category": "learning",
+      "href": "https://allergy.mprlab.com"
+    },
+    {
+      "id": "countdown",
+      "name": "Countdown Calendar",
+      "purpose": "Count the days to an event",
+      "category": "learning",
+      "href": "https://countdown.mprlab.com"
+    },
+    {
+      "id": "wallpapers",
+      "name": "Wallpapers",
+      "purpose": "Create patterned wallpapers",
+      "category": "writing",
+      "href": "https://wallpapers.mprlab.com"
+    },
+    {
+      "id": "gcal",
+      "name": "gcal",
+      "purpose": "Use Google Calendar from the command line",
+      "category": "developer",
+      "href": "https://github.com/MarcoPoloResearchLab/gcal"
+    },
+    {
+      "id": "nearest-city-finder",
+      "name": "Nearest City Finder",
+      "purpose": "Find nearby cities for a drive",
+      "category": "learning",
+      "href": "https://github.com/MarcoPoloResearchLab/NearestCityFinder"
+    },
+    {
+      "id": "seefood",
+      "name": "Seefood",
+      "purpose": "Identify hotdogs in images",
+      "category": "learning",
+      "href": "https://github.com/MarcoPoloResearchLab/seefood"
+    },
+    {
+      "id": "old-millionaire",
+      "name": "Old Millionaire",
+      "purpose": "Compare money across years",
+      "category": "learning",
+      "href": "https://github.com/MarcoPoloResearchLab/old_millionaire"
+    },
+    {
+      "id": "openai-extract",
+      "name": "OpenAI Extract",
+      "purpose": "Search exported conversation data",
+      "category": "developer",
+      "href": "https://github.com/MarcoPoloResearchLab/OpenaiExtract"
+    },
+    {
+      "id": "x-sync",
+      "name": "X-sync",
+      "purpose": "Compare Twitter followers",
+      "category": "business",
+      "href": "https://github.com/MarcoPoloResearchLab/X-sync"
+    },
+    {
+      "id": "skazka",
+      "name": "Skazka",
+      "purpose": "Read fairy tales",
+      "category": "learning",
+      "href": "https://github.com/MarcoPoloResearchLab/skazka"
+    },
+    {
+      "id": "camu",
+      "name": "Camu",
+      "purpose": "Browse a fairy-tale catalog",
+      "category": "learning",
+      "href": "https://github.com/MarcoPoloResearchLab/camu"
+    },
+    {
+      "id": "familyhome",
+      "name": "FamilyHome",
+      "purpose": "Use a child-friendly Portal home screen",
+      "category": "learning",
+      "href": "https://github.com/MarcoPoloResearchLab/FamilyHome"
+    },
+    {
+      "id": "mpr-ui",
+      "name": "MPR UI",
+      "purpose": "Add shared web components",
+      "category": "developer",
+      "href": "https://github.com/MarcoPoloResearchLab/mpr-ui"
+    },
+    {
+      "id": "swarm",
+      "name": "Swarm",
+      "purpose": "Explore the public project repository",
+      "category": "developer",
+      "href": "https://github.com/MarcoPoloResearchLab/swarm"
+    },
+    {
+      "id": "dictator",
+      "name": "Dictator",
+      "purpose": "Create speech and work with recorded voices",
+      "category": "writing",
+      "href": "https://github.com/tyemirov/dictator"
+    },
+    {
+      "id": "svg-tools",
+      "name": "SVG Tools",
+      "purpose": "Create and convert visual assets",
+      "category": "writing",
+      "href": "https://github.com/tyemirov/svg_tools"
+    },
+    {
+      "id": "utils",
+      "name": "Utils",
+      "purpose": "Use shared Go application libraries",
+      "category": "developer",
+      "href": "https://github.com/tyemirov/utils"
+    }
+  ]
+}
