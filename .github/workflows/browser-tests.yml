@@ -8,10 +8,14 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   browser-api-and-container:
     name: Browser, API, and container checks
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, computercat-ci]
     timeout-minutes: 30
     env:
       CI: "true"
@@ -70,7 +74,7 @@ jobs:
 
   mobile:
     name: Mobile checks
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, computercat-ci]
     timeout-minutes: 20
     env:
       CI: "true"
