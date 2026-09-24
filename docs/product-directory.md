@@ -1,21 +1,29 @@
 # Product directory
 
-Each public page and the native mobile footer has an `Explore MPR Lab` control.
+Each public web page has one shared MPR UI footer.
 The directory is available without sign-in.
-`About MPR Lab` and `All projects` appear before the product sections.
-`Writing & creativity` is initially expanded.
-The other three sections are initially collapsed.
-Each product link contains its name and short purpose.
-The permanent footer retains `Built by MPR Lab`, `GitHub`, and `Privacy` links.
+The web menu uses the same configuration as NameSignal.
+Its control shows `Marco Polo Research Lab LLC` beside the copyright year.
+The menu shows `MPR Lab` and nine project links with short names.
+`Productivity` is initially expanded.
+`Web and health tools` and `Creative tools` are initially collapsed.
+The footer shows `Thread splitter`, `Resources`, `Open source on GitHub`, and `Privacy` links.
+`js/constants.js` contains the web menu, copyright template, and footer links.
 
-The web directory uses the shared MPR UI `menu` contract.
-It opens above the footer, limits its height, and scrolls internally.
+The web directory uses the shared MPR UI `menu` contract and standard component styles.
+It opens above the footer and fits without a scrollbar in its initial state.
+The menu limits its height and scrolls internally when necessary.
 Escape closes the menu and returns focus to its control.
 An outside pointer action or a link action also closes it.
 Links open in another tab and keep the current draft.
 Resource grids and editor options wrap within narrow viewports.
 
-The native client uses a modal bottom sheet with the same catalog.
+The native client keeps the full catalog in a modal bottom sheet.
+Its footer keeps `Built by MPR Lab`, `GitHub`, `Privacy`, and `Explore MPR Lab` controls.
+`About MPR Lab` and `All projects` appear before the product sections.
+`Writing & creativity` is initially expanded.
+The other three sections are initially collapsed.
+Each product link contains its name and short purpose.
 Section buttons expose their expanded state to assistive technology.
 The sheet handles Android Back, dismissal, and device browser errors.
 Product links open through the native `Linking` adapter.
@@ -25,7 +33,8 @@ This behavior does not provide draft recovery after the operating system termina
 
 ## Source and update procedure
 
-MPR UI owns the catalog, validator, and directory stylesheet.
+MPR UI owns the native catalog snapshot, validator, and imported directory stylesheet.
+The web footer uses the standard MPR UI styles without the imported directory stylesheet.
 `data/product-catalog-source.json` records their source paths and SHA-256 values.
 The source repository records the public destination checks in `docs/product-catalog-verification.json`.
 This snapshot contains 39 projects checked on 2026-09-13.
@@ -46,9 +55,8 @@ The mobile synchronization copies the same catalog and validator into the native
 The snapshot check rejects changed hashes or unequal web and mobile bytes.
 Do not edit these copies in Social Threader.
 
-`js/directory.js` connects the gateway to the web footer.
-`js/core/gateway.js` loads and validates the catalog at the HTTP boundary.
-`js/ui/productDirectory.js` sets the shared menu or shows a visible error.
+`js/directory.js` initializes the web footer.
+`js/ui/productDirectory.js` applies the shared menu configuration.
 `ProductFooter` owns the native footer.
 `ProductDirectory` owns native sheet state and link actions.
 
