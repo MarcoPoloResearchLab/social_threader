@@ -8,16 +8,20 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
-- [ ] [B013] (P1) Update the Expo dependency versions
+- [x] [B013] (P1) Update the Expo dependency versions
   Goal:
   Restore the mobile dependency check.
   Requirements:
   - Use Expo and image picker versions that pass the installed SDK checks.
   Validation:
-  Initial and final CI reject `expo@57.0.23` and `expo-image-picker@57.0.18`.
-  The check requires `~57.0.25` and `~57.0.20` at this observation.
+  - Before the changes, local CI and GitHub CI rejected `expo@57.0.23` and `expo-image-picker@57.0.18`.
+  - The dependency files and config validator use `expo@57.0.25` and `expo-image-picker@57.0.20`.
+  - `make mobile-check` and the final `make ci` completed without errors.
+  - The final checks include 44 headless tests, 42 browser tests, and 35 mobile tests.
+  - The iOS and Android bundle checks completed without errors.
+  - The CI results are in `/tmp/social-threader-ci-before.log` and `/tmp/social-threader-ci-after.log`.
 
-- [!] [B012] (P1) {B013} Use the current LoopAware pixel host
+- [x] [B012] (P1) {B013} Use the current LoopAware pixel host
   Goal:
   Restore visit collection for public pages.
   Requirements:
@@ -27,7 +31,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Verify the public pages through the browser suite.
   The browser regression fails before the change and passes after the change.
   The final run passes 44 headless checks and 42 browser checks.
-  Blocked: B013 prevents the required full CI result.
+  The final `make ci` completed without errors after the B013 dependency changes.
 
 - [x] [B011] (P1) Keep narrow pages within the viewport
   Goal: Keep editor options and resource content within the page width.
