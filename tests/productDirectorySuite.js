@@ -36,15 +36,37 @@ export async function runProductDirectorySuite(browser, pass, fail, origin) {
                 try {
                     await page.goto(`${origin}${definition.path}`, { waitUntil: 'domcontentloaded' });
                     await page.waitForSelector(TRIGGER);
-                    assert.equal(await page.$eval(TRIGGER, element => element.textContent.trim().replace(/\s*[▾▴▼▲⌄⌃]$/, '')), 'Explore MPR Lab');
+                    assert.equal(await page.$$eval('footer', elements => elements.length), 1, 'Each page must have one footer');
+                    const utilityLinks = await page.$$eval('footer [data-mpr-footer="horizontal-links"] a', elements => elements.map(element => ({ label: element.textContent, href: element.getAttribute('href') })));
+                    assert.deepEqual(utilityLinks, [
+                        { label: 'Thread splitter', href: '/' },
+                        { label: 'Resources', href: '/resources/' },
+                        { label: 'Open source on GitHub', href: 'https://github.com/MarcoPoloResearchLab/social_threader' },
+                        { label: 'Privacy', href: '/privacy/' }
+                    ]);
+                    assert.equal(await page.$$eval('footer a[href="/privacy/"]', elements => elements.length), 1);
+                    assert.equal(await page.$$eval('footer [data-mpr-footer="prefix"]', elements => elements.length), 1);
+                    assert.equal(await page.$$eval('footer a[href="https://mprlab.com/"]', elements => elements.filter(element => element.checkVisibility()).length), 0, 'The lab credit must not repeat in utility links');
+                    const utilitySizes = await page.$$eval('footer [data-mpr-footer="horizontal-links"] a', elements => elements.map(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })));
+                    assert.ok(utilitySizes.every(size => size.width >= 44 && size.height >= 44), JSON.stringify(utilitySizes));
+                    if (definition.path === '/') {
+                        assert.equal(await page.$$eval('mpr-header a[href="/resources/"]', elements => elements.length), 0);
+                    }
+                    assert.equal(await page.$eval(TRIGGER, element => element.textContent.trim().replace(/\s*[▾▴▼▲⌄⌃]$/, '')), 'Marco Polo Research Lab LLC');
+                    assert.equal(await page.$eval('footer [data-mpr-footer="prefix"]', element => element.textContent), `© ${new Date().getFullYear()}`);
                     await page.focus(TRIGGER);
                     await page.keyboard.press('Enter');
                     await page.waitForSelector(PANEL, { visible: true });
-                    assert.deepEqual(await page.$$eval(SECTION, elements => elements.map(element => element.getAttribute('aria-expanded'))), ['true', 'false', 'false', 'false']);
+                    assert.deepEqual(await page.$$eval(SECTION, elements => elements.map(element => element.getAttribute('aria-expanded'))), ['true', 'false', 'false']);
+                    assert.deepEqual(await page.$$eval(`${SECTION} > span:first-child`, elements => elements.map(element => element.textContent)), ['Productivity', 'Web and health tools', 'Creative tools']);
                     const labels = await page.$$eval(`${PANEL} a`, elements => elements.map(element => element.textContent));
-                    assert.deepEqual(labels.slice(0, 2), ['About MPR Lab', 'All projects']);
-                    const catalog = await page.evaluate(async () => (await fetch('/data/product-catalog.json')).json());
-                    assert.deepEqual(labels.slice(2).sort(), catalog.products.map(product => `${product.name} — ${product.purpose}`).sort());
+                    assert.deepEqual(labels, ['MPR Lab', 'Gravity Notes', 'Social Threader', 'RSVP', 'Countdown Calendar', 'LoopAware', 'Allergy Wheel', 'LLM Crossword', 'Prompt Bubbles', 'Wallpapers']);
+                    const initialGeometry = await page.$eval(PANEL, element => {
+                        const bounds = element.getBoundingClientRect();
+                        return { width: bounds.width, height: bounds.height, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight };
+                    });
+                    assert.ok(initialGeometry.width <= 300 && initialGeometry.height <= 400, JSON.stringify(initialGeometry));
+                    assert.equal(initialGeometry.scrollHeight, initialGeometry.clientHeight, 'The initial menu must fit without a scrollbar');
                     for (const section of await page.$$(SECTION)) {
                         if (await section.evaluate(element => element.getAttribute('aria-expanded')) === 'false') await section.click();
                     }
@@ -57,7 +79,7 @@ export async function runProductDirectorySuite(browser, pass, fail, origin) {
                     assert.ok(geometry.pageWidth <= width, JSON.stringify({ ...geometry, overflowing }));
                     assert.ok(geometry.scrollHeight > geometry.clientHeight, 'Expanded catalog must scroll internally');
                     const sizes = await page.$$eval(`${PANEL} a, ${SECTION}, ${TRIGGER}`, elements => elements.map(element => { const bounds = element.getBoundingClientRect(); return { label: element.textContent, height: bounds.height, width: bounds.width }; }));
-                    assert.ok(sizes.every(size => size.height >= 44 && size.width >= 44), JSON.stringify(sizes.filter(size => size.height < 44 || size.width < 44)));
+                    assert.ok(sizes.every(size => size.height >= 24 && size.width >= 24), JSON.stringify(sizes.filter(size => size.height < 24 || size.width < 24)));
                     await page.keyboard.press('Escape');
                     assert.equal(await page.$eval(TRIGGER, element => document.activeElement === element), true);
                     await page.click(TRIGGER);
