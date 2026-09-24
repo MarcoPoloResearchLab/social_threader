@@ -1,9 +1,7 @@
-/* Application footer geometry; directory controls use the shared stylesheet. */
-mpr-footer[data-product-directory] { display: block; margin-top: auto; }
+/* Application footer geometry; menu controls use the standard MPR UI styles. */
+mpr-footer[data-product-directory] { display: block; margin-top: auto; line-height: 1.55; }
 mpr-footer[data-product-directory] footer.mpr-footer { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
-mpr-footer[data-product-directory] .mpr-footer__horizontal-links a,
-mpr-footer[data-product-directory] .mpr-footer__privacy,
-mpr-footer[data-product-directory] [data-mpr-footer="brand"] a {
+mpr-footer[data-product-directory] .mpr-footer__horizontal-links a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;

@@ -70,6 +70,11 @@ release publish deploy:
 local-config:
 	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" config --quiet
 
+.PHONY: up down
+up: local-up
+
+down: local-down
+
 local-up:
 	@test -f "$(LOCAL_ENV_FILE)" || { printf 'missing local environment file: %s\n' "$(LOCAL_ENV_FILE)" >&2; exit 2; }
 	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" up --build --detach --wait --wait-timeout 120

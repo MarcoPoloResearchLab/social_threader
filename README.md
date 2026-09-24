@@ -72,7 +72,7 @@ Install Go 1.26.5, Node.js 20 or later, Docker, and Docker Compose.
 3. Start the local stack.
 
    ```bash
-   make local-up
+   make up
    ```
 
 4. Open `http://localhost:4173`.
@@ -86,7 +86,7 @@ Install Go 1.26.5, Node.js 20 or later, Docker, and Docker Compose.
 6. Stop the local stack.
 
    ```bash
-   make local-down
+   make down
    ```
 
 The smoke test uses a seeded local-only TAuth user. It verifies session issuance, API authorization, logout, and fake-proxy routing.

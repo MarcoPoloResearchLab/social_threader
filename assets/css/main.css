@@ -31,8 +31,7 @@ body {
     color: #334155;
 }
 
-.resource-intro a,
-footer a {
+.resource-intro a {
     color: #0056b3;
 }
 
@@ -237,7 +236,7 @@ button[aria-disabled="true"]:hover {
 }
 
 /* Reserve 2px border to avoid shifting when active */
-button {
+:where(main) button {
     background-color: #007bff;
     color: #fff;
     padding: 10px;
@@ -249,7 +248,7 @@ button {
     transition: background-color 0.3s, border-color 0.3s;
 }
 
-button:hover {
+:where(main) button:hover {
     background-color: #0056b3;
 }
 
@@ -472,20 +471,6 @@ button:hover {
     .transformationUndo button {
         width: 100%;
     }
-}
-
-/* Footer styling */
-footer {
-    text-align: center;
-    padding: 20px;
-    border-top: 1px solid #ccc;
-}
-
-footer nav {
-    display: flex;
-    justify-content: center;
-    gap: 18px;
-    margin-top: 8px;
 }
 
 /* Active button state – uses the same border width to avoid layout shifts */
