@@ -30,7 +30,7 @@ export const PUBLIC_SEO_PATHS = Object.freeze({
     RESOURCE_HUB: "/resources/"
 });
 
-export const LOOPAWARE_PIXEL_URL_PREFIX = "https://www.loopaware.com/pixel.js?site_id=";
+export const LOOPAWARE_PIXEL_URL_PREFIX = "https://loopaware.mprlab.com/pixel.js?site_id=";
 export const PUBLIC_LOOPAWARE_SITE_ID = "2ca5a755-02e2-462c-8bdf-16e5bc303042";
 
 export const PUBLIC_SEO_KINDS = Object.freeze({
