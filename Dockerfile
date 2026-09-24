@@ -23,11 +23,9 @@ RUN target_os="${TARGETOS:-$(go env GOOS)}" && \
 FROM alpine:3.22 AS api
 
 ARG RELEASE_VERSION=development
-ARG SOURCE_REVISION=unknown
 
 LABEL org.opencontainers.image.title="Social Threader API" \
       org.opencontainers.image.version="${RELEASE_VERSION}" \
-      org.opencontainers.image.revision="${SOURCE_REVISION}" \
       org.opencontainers.image.source="https://github.com/MarcoPoloResearchLab/social_threader"
 
 RUN apk add --no-cache ca-certificates && mkdir -p /app/configs
