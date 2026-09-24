@@ -8,6 +8,20 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B014] (P1) Remove the obsolete image build identity
+  Goal:
+  The API image build arguments obey the installed Gateway contract.
+  Requirements:
+  - Remove the `source_commit` build identity and its Dockerfile revision label.
+  - Keep the `release_version` build identity and image version label.
+  Validation:
+  - Before the changes, Gateway v4.5.1 and the regression test rejected `SOURCE_REVISION`.
+  - After the changes, the installed metadata validator and deployment tests completed without errors.
+  - The local API image build and `make ci` completed without errors.
+  - The image version label contains the supplied build version.
+  - The full Gateway plan requires a clean checkout synchronized with `origin/master`.
+  - No release, publication, or deployment occurred.
+
 - [x] [B013] (P1) Update the Expo dependency versions
   Goal:
   Restore the mobile dependency check.

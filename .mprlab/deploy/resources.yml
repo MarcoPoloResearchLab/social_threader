@@ -22,8 +22,6 @@ mprlab_resources:
             arguments:
               RELEASE_VERSION:
                 identity: release_version
-              SOURCE_REVISION:
-                identity: source_commit
             platforms:
               - linux/amd64
               - linux/arm64
