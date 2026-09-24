@@ -1,17 +1,51 @@
 // @ts-check
 export const PRODUCT_DIRECTORY = Object.freeze({
-    CATALOG_URL: '/data/product-catalog.json',
     FOOTER_SELECTOR: 'mpr-footer[data-product-directory]',
-    ERROR_MESSAGE: 'Unable to load the MPR Lab product directory.',
-    ERROR_ID: 'product-directory-error',
-    PRIVACY_HREF: '/privacy/',
-    PRIVACY_LABEL: 'Privacy',
+    ERROR_MESSAGE: 'Unable to initialize the MPR Lab footer.',
+    COPYRIGHT_TEMPLATE: '© {year}',
+    MENU: Object.freeze({
+        label: 'Marco Polo Research Lab LLC',
+        placement: 'top',
+        sections: Object.freeze([
+            Object.freeze({
+                id: 'company', label: 'MPR Lab', mode: 'static',
+                links: Object.freeze([
+                    Object.freeze({ label: 'MPR Lab', href: 'https://mprlab.com', target: '_blank' })
+                ])
+            }),
+            Object.freeze({
+                id: 'productivity', label: 'Productivity', mode: 'expanded',
+                links: Object.freeze([
+                    Object.freeze({ label: 'Gravity Notes', href: 'https://gravity.mprlab.com', target: '_blank' }),
+                    Object.freeze({ label: 'Social Threader', href: 'https://threader.mprlab.com', target: '_blank' }),
+                    Object.freeze({ label: 'RSVP', href: 'https://rsvp.mprlab.com', target: '_blank' }),
+                    Object.freeze({ label: 'Countdown Calendar', href: 'https://countdown.mprlab.com', target: '_blank' })
+                ])
+            }),
+            Object.freeze({
+                id: 'tools', label: 'Web and health tools', mode: 'collapsed',
+                links: Object.freeze([
+                    Object.freeze({ label: 'LoopAware', href: 'https://loopaware.mprlab.com', target: '_blank' }),
+                    Object.freeze({ label: 'Allergy Wheel', href: 'https://allergy.mprlab.com', target: '_blank' })
+                ])
+            }),
+            Object.freeze({
+                id: 'creative', label: 'Creative tools', mode: 'collapsed',
+                links: Object.freeze([
+                    Object.freeze({ label: 'LLM Crossword', href: 'https://llm-crossword.mprlab.com', target: '_blank' }),
+                    Object.freeze({ label: 'Prompt Bubbles', href: 'https://prompts.mprlab.com', target: '_blank' }),
+                    Object.freeze({ label: 'Wallpapers', href: 'https://wallpapers.mprlab.com', target: '_blank' })
+                ])
+            })
+        ])
+    }),
     FOOTER_LINKS: Object.freeze({
         alignment: 'left',
         links: Object.freeze([
-            Object.freeze({ label: 'Built by MPR Lab', href: 'https://mprlab.com/', target: '_blank' }),
-            Object.freeze({ label: 'GitHub', href: 'https://github.com/MarcoPoloResearchLab/social_threader', target: '_blank' }),
-            Object.freeze({ label: 'Resources', href: '/resources/' })
+            Object.freeze({ label: 'Thread splitter', href: '/' }),
+            Object.freeze({ label: 'Resources', href: '/resources/' }),
+            Object.freeze({ label: 'Open source on GitHub', href: 'https://github.com/MarcoPoloResearchLab/social_threader', target: '_blank' }),
+            Object.freeze({ label: 'Privacy', href: '/privacy/' })
         ])
     })
 });
