@@ -148,27 +148,6 @@ details p {
     color: var(--brand-dark);
 }
 
-.site-footer {
-    border-top: 1px solid var(--border);
-}
-
-.site-footer__inner {
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
-    padding: 28px 0;
-    color: var(--text-muted);
-}
-
-.site-footer p {
-    margin: 0;
-}
-
-.site-footer nav {
-    display: flex;
-    gap: 16px;
-}
-
 @media (max-width: 820px) {
     .quick-verdict,
     .content-layout {
@@ -181,8 +160,7 @@ details p {
 }
 
 @media (max-width: 620px) {
-    .site-header__inner,
-    .site-footer__inner {
+    .site-header__inner {
         align-items: flex-start;
         flex-direction: column;
     }
