@@ -8,6 +8,27 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [ ] [B013] (P1) Update the Expo dependency versions
+  Goal:
+  Restore the mobile dependency check.
+  Requirements:
+  - Use Expo and image picker versions that pass the installed SDK checks.
+  Validation:
+  Initial and final CI reject `expo@57.0.23` and `expo-image-picker@57.0.18`.
+  The check requires `~57.0.25` and `~57.0.20` at this observation.
+
+- [!] [B012] (P1) {B013} Use the current LoopAware pixel host
+  Goal:
+  Restore visit collection for public pages.
+  Requirements:
+  - Load each pixel from `loopaware.mprlab.com`.
+  - Preserve the registered site ID.
+  Validation:
+  - Verify the public pages through the browser suite.
+  The browser regression fails before the change and passes after the change.
+  The final run passes 44 headless checks and 42 browser checks.
+  Blocked: B013 prevents the required full CI result.
+
 - [x] [B011] (P1) Keep narrow pages within the viewport
   Goal: Keep editor options and resource content within the page width.
   Evidence: F003 browser checks found overflow at 320 pixels and in resource grids below 1280 pixels.
