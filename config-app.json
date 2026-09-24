@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "environments": [
+    {
+      "name": "local",
+      "origins": [
+        "http://localhost:4173"
+      ],
+      "api_origin": ""
+    },
+    {
+      "name": "hosted",
+      "origins": [
+        "https://threader.mprlab.com"
+      ],
+      "api_origin": "https://threader-api.mprlab.com"
+    }
+  ]
+}
