@@ -174,7 +174,7 @@ export async function runSharedUiMigrationSuite(browser, pass, fail, origin) {
                 stage = "header login after cancellation";
                 const headerGoogle = `${HEADER} [data-test="candidate-google"]`;
                 await page.waitForSelector(headerGoogle, { visible: true });
-                await page.click(headerGoogle);
+                await page.locator(headerGoogle).click();
                 await page.waitForFunction(selector => !document.querySelector(selector).disabled, {}, POLISH);
                 await page.waitForSelector(`${HEADER} mpr-user[data-mpr-user-status="authenticated"]`);
                 assert.equal(transformationRequests.length, 0, "Canceled AI intents must not resume on a later login");
@@ -218,14 +218,14 @@ export async function runSharedUiMigrationSuite(browser, pass, fail, origin) {
                 await page.evaluate(() => {
                     document.addEventListener("mpr-ui:auth:error", () => document.body.dataset.testAuthFailure = "true", { once: true });
                 });
-                await page.click(DIALOG_GOOGLE);
+                await page.locator(DIALOG_GOOGLE).click();
                 await page.waitForSelector('body[data-test-auth-failure="true"]');
                 await page.waitForFunction(selector => !document.querySelector(selector).disabled, {}, DIALOG_GOOGLE);
                 assert.equal(await page.$eval(LOGIN_DIALOG, element => element.open), true);
                 assert.equal(await page.$eval(SOURCE, element => element.textContent), DRAFT_TEXT);
                 assert.equal(transformationRequests.length, 0);
                 stage = "successful retry resumes one AI action";
-                await page.click(DIALOG_GOOGLE);
+                await page.locator(DIALOG_GOOGLE).click();
                 await page.waitForSelector("[data-transformation-preview-text]:not([hidden])");
                 await page.waitForSelector(`${HEADER} mpr-user[data-mpr-user-status="authenticated"]`);
                 assert.equal(await page.$eval(LOGIN_DIALOG, element => element.open), false);
