@@ -18,7 +18,8 @@ Use the hosted frontend at [threader.mprlab.com](https://threader.mprlab.com/).
 
 ### Improve With AI
 
-The `Improve with AI` toolbar appears above the main editor. It has three closed operations:
+The `Improve with AI` toolbar is below the main editor. It is visible only when the draft contains text.
+The three controls are in one row on desktop and phone screens:
 
 - `Polish` improves grammar, clarity, cohesion, and flow.
 - `Expand` adds connective detail, explanation, and structure.
@@ -28,7 +29,9 @@ Each operation preserves the source language and factual meaning. Each operation
 
 The browser sends only the current plain-text draft to the protected API. The application does not persist source or transformed text.
 
-The controls require an authenticated `mpr-ui` lifecycle. The app uses the documented public startup snapshot when that optional helper is present. The normal split and copy functions remain available to guest users.
+A guest can select an AI action to open the sign-in dialog. The shared `mpr-login-button` uses `auth-target="#socialThreaderHeader"` to use the header's auth controller. After sign-in, the app sends the selected action once. `Cancel` and Escape close the dialog and clear the selected action. A change to the draft also clears the selected action.
+
+AI requests require the authenticated `mpr-ui` lifecycle. The app uses the documented public startup snapshot when that optional helper is present. The normal split and copy functions remain available to guest users.
 
 An image disables every thread transformation control. The browser does not upload, remove, move, or replace the image.
 
@@ -131,6 +134,14 @@ Run the repository CI gate:
 ```bash
 make ci
 ```
+
+To validate an MPR-UI change before its release, select the shared library source directory:
+
+```bash
+SOCIAL_THREADER_MPR_UI_SOURCE=/path/to/mpr-ui make ci
+```
+
+The shared auth browser tests load this source in place of CDN assets. Without this variable, they load the current `@latest` release. The sign-in dialog requires MPR-UI `auth-target` support.
 
 The gate runs these checks:
 

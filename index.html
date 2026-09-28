@@ -112,7 +112,6 @@
                 Need a specific workflow?
                 <a href="/resources/">Browse the Social Threader resource guides</a>.
             </p>
-            <section id="transformationToolbar"></section>
             <div
                 id="sourceText"
                 class="richTextInput"
@@ -124,6 +123,7 @@
             ></div>
             <div id="inputStats" class="inputStats" aria-live="polite"></div>
             <div id="inputError" class="error" role="alert"></div>
+            <section id="transformationToolbar" hidden></section>
             <section id="transformationPreview" hidden></section>
         </div>
 
@@ -156,6 +156,16 @@
             <div class="lower-right-pane" id="results" aria-live="polite"></div>
         </div>
     </main>
+
+    <dialog id="transformationLoginDialog" class="transformationLoginDialog" aria-labelledby="transformationLoginTitle">
+        <h2 id="transformationLoginTitle"></h2>
+        <mpr-login-button
+            auth-target="#socialThreaderHeader"
+            button-text="signin_with"
+            button-size="large"
+        ></mpr-login-button>
+        <button id="transformationLoginClose" class="transformationLoginClose" type="button"></button>
+    </dialog>
 
     <mpr-footer data-product-directory sticky="false"></mpr-footer>
 

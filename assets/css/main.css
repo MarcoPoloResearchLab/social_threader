@@ -102,8 +102,12 @@ body {
 
 /* Authenticated AI editing surface */
 .transformationToolbar {
-    margin-bottom: 12px;
-    padding: 12px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 4px 8px;
+    margin-top: 8px;
+    padding: 8px;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
     background: #f8fafc;
@@ -116,16 +120,34 @@ body {
     line-height: 1.3;
 }
 
+.transformationToolbarTitle {
+    margin: 0;
+    font-size: 14px;
+}
+
 .transformationButtonGroup {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    gap: 4px;
 }
 
 .transformationButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     width: 100%;
     height: auto;
-    min-height: 40px;
+    min-height: 36px;
+    padding: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.transformationButtonIcon {
+    flex: none;
+    width: 14px;
+    height: 14px;
 }
 
 button:disabled,
@@ -141,17 +163,9 @@ button[aria-disabled="true"]:hover {
 }
 
 .transformationStatus {
-    min-height: 18px;
-    margin-top: 8px;
+    grid-column: 1 / -1;
     color: #334155;
     font-size: 12px;
-}
-
-.transformationPrivacy {
-    margin-top: 4px;
-    color: #475569;
-    font-size: 11px;
-    line-height: 1.4;
 }
 
 .transformationPreview {
@@ -162,6 +176,8 @@ button[aria-disabled="true"]:hover {
     background: #f8fafc;
 }
 
+.transformationToolbar[hidden],
+.transformationStatus[hidden],
 .transformationPreview[hidden],
 .transformationPreviewText[hidden],
 .transformationStaleNotice[hidden],
@@ -210,6 +226,43 @@ button[aria-disabled="true"]:hover {
 }
 
 /* Right pane & controls */
+.transformationLoginDialog {
+    margin: auto;
+    padding: 20px;
+    width: min(360px, calc(100% - 32px));
+    max-height: calc(100% - 32px);
+    overflow: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f172a;
+    --mpr-login-button-inline-size: 100%;
+}
+
+.transformationLoginDialog[open] {
+    display: grid;
+    gap: 16px;
+}
+
+.transformationLoginDialog::backdrop {
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.transformationLoginDialog h2 {
+    font-size: 18px;
+}
+
+.transformationLoginClose {
+    padding: 8px;
+    min-height: 36px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: #f8fafc;
+    color: #334155;
+    font: inherit;
+    cursor: pointer;
+}
+
 .upper-right-pane {
     display: flex;
     flex-direction: column;
@@ -457,7 +510,7 @@ button[aria-disabled="true"]:hover {
         left: 6px;
     }
 
-    .transformationButtonGroup {
+    .transformationToolbar {
         grid-template-columns: 1fr;
     }
 

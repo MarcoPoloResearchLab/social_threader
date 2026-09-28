@@ -6,6 +6,7 @@
 import { InputPanel } from "../js/ui/inputPanel.js";
 import { TransformationToolbar } from "../js/ui/transformationToolbar.js";
 import { TransformationPreview } from "../js/ui/transformationPreview.js";
+import { TransformationLoginDialog } from "../js/ui/transformationLoginDialog.js";
 import { TransformationCoordinator } from "../js/core/transformationCoordinator.js";
 import { GatewayError } from "../js/core/gateway.js";
 import {
@@ -80,6 +81,8 @@ class DeferredGateway {
  *   previewElement: HTMLElement;
  *   toolbar: TransformationToolbar;
  *   preview: TransformationPreview;
+ *   dialogElement: HTMLDialogElement;
+ *   closeButton: HTMLButtonElement;
  *   gateway: DeferredGateway;
  *   coordinator: TransformationCoordinator;
  * }}
@@ -91,19 +94,25 @@ export function createCoordinatorFixture() {
     const statisticsElement = document.createElement("div");
     const errorElement = document.createElement("div");
     const previewElement = document.createElement("section");
+    const dialogElement = document.createElement("dialog");
+    const titleElement = document.createElement("h2");
+    const closeButton = document.createElement("button");
+    dialogElement.append(titleElement, closeButton);
     editorElement.contentEditable = "true";
-    document.body.append(toolbarElement, editorElement, statisticsElement, errorElement, previewElement);
+    document.body.append(toolbarElement, editorElement, statisticsElement, errorElement, previewElement, dialogElement);
 
     const inputPanel = new InputPanel(editorElement, statisticsElement, errorElement);
     inputPanel.initializeCopy();
     const toolbar = new TransformationToolbar(toolbarElement);
     const preview = new TransformationPreview(previewElement);
+    const loginDialog = new TransformationLoginDialog(dialogElement, titleElement, closeButton);
     const gateway = new DeferredGateway();
     let requestSequence = 0;
     const coordinator = new TransformationCoordinator({
         inputPanel,
         toolbar,
         preview,
+        loginDialog,
         gateway,
         lifecycleTarget: document,
         requestIdFactory() {
@@ -119,6 +128,8 @@ export function createCoordinatorFixture() {
         previewElement,
         toolbar,
         preview,
+        dialogElement,
+        closeButton,
         gateway,
         coordinator
     };
@@ -180,6 +191,25 @@ function settleAsyncWork() {
  * @returns {Promise<void>}
  */
 export async function runTransformationTests(runTest) {
+    const dismissedIntentCases = [
+        { name: "Cancel", dismiss(fixture) { fixture.closeButton.click(); }, text: SOURCE_TEXT },
+        { name: "Escape", dismiss(fixture) { fixture.dialogElement.dispatchEvent(new Event("cancel", { cancelable: true })); }, text: SOURCE_TEXT },
+        { name: "a changed draft", dismiss(fixture) { enterText(fixture.editorElement, REVISED_TEXT); }, text: REVISED_TEXT }
+    ];
+    for (const intentCase of dismissedIntentCases) {
+        await runTest(`${intentCase.name} clears a pending AI action before a later login`, () => {
+            const fixture = createCoordinatorFixture();
+            enterText(fixture.editorElement, SOURCE_TEXT);
+            getOperationButton(fixture.toolbarElement, "expand").click();
+            assertEqual(fixture.dialogElement.open, true, "Selecting a guest action opens login");
+            assertEqual(fixture.gateway.requests.length, 0, "Login selection creates no AI request");
+            intentCase.dismiss(fixture);
+            assertEqual(fixture.dialogElement.open, false, "Dismissal closes the login dialog");
+            reportAuthenticated();
+            assertEqual(fixture.gateway.requests.length, 0, "A dismissed action cannot resume");
+            assertEqual(fixture.inputPanel.getDocumentSnapshot().plainText, intentCase.text, "Login leaves the current draft intact");
+        });
+    }
     await runTest("coordinator waits for auth, submits once, previews as text, applies, and undoes", async () => {
         const fixture = createCoordinatorFixture();
         enterText(fixture.editorElement, SOURCE_TEXT);
@@ -330,7 +360,7 @@ export async function runTransformationTests(runTest) {
         assertEqual(activeSignal.aborted, true, "Logout should cancel the active request");
         assertEqual(fixture.previewElement.hidden, true, "Logout should clear transformation preview state");
         assertEqual(fixture.inputPanel.getDocumentSnapshot().plainText, SOURCE_TEXT, "Logout should preserve the local draft");
-        assertEqual(getOperationButton(fixture.toolbarElement, "polish").disabled, true, "Logout should disable protected controls");
+        assertEqual(getOperationButton(fixture.toolbarElement, "polish").disabled, false, "Logout should allow an action to request login");
     });
 
     await runTest("images disable every operation and remain byte-for-byte unchanged", async () => {

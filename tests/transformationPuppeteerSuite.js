@@ -4,6 +4,7 @@
  */
 
 import http from "node:http";
+import { runTransformationToolbarBrowserSuite } from "./transformationToolbarPuppeteerSuite.js";
 
 const SOURCE_TEXT_SELECTOR = "#sourceText";
 const TRANSFORMATION_TOOLBAR_SELECTOR = "#transformationToolbar";
@@ -164,7 +165,10 @@ export async function runTransformationBrowserSuite(page, pass, fail, indexUrl, 
         await page.setRequestInterception(true);
         page.on("request", handleRequest);
         await page.goto(indexUrl, { waitUntil: "domcontentloaded" });
-        await page.waitForSelector(TRANSFORMATION_TOOLBAR_SELECTOR);
+        await page.waitForFunction((toolbarSelector) => (
+            document.querySelector(toolbarSelector)?.querySelectorAll("button").length === 3
+        ), {}, TRANSFORMATION_TOOLBAR_SELECTOR);
+        await runTransformationToolbarBrowserSuite(page, pass, fail);
         await page.setCookie({
             name: LOCAL_SESSION_COOKIE_NAME,
             value: "puppeteer-profile-session",
@@ -177,8 +181,8 @@ export async function runTransformationBrowserSuite(page, pass, fail, indexUrl, 
         }, "Browser source draft.");
 
         const disabledBeforeAuth = await page.$eval(POLISH_BUTTON_SELECTOR, (buttonElement) => buttonElement.disabled);
-        if (!disabledBeforeAuth || transformationApiServer.capture().requestCount !== 0) {
-            throw new Error("Protected controls or requests became active before the mpr-ui authenticated lifecycle");
+        if (disabledBeforeAuth || transformationApiServer.capture().requestCount !== 0) {
+            throw new Error("A guest must be able to request login without sending an AI request");
         }
         await page.evaluate((authenticatedEventName) => {
             document.dispatchEvent(new CustomEvent(authenticatedEventName));
@@ -249,7 +253,7 @@ export async function runTransformationBrowserSuite(page, pass, fail, indexUrl, 
                 sourceText: sourceElement?.textContent
             };
         }, POLISH_BUTTON_SELECTOR, SOURCE_TEXT_SELECTOR);
-        if (!logoutState.disabled || logoutState.sourceText !== "Browser source draft.") {
+        if (logoutState.disabled || logoutState.sourceText !== "Browser source draft.") {
             throw new Error("Logout did not clear protected UI state while preserving the draft");
         }
         pass(testName);

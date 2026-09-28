@@ -40,11 +40,12 @@ export async function runTransformationToolbarTests(runTest) {
         );
 
         const matrixCases = [
-            { authenticated: false, hasText: false, hasImages: false, requestActive: false, enabled: false, status: TEXT_CONTENT.TRANSFORMATION_AUTH_REQUIRED },
+            { authenticated: false, hasText: false, hasImages: false, requestActive: false, enabled: false, status: TEXT_CONTENT.TRANSFORMATION_EMPTY_REQUIRED },
+            { authenticated: false, hasText: true, hasImages: false, requestActive: false, enabled: true, status: "" },
             { authenticated: true, hasText: false, hasImages: false, requestActive: false, enabled: false, status: TEXT_CONTENT.TRANSFORMATION_EMPTY_REQUIRED },
             { authenticated: true, hasText: true, hasImages: true, requestActive: false, enabled: false, status: TEXT_CONTENT.TRANSFORMATION_IMAGES_UNSUPPORTED },
             { authenticated: true, hasText: true, hasImages: false, requestActive: true, enabled: false, status: TEXT_CONTENT.TRANSFORMATION_LOADING },
-            { authenticated: true, hasText: true, hasImages: false, requestActive: false, enabled: true, status: TEXT_CONTENT.TRANSFORMATION_READY }
+            { authenticated: true, hasText: true, hasImages: false, requestActive: false, enabled: true, status: "" }
         ];
 
         matrixCases.forEach((matrixCase) => {
@@ -60,6 +61,11 @@ export async function runTransformationToolbarTests(runTest) {
                 toolbarElement.querySelector("[data-transformation-status]")?.textContent,
                 matrixCase.status,
                 "Toolbar status should explain availability"
+            );
+            assertEqual(
+                toolbarElement.querySelector("[data-transformation-status]")?.hasAttribute("hidden"),
+                matrixCase.status.length === 0,
+                "The ready toolbar should reserve no space for an empty status"
             );
         });
 
@@ -103,7 +109,7 @@ export async function runTransformationToolbarTests(runTest) {
         assertEqual(fixture.gateway.requests.length, 0, "Startup reconciliation should not probe the protected API");
     });
 
-    await runTest("obsolete snapshot shapes keep protected toolbar controls disabled", async () => {
+    await runTest("obsolete snapshot shapes preserve guest login actions without protected requests", async () => {
         for (const snapshot of [{ authenticated: true }, { user_id: "test-user" }, { profile: { user_id: "test-user" } }]) {
             const fixture = createCoordinatorFixture();
             enterText(fixture.editorElement, SOURCE_TEXT);
@@ -116,7 +122,7 @@ export async function runTransformationToolbarTests(runTest) {
                 handleAuthenticated: () => fixture.coordinator.handleAuthenticatedLifecycle(),
                 handleUnauthenticated: () => fixture.coordinator.handleUnauthenticatedLifecycle()
             });
-            assertEqual(getOperationButton(fixture.toolbarElement, "polish").disabled, true, "Only the canonical status field can enable protected controls");
+            assertEqual(getOperationButton(fixture.toolbarElement, "polish").disabled, false, "A guest can select an action to request login");
             assertEqual(fixture.gateway.requests.length, 0, "An obsolete snapshot cannot send a protected request");
         }
     });

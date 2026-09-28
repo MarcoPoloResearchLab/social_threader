@@ -11,6 +11,12 @@ import {
 
 const OPERATION_ATTRIBUTE = "data-transformation-operation";
 const STATUS_ATTRIBUTE = "data-transformation-status";
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const OPERATION_ICON_PATHS = Object.freeze({
+    [TRANSFORMATION_OPERATION_IDENTIFIERS.POLISH]: "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z",
+    [TRANSFORMATION_OPERATION_IDENTIFIERS.EXPAND]: "M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7",
+    [TRANSFORMATION_OPERATION_IDENTIFIERS.PUNCH_UP]: "m13 2-9 12h7l-1 8 10-12h-7Z"
+});
 
 /**
  * Renders transformation operations and explains their current availability.
@@ -50,8 +56,8 @@ export class TransformationToolbar {
      * @returns {void}
      */
     setAvailability(availability) {
+        this.rootElement.hidden = !availability.hasText;
         const controlsEnabled =
-            availability.authenticated &&
             availability.hasText &&
             !availability.hasImages &&
             !availability.requestActive;
@@ -61,6 +67,7 @@ export class TransformationToolbar {
         });
         this.rootElement.setAttribute("aria-busy", String(availability.requestActive));
         this.statusElement.textContent = availabilityMessage(availability);
+        this.statusElement.hidden = this.statusElement.textContent.length === 0;
     }
 
     /** @returns {void} */
@@ -86,7 +93,9 @@ export class TransformationToolbar {
             const buttonElement = document.createElement("button");
             buttonElement.type = "button";
             buttonElement.className = "transformationButton";
-            buttonElement.textContent = operationConfig.label;
+            const labelElement = document.createElement("span");
+            labelElement.textContent = operationConfig.label;
+            buttonElement.append(createOperationIcon(operation), labelElement);
             buttonElement.title = operationConfig.description;
             buttonElement.setAttribute(OPERATION_ATTRIBUTE, operation);
             buttonElement.addEventListener("click", () => {
@@ -105,12 +114,29 @@ export class TransformationToolbar {
         this.statusElement.setAttribute("aria-live", "polite");
         fragment.appendChild(this.statusElement);
 
-        const privacyElement = document.createElement("p");
-        privacyElement.className = "transformationPrivacy";
-        privacyElement.textContent = TEXT_CONTENT.TRANSFORMATION_PRIVACY;
-        fragment.appendChild(privacyElement);
         this.rootElement.appendChild(fragment);
     }
+}
+
+/**
+ * @param {import('../types.d.js').TransformationOperation} operation Button operation.
+ * @returns {SVGSVGElement} Decorative icon with the button's current color.
+ */
+function createOperationIcon(operation) {
+    const iconElement = document.createElementNS(SVG_NAMESPACE, "svg");
+    iconElement.classList.add("transformationButtonIcon");
+    iconElement.setAttribute("viewBox", "0 0 24 24");
+    iconElement.setAttribute("aria-hidden", "true");
+    iconElement.setAttribute("focusable", "false");
+    iconElement.setAttribute("fill", "none");
+    iconElement.setAttribute("stroke", "currentColor");
+    iconElement.setAttribute("stroke-width", "1.8");
+    iconElement.setAttribute("stroke-linecap", "round");
+    iconElement.setAttribute("stroke-linejoin", "round");
+    const pathElement = document.createElementNS(SVG_NAMESPACE, "path");
+    pathElement.setAttribute("d", OPERATION_ICON_PATHS[operation]);
+    iconElement.appendChild(pathElement);
+    return iconElement;
 }
 
 /**
@@ -124,11 +150,8 @@ function availabilityMessage(availability) {
     if (availability.hasImages) {
         return TEXT_CONTENT.TRANSFORMATION_IMAGES_UNSUPPORTED;
     }
-    if (!availability.authenticated) {
-        return TEXT_CONTENT.TRANSFORMATION_AUTH_REQUIRED;
-    }
     if (!availability.hasText) {
         return TEXT_CONTENT.TRANSFORMATION_EMPTY_REQUIRED;
     }
-    return TEXT_CONTENT.TRANSFORMATION_READY;
+    return "";
 }
