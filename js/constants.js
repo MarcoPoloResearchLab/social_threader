@@ -78,13 +78,12 @@ export const TEXT_CONTENT = Object.freeze({
     FEEDBACK_SUBMIT_LABEL: "Submit",
     CUSTOM_INPUT_PLACEHOLDER: "Size",
     TRANSFORMATION_HEADING: "Improve with AI",
-    TRANSFORMATION_PRIVACY:
-        "AI editing sends only this text draft to Social Threader's protected API. The source draft is not persisted.",
-    TRANSFORMATION_AUTH_REQUIRED: "Sign in to use AI editing. Thread splitting stays available.",
+    TRANSFORMATION_LOGIN_TITLE: "Sign in to {operation}",
+    TRANSFORMATION_LOGIN_CANCEL: "Cancel",
+    TRANSFORMATION_LOGIN_UNAVAILABLE: "The sign-in dialog is unavailable. Please try again.",
     TRANSFORMATION_EMPTY_REQUIRED: "Enter text to enable AI editing.",
     TRANSFORMATION_IMAGES_UNSUPPORTED: "AI editing currently supports text-only drafts. Attached images remain unchanged.",
     TRANSFORMATION_LOADING: "Improving your thread…",
-    TRANSFORMATION_READY: "Choose one editing operation.",
     TRANSFORMATION_PREVIEW_TITLE: "AI edit preview",
     TRANSFORMATION_STALE_RESULT: "Your draft changed while this result was prepared. Review it before you apply it.",
     TRANSFORMATION_APPLY_LABEL: "Apply",
@@ -215,6 +214,7 @@ export const HTTP_VALUES = Object.freeze({
 /** @type {Readonly<Record<string, string>>} */
 export const LOG_MESSAGES = Object.freeze({
     AUTH_SNAPSHOT_FAILURE: "Shared authentication snapshot failed.",
+    LOGIN_DIALOG_FAILURE: "Unable to open the sign-in dialog.",
     COPY_FAILURE: "Failed to copy chunk to clipboard",
     CLIPBOARD_UNAVAILABLE: "Clipboard API is not available",
     IMAGE_READ_FAILURE: "Unable to read file as data URL",

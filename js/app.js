@@ -10,6 +10,7 @@ import { FormControls } from "./ui/formControls.js";
 import { ThreaderController } from "./ui/controller.js";
 import { TransformationToolbar } from "./ui/transformationToolbar.js";
 import { TransformationPreview } from "./ui/transformationPreview.js";
+import { TransformationLoginDialog } from "./ui/transformationLoginDialog.js";
 import { TransformationCoordinator } from "./core/transformationCoordinator.js";
 import { createTransformationGateway, loadApplicationProfile } from "./core/gateway.js";
 import { reconcileMprUiAuthLifecycle } from "./core/authLifecycle.js";
@@ -152,6 +153,11 @@ function bootstrap() {
     const formControls = new FormControls(presetButtons, customButtonElement, customInputElement, toggleInputs, toggleLabels);
     const transformationToolbar = new TransformationToolbar(transformationToolbarElement);
     const transformationPreview = new TransformationPreview(transformationPreviewElement);
+    const loginDialog = new TransformationLoginDialog(
+        /** @type {HTMLDialogElement} */ (assertElement(document.getElementById("transformationLoginDialog"), "transformationLoginDialog")),
+        assertElement(document.getElementById("transformationLoginTitle"), "transformationLoginTitle"),
+        /** @type {HTMLButtonElement} */ (assertElement(document.getElementById("transformationLoginClose"), "transformationLoginClose"))
+    );
 
     const controller = new ThreaderController({
         inputPanel,
@@ -165,6 +171,7 @@ function bootstrap() {
         inputPanel,
         toolbar: transformationToolbar,
         preview: transformationPreview,
+        loginDialog,
         gateway: createProfiledTransformationGateway(),
         lifecycleTarget: document
     });

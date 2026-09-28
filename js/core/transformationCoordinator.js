@@ -6,9 +6,12 @@
 import {
     API_ERROR_CODES,
     AUTH_EVENT_NAMES,
-    TRANSFORMATION_ERROR_MESSAGES
+    TRANSFORMATION_ERROR_MESSAGES,
+    TEXT_CONTENT,
+    LOG_MESSAGES
 } from "../constants.js";
 import { GatewayError } from "./gateway.js";
+import { loggingAdapter } from "../utils/logging.js";
 
 /**
  * Owns the browser transformation workflow without owning authentication or transport details.
@@ -19,14 +22,16 @@ export class TransformationCoordinator {
      * @param {import('../ui/inputPanel.js').InputPanel} input.inputPanel Public editor boundary.
      * @param {import('../ui/transformationToolbar.js').TransformationToolbar} input.toolbar Toolbar view.
      * @param {import('../ui/transformationPreview.js').TransformationPreview} input.preview Preview view.
+     * @param {import('../ui/transformationLoginDialog.js').TransformationLoginDialog} input.loginDialog Login presentation.
      * @param {{ transform: (request: import('../types.d.js').TransformationGatewayRequest) => Promise<import('../types.d.js').TransformationResponse> }} input.gateway Application API gateway.
      * @param {EventTarget} input.lifecycleTarget Target that emits documented mpr-ui auth events.
      * @param {() => string} [input.requestIdFactory] Non-secret request identifier factory.
      */
-    constructor({ inputPanel, toolbar, preview, gateway, lifecycleTarget, requestIdFactory = createRequestID }) {
+    constructor({ inputPanel, toolbar, preview, loginDialog, gateway, lifecycleTarget, requestIdFactory = createRequestID }) {
         this.inputPanel = inputPanel;
         this.toolbar = toolbar;
         this.preview = preview;
+        this.loginDialog = loginDialog;
         this.gateway = gateway;
         this.lifecycleTarget = lifecycleTarget;
         this.requestIdFactory = requestIdFactory;
@@ -40,6 +45,8 @@ export class TransformationCoordinator {
         this.visibleResult = null;
         /** @type {string | null} */
         this.undoText = null;
+        /** @type {{ operation: import('../types.d.js').TransformationOperation; revision: number } | null} */
+        this.pendingLoginAction = null;
         this.initialized = false;
     }
 
@@ -59,6 +66,9 @@ export class TransformationCoordinator {
         this.preview.onDiscard(() => this.handleDiscard());
         this.preview.onRetry(() => this.handleRetry());
         this.preview.onUndo(() => this.handleUndo());
+        this.loginDialog.onDismiss(() => {
+            this.pendingLoginAction = null;
+        });
         this.lifecycleTarget.addEventListener(AUTH_EVENT_NAMES.AUTHENTICATED, () => {
             this.handleAuthenticatedLifecycle();
         });
@@ -76,6 +86,10 @@ export class TransformationCoordinator {
     handleEditorInput(documentSnapshot) {
         this.editorRevision += 1;
         this.currentDocument = documentSnapshot;
+        if (this.pendingLoginAction !== null) {
+            this.pendingLoginAction = null;
+            this.loginDialog.close();
+        }
         if (this.undoText !== null) {
             this.undoText = null;
             this.preview.clear();
@@ -90,11 +104,21 @@ export class TransformationCoordinator {
     /** Records the documented authenticated lifecycle for protected-control availability. @returns {void} */
     handleAuthenticatedLifecycle() {
         this.authLifecycleHasAuthenticated = true;
+        const pendingAction = this.pendingLoginAction;
+        this.pendingLoginAction = null;
+        this.loginDialog.close();
         this.updateToolbarAvailability();
+        if (pendingAction !== null && pendingAction.revision === this.editorRevision && this.canStartTransformation()) {
+            void this.startTransformation(pendingAction.operation);
+        }
     }
 
     /** Cancels protected work and clears AI state after the documented unauthenticated lifecycle. @returns {void} */
     handleUnauthenticatedLifecycle() {
+        if (this.authLifecycleHasAuthenticated) {
+            this.pendingLoginAction = null;
+            this.loginDialog.close();
+        }
         this.authLifecycleHasAuthenticated = false;
         if (this.activeRequest !== null) {
             this.activeRequest.controller.abort();
@@ -112,7 +136,18 @@ export class TransformationCoordinator {
      * @returns {void}
      */
     handleOperationSelected(operation) {
-        if (!this.canStartTransformation()) {
+        if (!this.canSelectTransformation()) {
+            return;
+        }
+        if (!this.authLifecycleHasAuthenticated) {
+            this.pendingLoginAction = { operation, revision: this.editorRevision };
+            try {
+                this.loginDialog.open(operation);
+            } catch (error) {
+                this.pendingLoginAction = null;
+                this.preview.showError(TEXT_CONTENT.TRANSFORMATION_LOGIN_UNAVAILABLE);
+                loggingAdapter.reportError(LOG_MESSAGES.LOGIN_DIALOG_FAILURE, error);
+            }
             return;
         }
         void this.startTransformation(operation);
@@ -211,8 +246,12 @@ export class TransformationCoordinator {
 
     /** @returns {boolean} */
     canStartTransformation() {
+        return this.authLifecycleHasAuthenticated && this.canSelectTransformation();
+    }
+
+    /** @returns {boolean} */
+    canSelectTransformation() {
         return (
-            this.authLifecycleHasAuthenticated &&
             this.activeRequest === null &&
             this.currentDocument.plainText.trim().length > 0 &&
             this.currentDocument.images.length === 0
