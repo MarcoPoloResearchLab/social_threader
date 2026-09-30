@@ -8,6 +8,15 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
+- [x] [B043] (P0) Align the Expo SDK 57 dependency contract.
+  Goal: Pass the mobile dependency check with the current SDK 57 packages.
+  Requirements:
+  - Update Expo and its package lock together.
+  - Keep the config validator on the selected Expo version.
+  Validation: The initial CI failed at the Expo dependency check.
+  Final `make ci` passed, including 35 mobile tests and both platform bundles.
+  Resolution: Expo uses version 57.0.26. The repository provides a dependency update target.
+
 - [x] [B014] (P1) Remove the obsolete image build identity
   Goal:
   The API image build arguments obey the installed Gateway contract.
