@@ -97,6 +97,10 @@ container-check:
 mobile-install:
 	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) ci
 
+.PHONY: mobile-update-dependencies
+mobile-update-dependencies: mobile-install
+	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) exec -- expo install --fix
+
 mobile-check: mobile-install
 	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) run check
 

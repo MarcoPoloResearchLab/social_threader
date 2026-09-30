@@ -4,16 +4,16 @@ mprlab_resources:
   release:
     scheme: semver
   resources:
-    - kind: private_values
-      id: private
+    private:
+      kind: private_values
       bindings:
         google-web-client-id: SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID
         llm-proxy-secret: SOCIAL_THREADER_LLM_PROXY_SECRET
         tauth-jwt-signing-key: SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY
-    - kind: compose_project
-      id: runtime
+    runtime:
+      kind: compose_project
       images:
-        - id: api-image
+        api-image:
           repository: ghcr.io/marcopoloresearchlab/social_threader
           build:
             context: .
@@ -23,10 +23,10 @@ mprlab_resources:
               RELEASE_VERSION:
                 identity: release_version
             platforms:
-              - linux/amd64
-              - linux/arm64
+            - linux/amd64
+            - linux/arm64
       services:
-        - id: social-threader-api
+        social-threader-api:
           image: api-image
           placement:
             group: gateway
@@ -44,18 +44,18 @@ mprlab_resources:
               resource: authentication
               output: jwt-signing-key
           assets:
-            - source: configs/config.yml
-              target: /app/configs/config.yml
-              mode: "0444"
+            /app/configs/config.yml:
+              source: configs/config.yml
+              mode: '0444'
           ports:
-            - container_port: 8080
+            '8080': {}
           readiness:
             protocol: http
             port: 8080
             path: /healthz
             expected_status: 200
-    - kind: runtime_capability
-      id: http
+    http:
+      kind: runtime_capability
       name: social-threader.http
       version: 1
       project: runtime
@@ -69,12 +69,12 @@ mprlab_resources:
         protocol: http
         path: /healthz
         expected_status: 200
-    - kind: caddy_route
-      id: public-api
+    public-api:
+      kind: caddy_route
       hostname: threader-api.mprlab.com
       listener: https
       handlers:
-        - id: default
+        default:
           path_prefix: /
           upstream: social-threader.http
           transport:
@@ -88,18 +88,18 @@ mprlab_resources:
         rate_limit:
           events: 30
           window_seconds: 10
-    - kind: health_check
-      id: public-health
+    public-health:
+      kind: health_check
       protocol: http
       url: https://threader-api.mprlab.com/healthz
       expected_status: 200
-    - kind: health_check
-      id: website-health
+    website-health:
+      kind: health_check
       protocol: http
       url: https://threader.mprlab.com/healthz
       expected_status: 200
-    - kind: github_pages
-      id: website
+    website:
+      kind: github_pages
       repository: marcopoloresearchlab/social_threader
       branch: gh-pages
       domain: threader.mprlab.com
@@ -111,8 +111,8 @@ mprlab_resources:
         target: pages
       verification:
         path: /.mprlab-release.json
-    - kind: mobile_application
-      id: mobile
+    mobile:
+      kind: mobile_application
       source: mobile
       build_system: local
       build:
@@ -121,15 +121,15 @@ mprlab_resources:
         package_name: com.mprlab.socialthreader
         destination: google_play
         track: production
-    - kind: tauth_tenant
-      id: authentication
+    authentication:
+      kind: tauth_tenant
       capability: tauth.tenants
       version: 1
       tenant:
         id: social-threader
         display_name: Social Threader
         origins:
-          - https://threader.mprlab.com
+        - https://threader.mprlab.com
         google_web_client_id:
           resource: private
           output: google-web-client-id
