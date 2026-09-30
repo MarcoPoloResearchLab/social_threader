@@ -11,10 +11,8 @@ func TestProductionImageBuildArguments(t *testing.T) {
 	const releaseVersionIdentity = "release_version"
 	var document struct {
 		Resources struct {
-			Resources []struct {
-				ID     string `yaml:"id"`
-				Images []struct {
-					ID    string `yaml:"id"`
+			Resources map[string]struct {
+				Images map[string]struct {
 					Build struct {
 						Arguments map[string]map[string]string `yaml:"arguments"`
 					} `yaml:"build"`
@@ -27,11 +25,11 @@ func TestProductionImageBuildArguments(t *testing.T) {
 		t.Fatalf("decode image build arguments: %v", decodeError)
 	}
 	argumentCount := 0
-	for _, resource := range document.Resources.Resources {
-		for _, image := range resource.Images {
+	for resourceID, resource := range document.Resources.Resources {
+		for imageID, image := range resource.Images {
 			for argumentName, argument := range image.Build.Arguments {
 				argumentCount++
-				t.Run(resource.ID+"/"+image.ID+"/"+argumentName, func(t *testing.T) {
+				t.Run(resourceID+"/"+imageID+"/"+argumentName, func(t *testing.T) {
 					if len(argument) != 1 {
 						t.Fatal("build argument must contain exactly one identity or value")
 					}

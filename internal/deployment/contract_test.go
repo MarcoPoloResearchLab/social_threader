@@ -16,9 +16,9 @@ type manifestDocument struct {
 }
 
 type manifestEnvelope struct {
-	Owner     string             `yaml:"owner"`
-	Release   manifestRelease    `yaml:"release"`
-	Resources []manifestResource `yaml:"resources"`
+	Owner     string                      `yaml:"owner"`
+	Release   manifestRelease             `yaml:"release"`
+	Resources map[string]manifestResource `yaml:"resources"`
 }
 
 type manifestRelease struct {
@@ -27,7 +27,6 @@ type manifestRelease struct {
 
 type manifestResource struct {
 	Kind        string            `yaml:"kind"`
-	ID          string            `yaml:"id"`
 	BuildSystem string            `yaml:"build_system"`
 	Build       map[string]string `yaml:"build"`
 }
@@ -117,8 +116,8 @@ func TestProductionLifecycleContract(t *testing.T) {
 		"authentication": "tauth_tenant",
 	}
 	actualResources := make(map[string]string, len(document.Resources.Resources))
-	for _, resource := range document.Resources.Resources {
-		actualResources[resource.ID] = resource.Kind
+	for resourceID, resource := range document.Resources.Resources {
+		actualResources[resourceID] = resource.Kind
 	}
 	for resourceID, expectedKind := range expectedResources {
 		if actualResources[resourceID] != expectedKind {
@@ -128,8 +127,8 @@ func TestProductionLifecycleContract(t *testing.T) {
 	if len(actualResources) != len(expectedResources) {
 		t.Fatalf("manifest has %d resources, want %d", len(actualResources), len(expectedResources))
 	}
-	for _, resource := range document.Resources.Resources {
-		if resource.ID != "mobile" {
+	for resourceID, resource := range document.Resources.Resources {
+		if resourceID != "mobile" {
 			continue
 		}
 		if resource.BuildSystem != "local" {
