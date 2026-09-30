@@ -37,7 +37,10 @@ Under no circumstances may Playwright be introduced into this codebase. Prefer P
 
 ### 5. Dependencies & Organization
 
-* CDN-hosted dependencies only; no npm, bundlers, or Node tooling.
+* Use CDN-hosted ES modules for browser runtime dependencies.
+* Use Node.js and npm for the repository test harness.
+* Use the declared Expo and React Native tools in `mobile/`.
+* Use the existing package locks and Make targets.
 * Layout:
 
   ```
@@ -55,7 +58,8 @@ Under no circumstances may Playwright be introduced into this codebase. Prefer P
 
 ### 6. Testing
 
-* Tests run in browser by opening `index.html?test=true`.
+* Run browser tests with `make browser-test`.
+* Use `index.html?test=true` for interactive browser checks.
 * Table-driven cases, iterate array of inputs/outputs.
 * Use black-box integration tests for public APIs and DOM behavior.
 * Use focused unit tests for complex internal logic when useful.
