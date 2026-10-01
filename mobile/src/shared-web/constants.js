@@ -42,7 +42,7 @@ export const PRODUCT_DIRECTORY = Object.freeze({
     FOOTER_LINKS: Object.freeze({
         alignment: 'left',
         links: Object.freeze([
-            Object.freeze({ label: 'Thread splitter', href: '/' }),
+            Object.freeze({ label: 'Social Threader', href: '/' }),
             Object.freeze({ label: 'Resources', href: '/resources/' }),
             Object.freeze({ label: 'Open source on GitHub', href: 'https://github.com/MarcoPoloResearchLab/social_threader', target: '_blank' }),
             Object.freeze({ label: 'Privacy', href: '/privacy/' })
@@ -70,12 +70,6 @@ export const TEXT_CONTENT = Object.freeze({
     CHUNK_STATS_TEMPLATE: "Characters: {characters} | Words: {words} | Sentences: {sentences}",
     ENUMERATION_TEMPLATE: "{text} ({current}/{total})",
     INPUT_STATS_EMPTY: "Characters: 0 | Words: 0 | Sentences: 0 | Paragraphs: 0",
-    FEEDBACK_TITLE: "Feedback",
-    FEEDBACK_EMAIL_LABEL: "Email:",
-    FEEDBACK_EMAIL_PLACEHOLDER: "you@example.com",
-    FEEDBACK_MESSAGE_LABEL: "Message:",
-    FEEDBACK_MESSAGE_PLACEHOLDER: "What can be improved?",
-    FEEDBACK_SUBMIT_LABEL: "Submit",
     CUSTOM_INPUT_PLACEHOLDER: "Size",
     TRANSFORMATION_HEADING: "Improve with AI",
     TRANSFORMATION_LOGIN_TITLE: "Sign in to {operation}",
@@ -289,29 +283,6 @@ export const PRESET_CONFIG = Object.freeze({
         length: DEFAULT_LENGTHS.TWITTER,
         label: "Twitter/X (280)"
     })
-});
-
-/** @type {Readonly<Record<string, string>>} */
-export const FORM_CONFIG = Object.freeze({
-    ACTION_URL: "https://formspree.io/f/manqedkk"
-});
-
-/** @type {Readonly<Record<string, string>>} */
-export const FORM_FIELD_TYPES = Object.freeze({
-    EMAIL: "email",
-    TEXTAREA: "textarea",
-    SUBMIT: "submit"
-});
-
-/** @type {Readonly<Record<string, string>>} */
-export const FORM_FIELD_NAMES = Object.freeze({
-    EMAIL: "email",
-    MESSAGE: "message"
-});
-
-/** @type {Readonly<Record<string, string>>} */
-export const STYLE_VALUES = Object.freeze({
-    BRAND_COLOR_HEX: "#007BFF"
 });
 
 /** @type {Readonly<Record<string, string>>} */
