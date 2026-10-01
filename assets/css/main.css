@@ -26,15 +26,6 @@ body {
     margin-bottom: 20px;
 }
 
-.resource-intro {
-    margin: -8px 0 20px;
-    color: #334155;
-}
-
-.resource-intro a {
-    color: #0056b3;
-}
-
 /* 2) Split layout: left-pane & right-pane */
 .left-pane {
     flex: 2;
