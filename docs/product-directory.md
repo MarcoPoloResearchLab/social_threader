@@ -71,4 +71,5 @@ They do not prove acceptance of an installed store artifact.
 Public web acceptance requires an operator deployment and a check of the public website.
 Installed mobile acceptance requires a new app artifact with this snapshot.
 Older installed apps retain their previous catalog.
-F003 keeps these results separate from source acceptance.
+F003 source acceptance is completed.
+The [operations record](../.mprlab/OPERATIONS.md) keeps public checks and store checks separate from source acceptance.

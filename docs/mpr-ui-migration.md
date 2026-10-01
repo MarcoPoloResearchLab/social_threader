@@ -71,4 +71,14 @@ The coordinated transition remains pending.
 5. Verify all three shared asset identities after the cache transition.
 6. Complete real Google sign-in, transformation, reload, and logout at mobile and desktop widths.
 7. Verify guest split and copy behavior after logout.
-8. Keep I003 blocked until CI, shared publication, cache transition, and live acceptance pass.
+8. Record shared publication, cache checks, and live acceptance in [the operations record](../.mprlab/OPERATIONS.md).
+
+## Source review on 2026-10-01
+
+I003 source acceptance is completed. The review `make ci` passed.
+B009 is closed and no longer blocks the mobile check.
+The source uses the provider map in both config environments.
+Real shared-header browser checks passed at desktop and mobile widths.
+
+The earlier CI and cache observations above are historical evidence.
+Current production state and live Google acceptance were not verified during this review.
