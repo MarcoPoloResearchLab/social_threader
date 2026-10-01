@@ -343,8 +343,8 @@ export async function runPublicPagesSeoSuite(page, pass, fail, publicOrigin) {
         const serverDeliveredRoot = await inspectServerDeliveredRoot(page, publicOrigin);
         assertCondition(serverDeliveredRoot.hasHeading, "Server-delivered root lacks its H1");
         assertCondition(
-            serverDeliveredRoot.hasResourceLink,
-            "Server-delivered root lacks the resource link"
+            !serverDeliveredRoot.hasResourceLink,
+            "Root repeats resource navigation outside the shared footer"
         );
 
         const openGraphImage = await inspectOpenGraphImage(page, publicOrigin);
