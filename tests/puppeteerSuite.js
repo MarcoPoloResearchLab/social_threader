@@ -11,12 +11,25 @@ import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
 import { runProductDirectorySuite } from "./productDirectorySuite.js";
 import { runPublicPagesSeoSuite } from "./publicPagesSeoSuite.js";
-import { LOOPAWARE_PIXEL_URL_PREFIX } from "./publicPagesSeoSupport.js";
+import { LOOPAWARE_PIXEL_URL_PREFIX, PUBLIC_LOOPAWARE_SITE_ID } from "./publicPagesSeoSupport.js";
 import { runSharedUiMigrationSuite } from "./sharedUiMigrationSuite.js";
 import {
     runTransformationBrowserSuite,
     startTransformationApiServer
 } from "./transformationPuppeteerSuite.js";
+
+const LOOPAWARE_WIDGET_URL = `https://loopaware.mprlab.com/widget.js?site_id=${PUBLIC_LOOPAWARE_SITE_ID}`;
+const LOOPAWARE_CONFIG_URL = `https://loopaware-api.mprlab.com/public/widget-config?site_id=${PUBLIC_LOOPAWARE_SITE_ID}`;
+const LOOPAWARE_BUBBLE_SELECTOR = "#mp-feedback-bubble";
+const LOOPAWARE_PANEL_SELECTOR = "#mp-feedback-panel";
+const LOOPAWARE_TEST_CONFIG = Object.freeze({
+    site_id: PUBLIC_LOOPAWARE_SITE_ID,
+    widget_bubble_side: "right",
+    widget_bubble_bottom_offset: 16,
+    widget_accent_color: "#0d6efd",
+    widget_show_message_input: true,
+    widget_show_sentiment_buttons: true
+});
 
 const SOURCE_TEXT_SELECTOR = "#sourceText";
 const INPUT_STATS_SELECTOR = "#inputStats";
@@ -443,6 +456,92 @@ async function runInputStatisticsSuite(page, pass, fail, indexUrl) {
     }
 }
 
+/**
+ * Verify option availability as the user changes the draft.
+ * @param {import("puppeteer").Page} page
+ * @param {(name: string) => void} pass
+ * @param {(name: string, error: unknown) => void} fail
+ * @param {string} indexUrl
+ * @returns {Promise<void>}
+ */
+async function runChunkingOptionsSuite(page, pass, fail, indexUrl) {
+    const testName = "chunking options follow draft content and reset after clearing";
+    const optionsSelector = ".toggle-options input";
+    const cases = [
+        { markup: null, enabled: [false, false, false] },
+        { markup: "<div>One sentence.</div>", enabled: [false, true, true] },
+        { markup: "<div>First paragraph.</div><div>Second paragraph.</div>", enabled: [true, true, true] },
+        { markup: '<img src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'1\' height=\'1\'/%3E" alt="Attached image">', enabled: [false, false, true] },
+        { markup: "<div> &nbsp; </div>", enabled: [false, false, false] },
+        { markup: "One sentence again.", enabled: [false, true, true] },
+        { markup: "", enabled: [false, false, false] }
+    ];
+    try {
+        await page.goto(indexUrl, { waitUntil: WAIT_UNTIL_EVENT });
+        for (const testCase of cases) {
+            if (testCase.markup !== null) {
+                await page.$eval(SOURCE_TEXT_SELECTOR, (editor, markup) => {
+                    editor.innerHTML = markup;
+                    editor.dispatchEvent(new Event("input", { bubbles: true }));
+                }, testCase.markup);
+            }
+            const actual = await page.$$eval(optionsSelector, inputs => inputs.map(input => ({ enabled: !input.disabled, checked: input.checked })));
+            if (JSON.stringify(actual.map(input => input.enabled)) !== JSON.stringify(testCase.enabled)) {
+                throw new Error(`Unexpected options for ${testCase.markup}: ${JSON.stringify(actual)}`);
+            }
+            for (const [optionIndex, input] of actual.entries()) {
+                if (!input.enabled && input.checked) {
+                    throw new Error(`Disabled option ${optionIndex} remains selected`);
+                }
+            }
+            if (testCase.enabled.every(Boolean)) {
+                for (const input of await page.$$(optionsSelector)) await input.click();
+            }
+        }
+        pass(testName);
+    } catch (error) {
+        fail(testName, error);
+    }
+}
+
+/**
+ * Verifies the released feedback widget through the real application page.
+ * Provider configuration is controlled to support the test server origin.
+ * @param {import("puppeteer").Page} page
+ * @param {(name: string) => void} pass
+ * @param {(name: string, error: unknown) => void} fail
+ * @param {string} indexUrl
+ * @returns {Promise<void>}
+ */
+async function runFeedbackWidgetSuite(page, pass, fail, indexUrl) {
+    const testName = "LoopAware feedback opens and closes with the Social Threader site identity";
+    try {
+        await page.goto(indexUrl, { waitUntil: WAIT_UNTIL_EVENT });
+        const embed = await page.evaluate(() => ({
+            widgetScripts: [...document.scripts].filter(script => script.src.includes("/widget.js")).map(script => ({ src: script.src, defer: script.defer })),
+            legacyScripts: [...document.scripts].filter(script => script.src.includes("formspree.io")).length,
+            legacyInitializer: typeof window.formbutton
+        }));
+        if (embed.widgetScripts.length !== 1 || embed.widgetScripts[0].src !== LOOPAWARE_WIDGET_URL || !embed.widgetScripts[0].defer) {
+            throw new Error(`Incorrect feedback embed: ${JSON.stringify(embed)}`);
+        }
+        if (embed.legacyScripts !== 0 || embed.legacyInitializer !== "undefined") {
+            throw new Error("Formspree feedback remains active");
+        }
+        await page.waitForSelector(LOOPAWARE_BUBBLE_SELECTOR, { visible: true });
+        await page.click(LOOPAWARE_BUBBLE_SELECTOR);
+        await page.waitForSelector(LOOPAWARE_PANEL_SELECTOR, { visible: true });
+        await page.waitForSelector("#mp-feedback-contact", { visible: true });
+        await page.waitForSelector("#mp-feedback-message", { visible: true });
+        await page.waitForSelector("#mp-feedback-sentiment", { visible: true });
+        await page.click(`${LOOPAWARE_PANEL_SELECTOR} button[aria-label="Close feedback panel"]`);
+        await page.waitForSelector(LOOPAWARE_PANEL_SELECTOR, { hidden: true });
+        pass(testName);
+    } catch (error) {
+        fail(testName, error);
+    }
+}
+
 async function main() {
     const staticServer = await startStaticServer(repositoryRootPath);
     const transformationApiServer = await startTransformationApiServer(staticServer.origin);
@@ -462,6 +561,15 @@ async function main() {
             void request.respond({ status: 401, contentType: 'application/json', body: '{"error":"unauthorized"}' });
             return;
         }
+        if (request.url() === LOOPAWARE_CONFIG_URL) {
+            void request.respond({
+                status: 200,
+                contentType: "application/json",
+                headers: { "Access-Control-Allow-Origin": staticServer.origin },
+                body: JSON.stringify(LOOPAWARE_TEST_CONFIG)
+            });
+            return;
+        }
         if (request.url().startsWith(LOOPAWARE_PIXEL_URL_PREFIX)) {
             void request.abort();
             return;
@@ -478,7 +586,9 @@ async function main() {
         }
         await page.setRequestInterception(true);
         page.on("request", handlePublicPageRequest);
+        await runFeedbackWidgetSuite(page, pass, fail, indexUrl);
         await runInputStatisticsSuite(page, pass, fail, indexUrl);
+        await runChunkingOptionsSuite(page, pass, fail, indexUrl);
         await runPublicPagesSeoSuite(page, pass, fail, staticServer.origin);
         page.off("request", handlePublicPageRequest);
         await page.setRequestInterception(false);

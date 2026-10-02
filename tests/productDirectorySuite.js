@@ -39,7 +39,7 @@ export async function runProductDirectorySuite(browser, pass, fail, origin) {
                     assert.equal(await page.$$eval('footer', elements => elements.length), 1, 'Each page must have one footer');
                     const utilityLinks = await page.$$eval('footer [data-mpr-footer="horizontal-links"] a', elements => elements.map(element => ({ label: element.textContent, href: element.getAttribute('href') })));
                     assert.deepEqual(utilityLinks, [
-                        { label: 'Thread splitter', href: '/' },
+                        { label: 'Social Threader', href: '/' },
                         { label: 'Resources', href: '/resources/' },
                         { label: 'Open source on GitHub', href: 'https://github.com/MarcoPoloResearchLab/social_threader' },
                         { label: 'Privacy', href: '/privacy/' }

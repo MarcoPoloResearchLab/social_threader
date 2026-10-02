@@ -1,355 +1,28 @@
 # ISSUES
 
-Entries record newly discovered requests or changes.
+This tracker contains open implementation issues and recurring maintenance.
+Completed entries are in [ISSUES-ARCHIVE.md](ISSUES-ARCHIVE.md).
+Production operations that are not completed are in [OPERATIONS.md](OPERATIONS.md).
 
-Read `AGENTS.md`, `.mprlab/POLICY.md`, `.mprlab/issues-md-format.md`, and relevant stack guides before implementing changes.
+The following source issues are closed. Their production checks stay open with these priorities.
+
+| Source issue | Priority | Open production checks |
+| --- | --- | --- |
+| B008 | P0 | [Policy publication and Google Play review](OPERATIONS.md#b008-privacy-policy-and-google-play) |
+| B001 | P1 | [Android release receipt and Metro result](OPERATIONS.md#b001-android-release-receipt) |
+| I003 | P1 | [Shared assets, cache transition, and live Google acceptance](OPERATIONS.md#i003-shared-ui-publication-and-google-acceptance) |
+| F001 | P1 | [Hosted API and authorized provider checks](OPERATIONS.md#f001-hosted-api-and-provider-acceptance) |
+| F003 | P1 | [Public directory and mobile store artifact checks](OPERATIONS.md#f003-public-directory-and-store-artifact) |
+
+Read `AGENTS.md`, `.mprlab/POLICY.md`, `.mprlab/issues-md-format.md`, and applicable stack guides before implementation.
 
 Format: `- [ ] [B042] (P1) {I007} Title`
 
 ## BugFixes
 
-- [x] [B043] (P0) Align the Expo SDK 57 dependency contract.
-  Goal: Pass the mobile dependency check with the current SDK 57 packages.
-  Requirements:
-  - Update Expo and its package lock together.
-  - Keep the config validator on the selected Expo version.
-  Validation: The initial CI failed at the Expo dependency check.
-  Final `make ci` passed, including 35 mobile tests and both platform bundles.
-  Resolution: Expo uses version 57.0.26. The repository provides a dependency update target.
-
-- [x] [B014] (P1) Remove the obsolete image build identity
-  Goal:
-  The API image build arguments obey the installed Gateway contract.
-  Requirements:
-  - Remove the `source_commit` build identity and its Dockerfile revision label.
-  - Keep the `release_version` build identity and image version label.
-  Validation:
-  - Before the changes, Gateway v4.5.1 and the regression test rejected `SOURCE_REVISION`.
-  - After the changes, the installed metadata validator and deployment tests completed without errors.
-  - The local API image build and `make ci` completed without errors.
-  - The image version label contains the supplied build version.
-  - The full Gateway plan requires a clean checkout synchronized with `origin/master`.
-  - No release, publication, or deployment occurred.
-
-- [x] [B013] (P1) Update the Expo dependency versions
-  Goal:
-  Restore the mobile dependency check.
-  Requirements:
-  - Use Expo and image picker versions that pass the installed SDK checks.
-  Validation:
-  - Before the changes, local CI and GitHub CI rejected `expo@57.0.23` and `expo-image-picker@57.0.18`.
-  - The dependency files and config validator use `expo@57.0.25` and `expo-image-picker@57.0.20`.
-  - `make mobile-check` and the final `make ci` completed without errors.
-  - The final checks include 44 headless tests, 42 browser tests, and 35 mobile tests.
-  - The iOS and Android bundle checks completed without errors.
-  - The CI results are in `/tmp/social-threader-ci-before.log` and `/tmp/social-threader-ci-after.log`.
-
-- [x] [B012] (P1) {B013} Use the current LoopAware pixel host
-  Goal:
-  Restore visit collection for public pages.
-  Requirements:
-  - Load each pixel from `loopaware.mprlab.com`.
-  - Preserve the registered site ID.
-  Validation:
-  - Verify the public pages through the browser suite.
-  The browser regression fails before the change and passes after the change.
-  The final run passes 44 headless checks and 42 browser checks.
-  The final `make ci` completed without errors after the B013 dependency changes.
-
-- [x] [B011] (P1) Keep narrow pages within the viewport
-  Goal: Keep editor options and resource content within the page width.
-  Evidence: F003 browser checks found overflow at 320 pixels and in resource grids below 1280 pixels.
-  Requirements: Let the option row wrap. Let resource grid tracks shrink around long code and tables.
-  Validation: The checks failed before these layout changes. All 32 page and width combinations passed afterward.
-  Deliverables: Updated the two page stylesheets and retained browser coverage in the F003 suite.
-
-- [x] [B010] (P1) Correct the mobile CI dependency versions
-  Goal: The mobile CI dependency check passes.
-  Evidence:
-  - Hosted run `34632566979` and local `make ci` passed all 33 mobile tests.
-  - The Expo dependency check rejected three installed versions.
-  - Expected result: The installed dependencies satisfy the Expo requirements.
-  - Actual result: The mobile CI job fails at `expo install --check`.
-  Requirements:
-  - Use `expo` version `57.0.22`.
-  - Use `expo-clipboard` version `57.0.2`.
-  - Use `expo-image-picker` version `57.0.17`.
-  - Update the dependency lock and config assertions.
-  - Keep the Expo dependency check.
-  Validation:
-  - Confirm that the updated config assertions reject the previous versions.
-  - Run `make mobile-check` and `make ci`.
-  Resolution:
-  - The three dependencies, lock, and config assertions use the required versions.
-  - The updated config validator rejected the previous Expo version before the dependency change.
-  - `make mobile-check` and the final `make ci` completed with exit code zero.
-  - Validation includes 33 mobile tests with full coverage and both mobile JavaScript bundles.
-  - The final CI log is `/tmp/social-threader-ci-final.log`.
-
-- [x] [B009] (P1) Update the Expo dependency set
-  Goal: The canonical mobile dependency check passes.
-  Evidence:
-  - Initial `make ci` passed browser, backend, lint, module, and 33 mobile tests.
-  - The Expo check requires `expo` version `~57.0.21` and `expo-image-picker` version `~57.0.16`.
-  - The initial dependency lock used `57.0.18` and `57.0.14`, respectively.
-  - Current master updates the image picker to `57.0.16` and Expo to `57.0.20`.
-  - CI after the merge still requires Expo `~57.0.21`.
-  Requirements:
-  - Update the dependency declarations, lock, and matching config validator.
-  - Verify the resulting mobile application contract.
-  Validation:
-  - Run `make mobile-check` and `make ci`.
-  Resolution:
-  Expo and its lock now use 57.0.21. The source config validator requires the same version.
-  The focused mobile check and final CI passed.
-  The suite includes 33 mobile tests with full coverage, both production JavaScript bundles, and three Apple adapter tests.
-  The final log is `/tmp/social-apple-final-ci-corrected.log`.
-
-- [!] [B008] (P0) Publish the Social Threader privacy policy
-  Goal:
-  Google Play rejects the Social Threader production submission because the declared privacy policy has incorrect identity information.
-
-  Evidence:
-  - Google Play reports `App or developer details do not match`.
-  - The rejected app has the package name `com.mprlab.socialthreader`.
-  - The declared URL is `https://mprlab.com/privacy/`.
-  - The declared page does not identify Social Threader or the matching publisher.
-  - Expected result: The privacy policy identifies the app, publisher, and operating legal entity.
-  - Actual result: Google Play rejects the app and makes it unavailable.
-
-  Requirements:
-  - Publish a policy at `https://threader.mprlab.com/privacy/`.
-  - Identify Social Threader and `com.mprlab.socialthreader`.
-  - Identify the Google Play publisher and Marco Polo Research Lab LLC.
-  - Describe the current browser and mobile data flows.
-  - Add a policy link to each public page.
-  - Add a policy link to the mobile client.
-  - Include the policy in the Pages artifact and sitemap.
-
-  Validation:
-  - Add a Puppeteer contract for the public policy page and links.
-  - Add a mobile test for the policy link.
-  - Run `make browser-test` during the change.
-  - Run `make mobile-check` during the change.
-  - Run `make ci` after the last source change.
-  - Run `git diff --check`.
-
-  Blocked:
-  - The source implementation and complete CI validation completed.
-  - Public acceptance requires the user-owned production lifecycle.
-  - Google acceptance requires the published policy URL and a new Play review.
-
-- [x] [B007] (P1) Add missing Social Threader LoopAware telemetry
-  Goal:
-  Every published Social Threader page must report to the current production LoopAware site.
-
-  Evidence:
-  - Production LoopAware assigns Social Threader site ID `2ca5a755-02e2-462c-8bdf-16e5bc303042`.
-  - The Pages artifact publishes seven HTML entry points.
-  - No published page currently loads the LoopAware pixel.
-  - Expected result: each published page loads exactly one pixel with the current site ID.
-  - Actual result: Social Threader produces no LoopAware page telemetry.
-
-  Requirements:
-  - Add the current Social Threader LoopAware pixel to each published HTML page.
-  - Add a browser-level regression check for the exact production site ID.
-  - Reject missing, duplicate, or different LoopAware site identities.
-
-  Validation:
-  - Run `make browser-test` before and after the source change.
-  - Run `make ci` after the last source change.
-  - Run `git diff --check`.
-
-  Resolution:
-  - Added the current production pixel to all seven published pages.
-  - Added a browser contract for one exact Social Threader site identity on each page.
-  - Kept browser validation independent from the remote pixel response.
-  - Confirmed that the focused gate failed before the page updates.
-  - Passed `make browser-test` and complete `make ci` after the last source change.
-
-- [x] [B006] (P1) Align Expo with its current patch release
-  Goal:
-  Hosted mobile CI must accept the exact Expo dependency set.
-
-  Evidence:
-  - Hosted run `33202860282` passed all 32 mobile tests.
-  - The same run passed mobile configuration validation.
-  - The Expo dependency check requires `expo` version `~57.0.18`.
-  - The current package and lock use version `57.0.17`.
-  - Expected result: the exact dependency check passes.
-  - Actual result: the mobile job stops after the configuration check.
-
-  Requirements:
-  - Pin `expo` to version `57.0.18`.
-  - Update the package lock with the exact dependency graph.
-  - Update the repository configuration validator.
-  - Keep each other mobile dependency declaration unchanged.
-  - Keep the exact Expo dependency check.
-
-  Validation:
-  - Run `make mobile-check` after the dependency change.
-  - Run `make ci` after the last source change.
-  - Run `git diff --check`.
-
-  Resolution:
-  - Pinned `expo` to version `57.0.18`.
-  - Updated the exact package lock and repository validator.
-  - Kept each other direct mobile dependency unchanged.
-  - Passed `make mobile-check` after the dependency change.
-  - Passed complete `make ci` after the last source change.
-
-- [x] [B005] (P0) Align the mobile dependencies with Expo 57
-  Goal:
-  Canonical CI must accept the exact mobile dependency lock.
-
-  Evidence:
-  - `make ci` passed each browser, Go, lint, module, and mobile test.
-  - The Expo compatibility check rejected three installed dependency versions.
-  - Expo requires `expo` 57.0.17, `expo-image-picker` 57.0.14, and `react-native` 0.86.3.
-  - Expected result: the current lock passes the Expo compatibility check.
-  - Actual result: `make ci` stops after all mobile tests pass.
-
-  Requirements:
-  - Pin `expo` to 57.0.17.
-  - Pin `expo-image-picker` to 57.0.14.
-  - Pin `react-native` to 0.86.3.
-  - Update `mobile/package-lock.json` with the exact dependency graph.
-  - Keep all other mobile dependency declarations unchanged.
-
-  Validation:
-  - Run `make mobile-check` after the lock change.
-  - Run `make ci` after the last source change.
-  - Run `git diff --check`.
-
-  Resolution:
-  - The mobile package and configuration validator use the three Expo-compatible versions.
-  - The canonical lock contains the exact updated dependency graph.
-  - The first focused gate rejected the obsolete validator versions.
-  - The focused `make mobile-check` gate passed after the validator change.
-  - The final `make ci` gate passed after the last source change.
-
-- [x] [B004] (P0) Exclude private deployment input from the Docker context
-  Goal:
-  The production Docker context must exclude the private deployment input without a negation.
-
-  Evidence:
-  - `.dockerignore` excludes `.mprlab/deploy/.env`.
-  - `.dockerignore` also contains the `!.env.example` negation.
-  - The gateway rejects all negations because they can include private files again.
-  - Expected result: the Docker context has an unambiguous private input exclusion.
-  - Actual result: deployment stops before state allocation.
-
-  Requirements:
-  - Remove the `.env.example` negation from `.dockerignore`.
-  - Keep `.env.*` excluded from each Docker context.
-  - Keep the exact private credential exclusions.
-  - Add a regression test that rejects each Docker ignore negation.
-  - Keep local environment file behavior unchanged.
-
-  Validation:
-  - Run the regression test before and after the source change.
-  - Run `make go-test`.
-  - Run `make ci` after the last source change.
-  - Run `make deploy` after the change lands.
-
-  Resolution:
-  - Removed the Docker ignore negation in pull request 63.
-  - Kept each private environment pattern excluded from the Docker context.
-  - Added a container contract test that rejects each Docker ignore negation.
-  - Passed `make go-test` after the source change.
-  - Passed complete CI at the released successor after the dependency fix.
-  - Released and published version `v1.0.2` from commit
-    `5b9ed264861bf13d3cb486848b3074b4b9ce014b`.
-  - Completed the canonical deployment at gateway revision 123.
-
-- [x] [B003] (P0) Derive the Android version code from the release timestamp
-  Goal:
-  Each sealed Android release must use a new store build number.
-
-  Evidence:
-  - The release builder used the permanent `versionCode: 1` value from `mobile/app.json`.
-  - Google Play already contains version code 1 with a different Android App Bundle.
-  - Google Play does not permit a replacement for an existing version code.
-
-  Requirements:
-  - Derive the release version code from the sealed UTC release timestamp.
-  - Use seconds since `2020-01-01T00:00:00Z` as the build number.
-  - Keep the source app config for local development builds only.
-  - Reject a timestamp that cannot produce a valid Google Play version code.
-
-  Validation:
-  - Add deterministic tests for valid, invalid, early, and out-of-range timestamps.
-  - Run `make mobile-check` after the test change.
-  - Run `make ci` after the last source change.
-  - Release, publish, and deploy the successor with the repository lifecycle.
-
-  Resolution:
-  - The release builder derives the Android version code from the sealed UTC release timestamp.
-  - Local development builds continue to use the source app config.
-  - The first focused gate failed because the build-number module was absent.
-  - The focused gate passed all 32 mobile tests after the source change.
-  - The final `make ci` gate passed after the last source change.
-
-- [x] [B002] (P0) Install the exact mobile dependency lock in CI
-  Goal:
-  Canonical CI must validate the mobile dependencies that the current lockfile specifies.
-
-  Evidence:
-  - The current lockfile specifies Expo 57.0.15 and Expo Image Picker 57.0.12.
-  - The local `node_modules` directory contains the prior package versions.
-  - The `mobile-install` target skips installation when that directory exists.
-  - Expo rejects the stale installed versions during `make ci`.
-
-  Requirements:
-  - Run `npm ci` for each `mobile-install` operation.
-  - Use `mobile/package-lock.json` as the only dependency installation contract.
-  - Remove the directory-presence condition.
-  - Do not add a second dependency path.
-
-  Validation:
-  - Add a Makefile contract test for the exact `npm ci` command.
-  - Reproduce the stale dependency failure before the change.
-  - Run `make go-test`, `make mobile-check`, and `make ci`.
-
-  Resolution:
-  - The `mobile-install` target runs one exact `npm ci` operation.
-  - The target does not use the prior `node_modules` directory as dependency evidence.
-  - The first `make go-test` run rejected both prior Makefile behaviors.
-  - The focused `make go-test` and `make mobile-check` gates passed after the change.
-  - The final `make ci` gate passed under the five-minute operation limit.
-
-- [ ] [B001] (P1) Remove NODE_ENV from the `npm ci` step of the mobile client build
-  Goal:
-  The Android release build fails in Metro. Metro cannot find `babel-preset-expo`. The Ansible task `build-selected-release-mobile-platform.yml` sets `NODE_ENV: production` for the build. The build tool `mobile/scripts/build-android-bundle.mjs` uses that value in its `npm ci` step. npm does not install `devDependencies` when `NODE_ENV` has the value `production`. The `mobile/package.json` has `babel-preset-expo` in its `devDependencies`.
-  The release process fails with the value 2. The build records no release receipt. The end user can operate `make release` again. The build tool already sets `NODE_ENV=production` for the Gradle step. The `mprlab-gateway` value is not necessary for that step. The release builds this repository at `64c1fc0` and `mprlab-gateway` at `7d7603e`.
-
-  Requirements:
-  - Remove `NODE_ENV` from the environment in `buildEnvironment` in `mobile/scripts/build-android-bundle.mjs`.
-  - Keep the `NODE_ENV=production` value for the Gradle step.
-  - Keep `babel-preset-expo` in the `devDependencies` of `mobile/package.json`.
-  - Keep the change in this repository.
-  - Make the build tool operate under any environment.
-  - Add a regression test for the `npm ci` step under `NODE_ENV=production`.
-  - Verify that `babel-preset-expo` is in `node_modules` after the step.
-
-  Deliverables:
-  - A change to `buildEnvironment` in `mobile/scripts/build-android-bundle.mjs` that removes `NODE_ENV` from the environment.
-  - A regression test that verifies the `npm ci` step installs `devDependencies` under `NODE_ENV=production`.
-  - Documentation in `mobile/README.md` that records the build environment contract.
-
-  Verification:
-  - Operate the regression test before the change.
-  - Make sure that the test fails before the change and shows the correct result after the change.
-  - Operate `make mobile-check`.
-  - Operate `make ci` one time after the last change.
-  - Operate `git diff --check`.
-  - The end user operates `make release`.
-  - Make sure that the release records the Android AAB.
-  - Make sure that Metro shows no error.
-
 ## Improvements
 
-- [-] [I004] (P1) Use the shared Xcode Cloud release flow
+- [!] [I004] (P1) Use the shared Xcode Cloud release flow
   Goal:
   Build Apple release artifacts through the single MPR Lab Xcode Cloud flow.
 
@@ -380,6 +53,18 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   The final log is `/tmp/social-apple-final-ci-corrected.log`.
   I005 records the remaining dependency audit findings.
 
+  Review: 2026-10-01.
+  The shared shell adapter and its three integration tests passed in the review CI.
+  The native project, shared scheme, and `.mprlab/apple-build.json` are missing.
+  Blocked: The source uses `com.mprlab.socialthreader`.
+  The existing App Store record uses `com.mprlab.threader`.
+  The operator must select the Apple product identity before native preparation.
+  Deliverables:
+  - Prepare and commit the native project and shared scheme after the identity decision.
+  - Declare the selected product in `.mprlab/apple-build.json` and the application manifest.
+  - Verify the shared Apple build contract.
+  - Record account setup and hosted build results separately in `OPERATIONS.md`.
+
 - [ ] [I005] (P1) Resolve the mobile dependency audit findings
   Goal:
   Qualify the declared mobile runtime and build dependencies.
@@ -397,94 +82,39 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Verify application bundles and the final repository CI.
   - Record any remaining advisory and its actual application or build exposure.
 
-- [x] [I002] (P1) Standardize HTTP health at `/healthz`.
-  Goal:
-  Make `/healthz` the canonical health endpoint for the Social Threader API
-  and static web origins. Use the endpoint for readiness without application requests.
-
-  Requirements:
-  - Keep unauthenticated `GET /healthz` on the API and local frontend origins.
-  - Publish a static `/healthz` resource for the GitHub Pages origin.
-  - Return `200` only when each origin can serve its current application contract.
-  - Return a non-success status when a required runtime dependency prevents API service.
-  - Send `Cache-Control: no-store` on API and local health responses.
-  - Use the GitHub Pages cache policy for production static health responses.
-  - Keep each response free from credentials and internal state.
-  - Do not call a paid provider or mutate application state during a probe.
-  - Do not record a probe as application usage or an audit event.
-  - Do not emit routine information-level request events for successful probes.
-  - Keep failed probe evidence in container and deployment diagnostics.
-  - Use `/healthz` for local Compose, runtime capability, and public health checks.
-  - Set `start_interval: 1s` and `interval: 30s` for Docker probes.
-  - Set bounded `start_period` values for the application startup contracts.
-  - Keep the selected manifest contract unchanged.
-
+  Review: 2026-10-01.
+  `cd mobile && npm audit --json` reports 14 affected packages.
+  The result contains 11 moderate and three high findings. It includes development dependencies.
+  The audit still proposes an Expo 46 downgrade for some findings.
+  This downgrade is outside the current Expo 57 contract.
+  The report is `/tmp/social-threader-mobile-audit.json`.
   Deliverables:
-  - Update the API, static artifact, orchestration, manifest, documentation, and black-box tests.
-
+  - Update the affected dependency graph within Expo 57.
+  - Record each remaining advisory and its runtime or build exposure.
   Validation:
-  - Verify unauthenticated `GET /healthz` returns `200` on each origin.
-  - Verify API and local health responses use `Cache-Control: no-store`.
-  - Verify a required dependency failure returns a non-success API status without a provider call.
-  - Verify the static publication artifact contains `/healthz`.
-  - Verify Docker probes use the required startup and steady intervals.
-  - Verify successful probes create no routine request events.
-  - Verify failed probes retain diagnostic evidence.
-  - Run `make ci`.
+  - Run `cd mobile && npm audit --json` after the dependency change.
+  - Run `make mobile-check` and final `make ci`.
 
-  Cache policy:
-  The operator approved the GitHub Pages cache-policy exception on 2026-09-04.
-  This exception applies only to production static health responses.
-  API and local health responses still require `Cache-Control: no-store`.
-
-  Resolution:
-  Full `make ci` passed, including API, browser, mobile, and bundle checks.
-  Updated Expo and the image picker to the required patch versions.
-  The approved Pages cache exception removes the remaining contract blocker.
-
-
-- [!] [I003] (P1) {B009} Adopt the shared provider-map contract
-  Goal: Social Threader uses the current mpr-ui config and authentication lifecycle.
+- [ ] [I007] (P1) Resolve the browser test dependency audit findings
+  Goal: Qualify the browser test dependencies without a change to product behavior.
+  Evidence:
+  The root `npm audit --json` reports nine affected packages on 2026-10-01.
+  The result contains seven high and two critical findings.
+  `happy-dom` and `puppeteer` are direct development dependencies.
+  The critical findings affect `happy-dom` and transitive `basic-ftp`.
+  The root package supplies test tooling. It is not the browser runtime dependency graph.
+  The report is `/tmp/social-threader-browser-audit.json`.
   Requirements:
-  - Convert both config environments and their dependent fixtures to the provider map.
-  - Preserve the Google client, tenant, origins, and session endpoint.
-  - Verify the real shared header through controlled Google and TAuth boundaries.
-  - Preserve guest splitting and authenticated transformation behavior.
+  - Update the affected dependency graph and the exact package lock.
+  - Keep Puppeteer as the browser automation tool.
+  - Preserve the current browser and authentication test contracts.
+  - Record each remaining advisory and its test or build exposure.
+  Deliverables:
+  - Updated root dependency declarations and package lock.
+  - A reviewed audit result with any remaining exposure.
   Validation:
-  - Run focused browser checks before production changes.
-  - Run final `make ci` and inspect hosted CI.
-  - Complete shared publication, cache transition, and real Google acceptance before activation.
-  Results:
-  - Four real-header checks and the obsolete-snapshot regression failed before the corresponding source changes.
-  - The page exposed mpr-ui B066. Shared PR #212 corrects the account-menu viewport position.
-  - Final CI passed 44 headless checks, ten browser checks, backend checks, lint, module verification, and 33 mobile tests.
-  - Final B069 candidate `768f25936497c5aabd426197d21c2100b6e5d9a1` passed local CI and all four browser flows.
-  - Local CI includes the separate Apple branch and B009 correction; the committed I003 branch retains those qualification gates.
-  Blocked:
-  - B009 prevents the complete mobile CI gate.
-  - Hosted run `34301824325` passed browser, API, container, and local-stack checks at `e83e2a5feddd6449213351a27b77623d0a64c531`.
-  - Its mobile job reports the same Expo dependency mismatch.
-  - Shared publication, cache transition, and real Google acceptance remain pending.
-
-- [x] [I001] (P1) Freeze the selected manifest as a versionless contract
-  Resolved: removed the numbered manifest envelope and stale mobile publication member, kept only current typed resources, and added a contract test that rejects numbered envelope drift.
-
-- [x] [I006] Use the installed Gateway runtime.
-  Goal: Run the application lifecycle through the installed `mprlab-gateway` command.
-  Requirements:
-  - Keep `make release`, `make publish`, and `make deploy` as the public commands.
-  - Pass the application Git root through `--app-root`.
-  - Use `MPRLAB_GATEWAY_EXECUTABLE` for an explicit installed command path.
-  - Keep inventory and private config under `MPRLAB_GATEWAY_OPERATOR_ROOT`.
-  Validation:
-  - Baseline `make ci` passed.
-  - The public Make integration test reproduced the required sibling-checkout failure.
-  - The installed Gateway v4.0.3 accepted the committed application release plan.
-  - `make test-installed-gateway`, `make go-test`, and final `make ci` passed.
-  - The new Make integration test replaced sibling-checkout assertions in the Go and mobile validators.
-  - Governor reported only the managed-content drift observed before this change.
-  - Release, publication, and deployment were not run.
-
+  - Run the root `npm audit --json` after the dependency change.
+  - Run `make browser-test` and final `make ci`.
 
 ## Maintenance
 
@@ -510,6 +140,12 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Confirm recurring entries remain open and keep the `R` suffix.
   - Confirm no active, blocked, recurring, or planning work was archived.
 
+  Last run: 2026-10-01.
+  Archived 21 completed entries with their full history and identifiers.
+  Closed B001, B008, I003, F001, and F003 after source review and passing CI.
+  Recorded incomplete production operations in `OPERATIONS.md`.
+  Checked identifiers and dependencies across both tracker files.
+
 - [ ] [M401R] (P2) Polish open issues
   Goal:
   Keep unresolved work executable by making each open issue concrete, ordered, and testable.
@@ -517,7 +153,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   Requirements:
   - Cadence: run weekly during active development and before handing a repo to automated execution.
   - Review every unresolved non-recurring issue for missing context, dependencies, repro steps, acceptance criteria, and validation expectations.
-  - Make priorities concrete and ensure each open issue has actionable deliverables.
+  - Make priorities concrete and make sure that each open issue has actionable deliverables.
   - Merge duplicate open issues or add explicit dependency links when separate entries must remain.
   - Do not close or implement issues as part of this polish pass unless that work is separately requested.
 
@@ -530,6 +166,11 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Sample the open entries after the pass and confirm each has clear next actions and validation expectations.
   - Confirm no recurring runbook was marked complete.
   - Confirm duplicates were merged or explicitly cross-referenced.
+
+  Last run: 2026-10-01.
+  Reviewed the three remaining implementation entries and added I007.
+  I004 requires an Apple product identity decision.
+  I005 and I007 require dependency corrections. F002 requires the native authentication contract first.
 
 - [ ] [M402R] (P2) Architecture and policy review
   Goal:
@@ -560,7 +201,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Cadence: run weekly for active apps and before each release cut.
   - Inspect package managers, lockfiles, language toolchains, container bases, and generated clients for known vulnerabilities or stale direct dependencies.
   - Review auth, secret, CORS, CSP, SQL, network, and service-authorization configuration for drift from the current contract.
-  - Prefer current supported dependencies; do not add compatibility shims for obsolete dependency behavior.
+  - Use current supported dependencies. Do not add compatibility shims for obsolete dependency behavior.
   - File each actionable vulnerability, unsupported runtime, or security-contract gap under its outcome-based issue section.
 
   Deliverables:
@@ -573,6 +214,11 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Confirm every finding is either filed, fixed under a separate issue, or explicitly marked not applicable with evidence.
   - Confirm no secrets or private payloads were written into the tracker.
 
+  Last run: 2026-10-01.
+  The dependency review used `npm audit --json` in the root and `mobile/` directories.
+  I005 records 14 affected mobile packages. I007 records nine affected browser test packages.
+  This review did not inspect Go dependencies, container bases, or security config.
+
 - [ ] [M404R] (P1) CI, release, and artifact health
   Goal:
   Keep the repository's validation, release, publication, and generated artifact surfaces trustworthy.
@@ -580,9 +226,9 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   Requirements:
   - Cadence: run before every release, publish, or deploy, and weekly for critical services.
   - Verify repository-native CI, lint, format, coverage, release, publish, Docker image, Pages, and artifact workflows still match the documented contract.
-  - Check generated artifacts, release tags, published images, and Pages outputs for source-to-public drift.
+  - Examine generated artifacts, release tags, published images, and Pages outputs for source-to-public drift.
   - File concrete follow-up issues for failing gates, stale artifacts, missing release prerequisites, or undocumented workflow changes.
-  - Do not perform production deployment from this runbook unless the operator explicitly requests that deployment.
+  - Do not do production deployment from this runbook unless the operator explicitly requests that deployment.
 
   Deliverables:
   - Recorded gate status and artifact surfaces inspected.
@@ -601,9 +247,9 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   Requirements:
   - Cadence: run monthly and before large refactors.
   - Scan for dead code, unused exports, duplicated literals, silent fallbacks, legacy aliases, compatibility reads, and zero-but-invalid domain states.
-  - Check static analysis, coverage, schema, and contract guards that are supposed to prevent drift.
+  - Examine static analysis, coverage, schema, and contract guards that prevent drift.
   - File each concrete violation under its outcome-based issue section.
-  - Keep the current canonical contract only; do not preserve obsolete behavior unless a product requirement explicitly says so.
+  - Keep the current canonical contract only. Do not preserve obsolete behavior unless a product requirement explicitly requires it.
 
   Deliverables:
   - Issue entries for each actionable static hygiene or contract violation.
@@ -653,168 +299,13 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Cross-references from archived issue history to durable docs when useful.
 
   Validation:
-  - Check links, command names, paths, and public contract descriptions touched by the pass.
+  - Verify links, command names, paths, and public contract descriptions from the review.
   - Confirm docs describe the current canonical path only.
   - Confirm issue archive and active tracker references remain consistent.
 
 ## Features
 
-- [!] [F003] (P1) Add an MPR Lab product directory to web and mobile
-  Goal:
-  Social Threader introduces users to MPR Lab through a shared product directory on web and mobile.
-
-  Requirements:
-  - Use one product catalog maintained in the `mpr-ui` repository for both clients.
-  - Compare the MPR UI footer catalog, the lab website catalog, and other public MPR Lab projects before catalog selection.
-  - Record each selected project's identifier, name, short purpose, category, and verified public destination.
-  - Include all projects with a verified public application, documentation page, repository, or descriptive project page.
-  - Record each excluded candidate and its missing public destination.
-  - Use these initial section labels: `Writing & creativity`, `Business & organization`, `Learning & everyday life`, and `Developer tools`.
-  - Put `About MPR Lab` and `All projects` before the product sections.
-  - Use `Explore MPR Lab` for the directory control.
-  - Show the `Writing & creativity` section expanded initially.
-  - Show the other product sections collapsed initially.
-  - Use a product name and short purpose for each link label.
-  - Keep `Built by MPR Lab`, the Social Threader GitHub link, and `Privacy` visible outside the directory.
-  - Apply the directory to each public Social Threader page and the native mobile footer.
-  - On desktop web, use an anchored drop-up with a height limit and internal scroll behavior.
-  - On mobile web, use a wide panel above the footer within the viewport and safe area.
-  - On native mobile, use a bottom sheet with the same catalog, section order, and initial section states.
-  - Use the device browser for native mobile product links.
-  - Keep the complete draft when users select a product link and return to Social Threader.
-  - Keep directory access available without authentication.
-
-  Deliverables:
-  - A verified product catalog and a documented distribution contract in `mpr-ui`.
-  - Shared MPR UI menu behavior for desktop and mobile web.
-  - A Social Threader web integration and native mobile bottom sheet that consume the same catalog.
-  - A documented catalog update procedure, including the mobile release boundary.
-  - Updated architecture and user documentation for both clients.
-  - One coordinated implementation record in F003 with the MPR UI and Social Threader change references.
-
-  Validation:
-  - Start each behavior change with a failing integration test through a public entry point.
-  - Verify catalog identifiers, category membership, link labels, and identical catalog data across both clients.
-  - Verify each public destination and record its result and check date.
-  - Verify web layouts at widths of 320, 390, 768, and 1280 pixels with Puppeteer.
-  - Verify expanded sections, long labels, internal scroll behavior, safe areas, and page overflow.
-  - Verify keyboard access, focus return, dismissal, screen reader labels, and section state announcements.
-  - Verify touch targets of at least 44 CSS pixels on web and 44 logical units on native mobile.
-  - Verify native link handling, visible errors, Android Back behavior, and complete draft retention through the mobile public interface.
-  - Verify the native sheet and device browser return on an Android emulator or device.
-  - Run the applicable MPR UI checks and Social Threader `make browser-test`, `make mobile-check`, and final `make ci`.
-  - Record source acceptance, public web acceptance, and installed mobile acceptance as separate results.
-  - Keep production deployment and app-store publication under user control.
-
-  Implementation:
-  - MPR UI F012 supplies the shared catalog, validator, stylesheet, and public destination evidence.
-  - Social Threader imports their exact bytes and records SHA-256 values in `data/product-catalog-source.json`.
-  - All eight public pages and the native footer consume the same 39-project catalog.
-  - `docs/product-directory.md` defines architecture, updates, and the mobile release boundary.
-  - B011 records the narrow-page overflow exposed by the required browser checks.
-  - The expected failures are in `/tmp/f003-catalog-red.log`, `/tmp/f003-browser-red.log`, and `/tmp/f003-mobile-red.log`.
-  - Both repository `make ci` commands passed with the final 39-project catalog.
-  - Social Threader passed 44 headless tests, 42 browser scenarios, and 35 mobile tests with full coverage.
-  - The directory suite covers all eight public pages at four viewport widths.
-  - Shared MPR UI validation includes 151 browser scenarios in each browser suite.
-  - The Pages artifact contains the shared catalog files. Its consumer files match the source bytes.
-  - Android Expo Go opened Chrome and returned with draft text and the copy marker intact.
-  - Android Back dismissed the expanded sheet without a draft change.
-  - The final Android API 37 run displayed the added Dictator and SVG Tools links from the 39-project snapshot.
-  - Mobile integration tests also retain image bytes, options, and custom size after a product link.
-  - Final CI logs are `/tmp/social-f003-final-ci.log` and `/tmp/mpr-ui-f003-final-ci.log`.
-  - The Governor check reports existing template drift. Changed prose has no mechanical checker findings.
-  - Public web and installed store acceptance remain separate operator steps.
-  - All F003 source changes remain uncommitted. No release, publication, or deployment occurred.
-
-  Blocked:
-  - Public web acceptance requires the operator deployment of this source.
-  - Installed mobile acceptance requires a new app artifact and the operator publication step.
-  - Expo Go verification does not replace installed store acceptance.
-
-- [!] [F001] (P1) Add authenticated LLM-powered thread transformations
-  Goal:
-  Let a user deliberately transform the text in the main Social Threader editor with a small catalog of safe, product-defined operations while preserving the existing free, local thread-splitting workflow and keeping LLM credentials, routing, prompt policy, and paid-compute controls outside browser and mobile runtimes.
-
-  Requirements:
-  - Deliver the first release on the existing browser frontend. Keep the Expo mobile app unchanged in this issue, but design the application API so a later mobile issue can use the same product operation after a native TAuth profile and session contract are explicitly defined.
-  - Add an `Improve with AI` toolbar immediately above the main editable input with three clear operations:
-    - `Polish` (`polish`): improve grammar, clarity, cohesion, and flow while preserving meaning, language, voice, factual claims, URLs, mentions, hashtags, and approximate length.
-    - `Expand` (`expand`): add connective detail, useful explanation, and structure while preserving the original position and avoiding invented facts, sources, quotations, statistics, experiences, or claims.
-    - `Punch Up` (`punch_up`): strengthen the opening hook, cadence, concrete language, transitions, and ending while preserving the user's factual claims and avoiding misleading clickbait.
-  - Keep operation identifiers in a closed enum and keep all browser-visible labels, descriptions, loading copy, authentication copy, validation copy, preview actions, and error messages in `js/constants.js`.
-  - Disable transformation controls when the editor has no text, while a request is active, or before the shared browser authentication lifecycle reports `authenticated`. Ordinary text entry, chunking, copying, image handling, and platform presets must remain usable without authentication.
-  - Treat images as unsupported transformation input in the first release. If the current document contains one or more image records, disable the transformation controls and explain that AI editing currently supports text-only drafts. Never drop, move, replace, upload, or silently ignore an attached image.
-  - Do not overwrite the editor when a transformation completes. Preserve the source document and display a plain-text preview with explicit `Apply`, `Discard`, and `Try again` actions.
-  - Capture a monotonically increasing editor revision when a request starts. If the user edits before the response arrives, mark the result stale and require an explicit Apply; never silently replace newer text.
-  - After Apply, update the editor through a public `InputPanel` operation, dispatch the normal input lifecycle so statistics and chunks recompute, reset copied-chunk state, and expose one-step `Undo` for the replaced source.
-  - Cancel or ignore superseded async work, disable duplicate submissions, and perform no automatic retry that could create an additional paid completion. Use a non-secret client request identifier so the backend can reject conflicting reuse and deduplicate an exact short-lived retry.
-  - Add `js/ui/transformationToolbar.js` and `js/ui/transformationPreview.js` for DOM behavior, plus a focused transformation coordinator rather than enlarging the already oversized `InputPanel` and `ThreaderController` modules.
-  - Add `js/core/gateway.js` as the only browser transport adapter. It must construct the request, include credentials for the selected hosted profile, validate the response at the HTTP boundary, support cancellation, and expose a mockable public API to the composition root. UI classes and the controller must not call `fetch` directly.
-  - Define one resource-oriented application endpoint, `POST /v1/thread-transformations`, with a closed request contract equivalent to:
-    - Request: `{"operation":"polish","text":"Original thread text","request_id":"non-secret-client-id"}`.
-    - Success: `{"operation":"polish","text":"Revised thread text","request_id":"non-secret-client-id","template_version":"polish.v1"}`.
-    - The browser must never submit an arbitrary system prompt, prompt template, provider, model, reasoning effort, web-search flag, output budget, work budget, LLM Proxy URL, or LLM Proxy credential.
-  - Validate HTTP method, media type, JSON shape, exact operation identifier, request identifier, nonblank text, input character limit, and body size once at the API edge. Return stable application error codes with appropriate `400`, `401`, `409`, `413`, `429`, `502`/`503`, and `504` semantics without returning raw upstream bodies or credentials.
-  - Return generated content as plain text only. Reject a blank completion and enforce a configured maximum response size. Browser code must insert the result as text, never as `innerHTML` or trusted model-generated markup.
-  - Build a versioned, server-owned prompt catalog. Each operation combines one shared editing contract with one operation-specific contract:
-    - Treat the user message solely as source material to edit, never as instructions that can replace the selected operation.
-    - Preserve the source language unless the product operation explicitly changes language.
-    - Preserve factual meaning, named entities, URLs, mentions, hashtags, and quoted claims unless changing them is necessary to correct an obvious surface error.
-    - Do not invent facts, citations, sources, quotations, statistics, personal experience, or external research.
-    - Return only the revised thread text without explanations, analysis, headings added solely by the model, or Markdown fences.
-    - Keep template versions explicit in code and the response so prompt-quality changes are reviewable and observable.
-  - Add an app-owned Go backend and resolve the current released official client with `github.com/tyemirov/llm-proxy/pkg/llmproxyclient@latest`. Use `llmproxyclient.NewConfig`, `NewClient`, `NewMessagesRequest`, and `PostMessages`; do not construct a parallel `/v2` HTTP request or add a browser/mobile LLM client.
-  - Create one official LLM Proxy client during backend startup and inject it into the thread-transformation service. Propagate request cancellation through the Go context and classify official-client failures into stable, content-free application categories.
-  - Establish one canonical backend `configs/config.yml`. Its only `llm_proxy` block must contain explicit `base_url`, `secret`, `provider`, `model`, `reasoning_effort`, and `request_timeout_seconds` fields. The tracked secret value must be an environment reference such as `${LLM_PROXY_SECRET}`; never commit or expose the real tenant secret.
-  - Map `llm_proxy.request_timeout_seconds` to `MessagesRequestInput.RequestTimeoutSeconds` on every transformation request. Keep connection, credential, provider, model, reasoning effort, and work-budget policy out of code constants and client request payloads.
-  - Keep application-owned limits separate from LLM routing configuration. Strictly configure and validate maximum input characters, maximum response characters or output tokens, per-user request rate, global concurrency, idempotency retention, and any global spend/capacity circuit breaker before the backend starts serving.
-  - Use a dedicated Social Threader LLM Proxy tenant secret so usage and failures are attributable to this product and compromise does not expose another application's tenant.
-  - Keep ordinary thread splitting guest-accessible, but protect `POST /v1/thread-transformations` with the shared TAuth session. The backend may validate the exact TAuth-issued session solely for resource authorization and must return `401` without a valid profile-specific session.
-  - Integrate browser authentication only through the current `mpr-ui@latest` declarative contract and the app-owned `/config-ui.yaml`. React only to documented `mpr-ui:auth:*` lifecycle events; do not load `tauth.js`, call authentication endpoints, inspect cookies or tokens, maintain an app-owned auth state machine, or reinterpret an application API failure as signed-out state.
-  - Make zero protected transformation requests before `mpr-ui` reports `authenticated`. On `unauthenticated`, cancel pending protected work and clear transformation previews without disturbing the user's source draft or local chunks.
-  - Define explicit local and hosted application profiles before production implementation. Each hosted profile must name the frontend origin, API origin, TAuth browser origin, OAuth callback, tenant ID, session and refresh cookie names, cookie domain, `Secure`/`SameSite` behavior, CORS credential behavior, DNS owner, reverse-proxy owner, upstream service, and container port. Do not infer or hardcode an API hostname from the repository name.
-  - For a split-origin Pages frontend and API, allow only the exact configured frontend origin, send `credentials: include`, and verify cookie/CORS behavior in a real browser. Do not treat CORS as authentication.
-  - Do not persist source or transformed text in the first release. Do not put source text, transformed text, prompts, credentials, raw proxy errors, or provider bodies in application logs, analytics, metrics, traces, issue notes, or test output. Log only safe metadata such as request ID, authenticated subject identifier or irreversible rate-limit key, operation, template version, input/output sizes, duration, and outcome category.
-  - Preserve the existing static frontend and mobile release artifacts while adding the backend as a separately declared deployable surface.
-  - Add the repository's one canonical `.mprlab/deploy/resources.yml` using the current sibling `mprlab-gateway` schema at implementation time. Declare the complete Social Threader lifecycle, including the Pages frontend, immutable API image, backend runtime service, public route, health check, runtime configuration/secret inputs, and TAuth tenant contribution required by the selected profile.
-  - Normalize root `make release`, `make publish`, and `make deploy` into the current zero-argument sibling-gateway lifecycle. Remove obsolete application-owned Pages deployment orchestration in the same forward change rather than preserving aliases or a second deployment path. Production deployment remains an explicit operator action and is not part of ordinary implementation validation.
-  - Rerun `mprlab-governor` after the Go backend, HTTP API, and container surfaces exist so `.mprlab/AGENTS.GO.md`, `.mprlab/AGENTS.API.md`, and `.mprlab/AGENTS.DOCKER.md` are added from actual repository evidence rather than prematurely.
-  - Update `README.md`, `doc.md`, the public feature description, privacy-facing copy near the toolbar, API documentation, local setup, configuration examples, and release/deployment documentation to describe the current canonical workflow only.
-
-  Deliverables:
-  - Accessible browser transformation toolbar, loading/error states, result preview, Apply/Discard/Try again behavior, stale-result protection, and Undo.
-  - Closed browser transformation types and user-facing constants.
-  - Mockable `js/core/gateway.js` adapter with strict request/response validation and cancellation.
-  - Go Social Threader API with health endpoint, TAuth resource-authorization middleware, limits, idempotency handling, safe error mapping, and a versioned transformation service.
-  - Official `llmproxyclient` startup construction and injected adapter using request-scoped reasoning/model/output/work-budget inputs from the validated canonical configuration.
-  - Canonical `configs/config.yml`, tracked environment example, dedicated secret reference, local fake-proxy configuration, and startup validation.
-  - App-owned `/config-ui.yaml` plus current `mpr-ui@latest` shell/auth integration for the protected AI surface.
-  - Local black-box stack with a fake LLM Proxy and profile-specific TAuth session path; no paid provider call is required for CI.
-  - Current `.mprlab/deploy/resources.yml` and zero-argument release/publish/deploy lifecycle covering both frontend and API surfaces.
-  - Updated architecture, privacy, setup, API, testing, and operator documentation.
-  - A separately scoped follow-up issue for native mobile transformations if mobile support is still desired after the browser capability is accepted.
-
-  Validation:
-  - Add table-driven black-box browser tests for empty text, unauthenticated state, authenticated enablement, every operation identifier, one request per click, loading/disabled state, cancellation, API validation errors, rate limiting, upstream failure, blank response, oversized response, preview rendering, Apply, Discard, Try again, Undo, and stale responses after concurrent editing.
-  - Verify attached images disable transformations and remain byte-for-byte present after every attempted interaction.
-  - Use the existing Happy DOM harness for public UI contracts and Puppeteer for real browser behavior. Do not introduce Playwright.
-  - Add Go tests proving configuration expansion and strict startup failure for every missing or malformed `llm_proxy`, auth, profile, limit, and application-policy field.
-  - Add a local fake HTTP server test around the official LLM Proxy client and assert the generated path/query, tenant-secret authentication without printing the secret, configured provider/model/reasoning effort, request-timeout header, request body, response propagation, cancellation, and sanitized error classification.
-  - Add API black-box tests proving unauthenticated `401`, authenticated success, exact CORS allowlist behavior, body/input/output limits, unknown-operation rejection, conflicting request-ID rejection, bounded exact retry reuse, concurrency admission, rate-limit responses, no-store headers, and content-free logs.
-  - Add prompt fixtures covering short and long drafts, multiple paragraphs, non-English text, URLs, mentions, hashtags, quotations, factual claims, emoji, instruction-like source content, and hostile prompt-injection text. CI must validate deterministic prompt construction and invariants against a fake client, not exact stochastic prose.
-  - Evaluate prompt quality separately against a small human-reviewed corpus using rubrics for meaning retention, language retention, factual non-invention, voice, requested length behavior, hook/flow quality, and preservation of URLs/mentions/hashtags. Any real provider evaluation is explicit, potentially paid verification and must not be a default CI step.
-  - Run `npm test`, the focused Go tests, `go test ./...`, `go vet ./...`, `go mod verify`, `make mobile-check`, the deployment-manifest validation supplied by the current sibling gateway, the governor `--check`, and `git diff --check`.
-  - Prove locally that no protected request occurs before authenticated lifecycle settlement, a valid TAuth session unlocks only the transformation endpoint, logout cancels/clears AI state without erasing the draft, and an API `401` after authentication is surfaced as an application/integration error rather than starting a second login flow.
-  - For hosted acceptance, separately verify the Pages frontend, API DNS/TLS/health, exact CORS and credential behavior, TAuth callback/session restoration/logout, public route timeouts, and one explicitly authorized live transformation. Do not infer hosted readiness from localhost, CI, a healthy frontend, or a healthy backend alone.
-
-  Blocked: Production acceptance requires a committed implementation and the canonical operator command.
-  The private deployment input is present.
-  Google accepts the configured callback.
-  LLM Proxy accepts the dedicated tenant secret without a provider call.
-  No production lifecycle operation occurred.
-
-- [ ] [F002] (P2) Add authenticated thread transformations to the mobile app
+- [ ] [F002] (P2) {F001} Add authenticated thread transformations to the mobile app
   Goal:
   Let a mobile user use the Social Threader transformation API after the browser capability is accepted and a native authentication contract is approved.
 
@@ -839,8 +330,14 @@ Format: `- [ ] [B042] (P1) {I007} Title`
   - Add black-box mobile tests for authentication gates, all operations, one request per action, cancellation, and errors.
   - Add black-box mobile tests for preview actions, stale results, and Undo.
   - Verify that image drafts never make a transformation request and remain byte-for-byte unchanged.
-  - Verify session restoration and logout on an Android device or emulator with the approved TAuth profile.
+  - Verify session restoration and logout on an Android emulator with the approved TAuth profile.
   - Run the repository mobile coverage gate and the shared API contract tests.
   - Treat one live transformation as explicit, potentially paid verification. Do not make it a default CI step.
+
+  Review: 2026-10-01.
+  F001 source acceptance is completed.
+  The mobile client has no transformation controls or native TAuth application profile.
+  The native authentication contract is the first deliverable.
+  Hosted API acceptance remains a separate operational prerequisite in `OPERATIONS.md`.
 
 ## Planning

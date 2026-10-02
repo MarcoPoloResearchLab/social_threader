@@ -121,7 +121,9 @@ export class ThreaderController {
     initialize() {
         this.inputPanel.initializeCopy();
         this.formControls.initializeCopy();
-        this.formControls.setToggleAvailability(TOGGLE_IDENTIFIERS.PARAGRAPH, false);
+        for (const identifier of Object.values(TOGGLE_IDENTIFIERS)) {
+            this.formControls.setToggleAvailability(identifier, false);
+        }
         this.formControls.setActivePreset(null);
         this.attachEventListeners();
     }
@@ -200,10 +202,14 @@ export class ThreaderController {
             const statistics = this.chunkingService.calculateStatistics(documentSnapshot.plainText);
             this.inputPanel.updateStatistics(statistics);
             const hasMultipleParagraphs = statistics.paragraphs > 1;
+            const hasText = documentSnapshot.plainText.trim().length > 0;
+            const hasContent = this.hasRenderableContent(documentSnapshot);
             this.formControls.setToggleAvailability(TOGGLE_IDENTIFIERS.PARAGRAPH, hasMultipleParagraphs);
-            if (!hasMultipleParagraphs && this.state.breakOnParagraphs) {
-                this.state.breakOnParagraphs = false;
-            }
+            this.formControls.setToggleAvailability(TOGGLE_IDENTIFIERS.SENTENCE, hasText);
+            this.formControls.setToggleAvailability(TOGGLE_IDENTIFIERS.ENUMERATION, hasContent);
+            this.state.breakOnParagraphs = hasMultipleParagraphs && this.state.breakOnParagraphs;
+            this.state.breakOnSentences = hasText && this.state.breakOnSentences;
+            this.state.enumerate = hasContent && this.state.enumerate;
             if (this.rechunkTimeoutId !== null) {
                 window.clearTimeout(this.rechunkTimeoutId);
             }

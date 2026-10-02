@@ -7,7 +7,7 @@ Its control shows `Marco Polo Research Lab LLC` beside the copyright year.
 The menu shows `MPR Lab` and nine project links with short names.
 `Productivity` is initially expanded.
 `Web and health tools` and `Creative tools` are initially collapsed.
-The footer shows `Thread splitter`, `Resources`, `Open source on GitHub`, and `Privacy` links.
+The footer shows `Social Threader`, `Resources`, `Open source on GitHub`, and `Privacy` links.
 `js/constants.js` contains the web menu, copyright template, and footer links.
 
 The web directory uses the shared MPR UI `menu` contract and standard component styles.
@@ -71,4 +71,5 @@ They do not prove acceptance of an installed store artifact.
 Public web acceptance requires an operator deployment and a check of the public website.
 Installed mobile acceptance requires a new app artifact with this snapshot.
 Older installed apps retain their previous catalog.
-F003 keeps these results separate from source acceptance.
+F003 source acceptance is completed.
+The [operations record](../.mprlab/OPERATIONS.md) keeps public checks and store checks separate from source acceptance.
