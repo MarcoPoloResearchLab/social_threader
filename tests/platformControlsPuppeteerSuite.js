@@ -12,6 +12,9 @@ const PLATFORM_CASES = Object.freeze([
 ]);
 const VIEWPORT_CASES = Object.freeze([
     { width: 1527, height: 1474 },
+    { width: 801, height: 900 },
+    { width: 800, height: 900 },
+    { width: 678, height: 471 },
     { width: 390, height: 844 },
     { width: 320, height: 700 }
 ]);
@@ -37,8 +40,37 @@ export async function runPlatformControlsBrowserSuite(page, pass, fail, indexUrl
             await page.setViewport(viewport);
             const layout = await page.evaluate((rowSelector) => {
                 const rows = Array.from(document.querySelectorAll(rowSelector));
+                const customButton = document.querySelector("#customButton");
+                const customInput = document.querySelector(".custom-control input");
+                const buttonBounds = customButton?.getBoundingClientRect();
+                const inputBounds = customInput?.getBoundingClientRect();
+                const options = document.querySelector(".toggle-sentence-break");
+                const optionsBounds = options?.getBoundingClientRect();
                 return {
                     fits: document.documentElement.scrollWidth <= window.innerWidth,
+                    optionsAligned: optionsBounds !== undefined && rows.every((row) => {
+                        const bounds = row.getBoundingClientRect();
+                        return Math.abs(optionsBounds.left - bounds.left) <= 1 && Math.abs(optionsBounds.right - bounds.right) <= 1;
+                    }),
+                    optionsFit: options !== null && optionsBounds !== undefined && Array.from(options.children).every((option) => {
+                        const checkbox = option.querySelector("input");
+                        const label = option.querySelector("label");
+                        if (checkbox === null || label === null) return false;
+                        const bounds = option.getBoundingClientRect();
+                        const checkboxBounds = checkbox.getBoundingClientRect();
+                        const labelBounds = label.getBoundingClientRect();
+                        return bounds.left >= optionsBounds.left && bounds.right <= optionsBounds.right &&
+                            checkboxBounds.right < labelBounds.left &&
+                            Math.abs(checkboxBounds.top + checkboxBounds.height / 2 - labelBounds.top - labelBounds.height / 2) <= 1;
+                    }),
+                    customAligned: buttonBounds !== undefined && inputBounds !== undefined && rows.every((row) => {
+                        const bounds = row.getBoundingClientRect();
+                        return Math.abs(buttonBounds.left - bounds.left) <= 1 &&
+                            Math.abs(inputBounds.right - bounds.right) <= 1 &&
+                            Math.abs(buttonBounds.top - inputBounds.top) <= 1 &&
+                            Math.abs(buttonBounds.height - inputBounds.height) <= 1 &&
+                            buttonBounds.right < inputBounds.left;
+                    }),
                     helpUnobstructed: rows.every((row) => {
                         const help = row.querySelector("a");
                         if (help === null) return false;
@@ -62,7 +94,7 @@ export async function runPlatformControlsBrowserSuite(page, pass, fail, indexUrl
                     })
                 };
             }, ROW_SELECTOR);
-            if (!layout.fits || !layout.rowsFit || !layout.helpUnobstructed) throw new Error(`Platform controls fail at ${viewport.width}px: ${JSON.stringify(layout)}`);
+            if (!layout.fits || !layout.rowsFit || !layout.helpUnobstructed || !layout.customAligned || !layout.optionsAligned || !layout.optionsFit) throw new Error(`Platform controls fail at ${viewport.width}px: ${JSON.stringify(layout)}`);
             const screenshotDirectory = process.env.SOCIAL_THREADER_PLATFORM_SCREENSHOT_DIR;
             if (screenshotDirectory && viewport.width !== 390) {
                 await page.screenshot({ path: path.join(screenshotDirectory, `platforms-${viewport.width}.png`), fullPage: true });
