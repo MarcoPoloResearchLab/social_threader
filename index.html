@@ -101,12 +101,16 @@
         brand-label="Social Threader"
         brand-href="/"
     >
+        <a slot="brand" class="mpr-header__brand-link socialThreaderBrand" href="/" target="_blank" rel="noopener noreferrer">
+            <img src="/assets/favicons/favicon.svg" width="24" height="24" alt="" aria-hidden="true">
+            <span>Social Threader</span>
+        </a>
         <mpr-user slot="aux" display-mode="avatar" logout-url="/"></mpr-user>
     </mpr-header>
     <main class="container">
         <div class="left-pane">
             <h1>Social Threader</h1>
-            <p class="mb-20">Split long text into smaller chunks for Twitter/X, Bluesky, Threads, Mastodon, or any platform with a character limit.</p>
+            <p id="platformIntroduction" class="mb-20">Split long text into smaller chunks for Twitter/X, Bluesky, Threads, Mastodon, or any platform with a character limit.</p>
             <p class="mb-20">Choose sentence or paragraph boundaries, track the counts that matter, and copy each chunk in order.</p>
             <div
                 id="sourceText"
