@@ -333,7 +333,8 @@ button[aria-disabled="true"]:hover {
 }
 
 .button-group,
-.custom-control {
+.custom-control,
+.toggle-sentence-break {
     width: 90%;
     max-width: 600px;
     display: flex;
@@ -416,8 +417,8 @@ button[aria-disabled="true"]:hover {
 }
 
 .custom-control button {
-    margin-right: 10px;
     flex: 1;
+    min-width: 0;
 }
 
 .custom-control input {
@@ -431,18 +432,15 @@ button[aria-disabled="true"]:hover {
 }
 
 .toggle-sentence-break {
-    width: 90%;
-    max-width: 600px;
-    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
     margin-top: 5px;
     justify-content: space-between;
 }
 
 .toggle-sentence-break .toggle-options {
     display: flex;
-    flex-wrap: wrap;
     gap: 12px;
     align-items: center;
 }
@@ -592,9 +590,11 @@ button[aria-disabled="true"]:hover {
         width: 100%;
     }
 
-    .button-group {
-        width: 100%;
-        padding-right: 64px;
+    .button-group,
+    .custom-control,
+    .toggle-sentence-break {
+        width: calc(100% - 64px);
+        align-self: flex-start;
     }
 
     .lower-right-pane {
