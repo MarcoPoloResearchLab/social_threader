@@ -5,6 +5,7 @@
 
 import http from "node:http";
 import { runTransformationToolbarBrowserSuite } from "./transformationToolbarPuppeteerSuite.js";
+import { assertTransformationPreviewLayout } from "./transformationPreviewPuppeteerSuite.js";
 
 const SOURCE_TEXT_SELECTOR = "#sourceText";
 const TRANSFORMATION_TOOLBAR_SELECTOR = "#transformationToolbar";
@@ -232,11 +233,13 @@ export async function runTransformationBrowserSuite(page, pass, fail, indexUrl, 
         if (sourceBeforeApply !== "Browser source draft.") {
             throw new Error("Preview overwrote the editor before Apply");
         }
+        await assertTransformationPreviewLayout(page, "result");
         await page.click(APPLY_BUTTON_SELECTOR);
         const sourceAfterApply = await page.$eval(SOURCE_TEXT_SELECTOR, (editorElement) => editorElement.textContent);
         if (sourceAfterApply !== "Browser-safe <strong>result</strong>.") {
             throw new Error("Apply did not use the plain-text editor boundary");
         }
+        await assertTransformationPreviewLayout(page, "applied");
         await page.click(UNDO_BUTTON_SELECTOR);
         const sourceAfterUndo = await page.$eval(SOURCE_TEXT_SELECTOR, (editorElement) => editorElement.textContent);
         if (sourceAfterUndo !== "Browser source draft.") {

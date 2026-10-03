@@ -57,6 +57,9 @@ export const PRODUCT_DIRECTORY = Object.freeze({
 export const TEXT_CONTENT = Object.freeze({
     EDITOR_PLACEHOLDER: "Enter text here...",
     CUSTOM_BUTTON_DEFAULT: "Custom Size",
+    PLATFORM_PRESET_LABEL: "{platform} ({length})",
+    PLATFORM_HELP_LABEL: "{platform} character limit (opens in a new tab)",
+    PLATFORM_HELP_SYMBOL: "?",
     CUSTOM_BUTTON_TEMPLATE: "Custom ({VALUE})",
     COPY_BUTTON_LABEL: "Copy",
     COPY_BUTTON_SUCCESS_LABEL: "Copied!",
@@ -268,6 +271,48 @@ export const PRESET_IDENTIFIERS = Object.freeze({
     BLUESKY: "bluesky",
     TWITTER: "twitter"
 });
+
+export const PLATFORM_IDENTIFIERS = Object.freeze({
+    THREADS: "threads", MASTODON: "mastodon", BLUESKY: "bluesky", TWITTER: "twitter"
+});
+
+export const PLATFORM_CONFIG = Object.freeze({
+    [PLATFORM_IDENTIFIERS.THREADS]: Object.freeze({
+        name: "Threads", homepage: "https://www.threads.com/",
+        documentation: "https://about.fb.com/news/2023/07/introducing-threads-new-app-text-sharing/",
+        icon: "/assets/img/platforms/threads.svg"
+    }),
+    [PLATFORM_IDENTIFIERS.MASTODON]: Object.freeze({
+        name: "Mastodon", homepage: "https://joinmastodon.org/",
+        documentation: "https://docs.joinmastodon.org/user/posting/#text",
+        icon: "/assets/img/platforms/mastodon.svg"
+    }),
+    [PLATFORM_IDENTIFIERS.BLUESKY]: Object.freeze({
+        name: "Bluesky", homepage: "https://bsky.app/",
+        documentation: "https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/feed/post.json",
+        icon: "/assets/img/platforms/bluesky.svg"
+    }),
+    [PLATFORM_IDENTIFIERS.TWITTER]: Object.freeze({
+        name: "Twitter/X", homepage: "https://x.com/",
+        documentation: "https://help.x.com/en/using-x/types-of-posts",
+        icon: "/assets/img/platforms/x.svg"
+    })
+});
+
+export const PLATFORM_PRESET_PRESENTATIONS = Object.freeze([
+    Object.freeze({ platform: PLATFORM_IDENTIFIERS.THREADS, preset: PRESET_IDENTIFIERS.THREADS }),
+    Object.freeze({ platform: PLATFORM_IDENTIFIERS.MASTODON, preset: PRESET_IDENTIFIERS.THREADS }),
+    Object.freeze({ platform: PLATFORM_IDENTIFIERS.BLUESKY, preset: PRESET_IDENTIFIERS.BLUESKY }),
+    Object.freeze({ platform: PLATFORM_IDENTIFIERS.TWITTER, preset: PRESET_IDENTIFIERS.TWITTER })
+]);
+
+export const PLATFORM_INTRODUCTION = Object.freeze([
+    Object.freeze({ text: "Split long text into smaller chunks for ", platform: PLATFORM_IDENTIFIERS.TWITTER }),
+    Object.freeze({ text: ", ", platform: PLATFORM_IDENTIFIERS.BLUESKY }),
+    Object.freeze({ text: ", ", platform: PLATFORM_IDENTIFIERS.THREADS }),
+    Object.freeze({ text: ", ", platform: PLATFORM_IDENTIFIERS.MASTODON })
+]);
+export const PLATFORM_INTRODUCTION_END = ", or any platform with a character limit.";
 
 /** @type {Readonly<Record<string, import('./types.d.js').PresetDefinition>>} */
 export const PRESET_CONFIG = Object.freeze({

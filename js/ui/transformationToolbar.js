@@ -8,10 +8,10 @@ import {
     TRANSFORMATION_OPERATION_CONFIG,
     TRANSFORMATION_OPERATION_IDENTIFIERS
 } from "../constants.js";
+import { createButtonIcon } from "./buttonIcon.js";
 
 const OPERATION_ATTRIBUTE = "data-transformation-operation";
 const STATUS_ATTRIBUTE = "data-transformation-status";
-const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const OPERATION_ICON_PATHS = Object.freeze({
     [TRANSFORMATION_OPERATION_IDENTIFIERS.POLISH]: "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z",
     [TRANSFORMATION_OPERATION_IDENTIFIERS.EXPAND]: "M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7",
@@ -95,7 +95,7 @@ export class TransformationToolbar {
             buttonElement.className = "transformationButton";
             const labelElement = document.createElement("span");
             labelElement.textContent = operationConfig.label;
-            buttonElement.append(createOperationIcon(operation), labelElement);
+            buttonElement.append(createButtonIcon(OPERATION_ICON_PATHS[operation]), labelElement);
             buttonElement.title = operationConfig.description;
             buttonElement.setAttribute(OPERATION_ATTRIBUTE, operation);
             buttonElement.addEventListener("click", () => {
@@ -116,27 +116,6 @@ export class TransformationToolbar {
 
         this.rootElement.appendChild(fragment);
     }
-}
-
-/**
- * @param {import('../types.d.js').TransformationOperation} operation Button operation.
- * @returns {SVGSVGElement} Decorative icon with the button's current color.
- */
-function createOperationIcon(operation) {
-    const iconElement = document.createElementNS(SVG_NAMESPACE, "svg");
-    iconElement.classList.add("transformationButtonIcon");
-    iconElement.setAttribute("viewBox", "0 0 24 24");
-    iconElement.setAttribute("aria-hidden", "true");
-    iconElement.setAttribute("focusable", "false");
-    iconElement.setAttribute("fill", "none");
-    iconElement.setAttribute("stroke", "currentColor");
-    iconElement.setAttribute("stroke-width", "1.8");
-    iconElement.setAttribute("stroke-linecap", "round");
-    iconElement.setAttribute("stroke-linejoin", "round");
-    const pathElement = document.createElementNS(SVG_NAMESPACE, "path");
-    pathElement.setAttribute("d", OPERATION_ICON_PATHS[operation]);
-    iconElement.appendChild(pathElement);
-    return iconElement;
 }
 
 /**
