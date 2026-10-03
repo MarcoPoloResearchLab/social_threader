@@ -13,6 +13,8 @@ import { runProductDirectorySuite } from "./productDirectorySuite.js";
 import { runPublicPagesSeoSuite } from "./publicPagesSeoSuite.js";
 import { LOOPAWARE_PIXEL_URL_PREFIX, PUBLIC_LOOPAWARE_SITE_ID } from "./publicPagesSeoSupport.js";
 import { runSharedUiMigrationSuite } from "./sharedUiMigrationSuite.js";
+import { runPlatformControlsBrowserSuite } from "./platformControlsPuppeteerSuite.js";
+import { runHeaderBrandBrowserSuite } from "./headerBrandPuppeteerSuite.js";
 import {
     runTransformationBrowserSuite,
     startTransformationApiServer
@@ -588,6 +590,8 @@ async function main() {
         page.on("request", handlePublicPageRequest);
         await runFeedbackWidgetSuite(page, pass, fail, indexUrl);
         await runInputStatisticsSuite(page, pass, fail, indexUrl);
+        await runHeaderBrandBrowserSuite(page, pass, fail, indexUrl);
+        await runPlatformControlsBrowserSuite(page, pass, fail, indexUrl);
         await runChunkingOptionsSuite(page, pass, fail, indexUrl);
         await runPublicPagesSeoSuite(page, pass, fail, staticServer.origin);
         page.off("request", handlePublicPageRequest);
