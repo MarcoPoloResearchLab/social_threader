@@ -7,11 +7,18 @@ import {
     TEXT_CONTENT,
     TRANSFORMATION_ACTION_IDENTIFIERS
 } from "../constants.js";
+import { createButtonIcon } from "./buttonIcon.js";
 
 const PREVIEW_TEXT_ATTRIBUTE = "data-transformation-preview-text";
 const ERROR_ATTRIBUTE = "data-transformation-error";
 const STALE_ATTRIBUTE = "data-transformation-stale";
 const ACTION_ATTRIBUTE = "data-transformation-action";
+const ACTION_ICON_PATHS = Object.freeze({
+    [TRANSFORMATION_ACTION_IDENTIFIERS.APPLY]: "m5 12 4 4L19 6",
+    [TRANSFORMATION_ACTION_IDENTIFIERS.DISCARD]: "m6 6 12 12M18 6 6 18",
+    [TRANSFORMATION_ACTION_IDENTIFIERS.RETRY]: "M20 7v5h-5M20 12a8 8 0 1 0-2 5",
+    [TRANSFORMATION_ACTION_IDENTIFIERS.UNDO]: "M9 4 4 9l5 5M4 9h10a6 6 0 0 1 0 12"
+});
 
 /**
  * Renders model results as plain text and exposes explicit result actions.
@@ -183,6 +190,7 @@ export class TransformationPreview {
         this.rootElement.appendChild(this.resultActionsElement);
 
         const appliedStatusElement = document.createElement("span");
+        appliedStatusElement.className = "transformationAppliedStatus";
         appliedStatusElement.textContent = TEXT_CONTENT.TRANSFORMATION_APPLIED;
         this.undoElement.className = "transformationUndo";
         this.undoElement.append(
@@ -200,7 +208,10 @@ export class TransformationPreview {
     createActionButton(action, label) {
         const buttonElement = document.createElement("button");
         buttonElement.type = "button";
-        buttonElement.textContent = label;
+        buttonElement.className = "transformationActionButton";
+        const labelElement = document.createElement("span");
+        labelElement.textContent = label;
+        buttonElement.append(createButtonIcon(ACTION_ICON_PATHS[action]), labelElement);
         buttonElement.setAttribute(ACTION_ATTRIBUTE, action);
         buttonElement.addEventListener("click", () => {
             const callback = this.actionCallbacks.get(action);

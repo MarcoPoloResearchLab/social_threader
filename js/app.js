@@ -8,6 +8,7 @@ import { InputPanel } from "./ui/inputPanel.js";
 import { ChunkListView } from "./ui/chunkListView.js";
 import { FormControls } from "./ui/formControls.js";
 import { ThreaderController } from "./ui/controller.js";
+import { renderPlatformIntroduction } from "./ui/platformControls.js";
 import { TransformationToolbar } from "./ui/transformationToolbar.js";
 import { TransformationPreview } from "./ui/transformationPreview.js";
 import { TransformationLoginDialog } from "./ui/transformationLoginDialog.js";
@@ -71,6 +72,7 @@ function bootstrap() {
         return;
     }
     bootstrapHasInitialized = true;
+    renderPlatformIntroduction(assertElement(document.getElementById("platformIntroduction"), "platformIntroduction"));
     const editorElement = /** @type {HTMLDivElement} */ (
         assertElement(document.getElementById("sourceText"), "sourceText")
     );

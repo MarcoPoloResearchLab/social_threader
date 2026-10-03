@@ -6,12 +6,12 @@
 import {
     TEXT_CONTENT,
     TOGGLE_LABELS,
-    PRESET_IDENTIFIERS,
     PRESET_CONFIG,
     DEFAULT_LENGTHS,
     ATTRIBUTE_NAMES,
     CLASS_NAMES
 } from "../constants.js";
+import { createPlatformPresetViews } from "./platformControls.js";
 
 /**
  * @typedef {Object} PresetToggleDetails
@@ -32,7 +32,7 @@ export class FormControls {
      * @param {Record<string, HTMLLabelElement>} toggleLabels Mapping of toggle identifiers to label elements.
      */
     constructor(presetButtons, customButtonElement, customInputElement, toggleInputs, toggleLabels) {
-        this.presetButtons = presetButtons;
+        this.presetViews = createPlatformPresetViews(presetButtons);
         this.customButtonElement = customButtonElement;
         this.customInputElement = customInputElement;
         this.toggleInputs = toggleInputs;
@@ -46,11 +46,8 @@ export class FormControls {
      * @returns {void}
      */
     initializeCopy() {
-        Object.keys(this.presetButtons).forEach((identifier) => {
-            const presetDefinition = PRESET_CONFIG[identifier];
-            if (presetDefinition) {
-                this.presetButtons[identifier].textContent = presetDefinition.label;
-            }
+        this.presetViews.forEach(({ labelElement, label }) => {
+            labelElement.textContent = label;
         });
         this.customButtonElement.textContent = TEXT_CONTENT.CUSTOM_BUTTON_DEFAULT;
         this.customInputElement.value = String(DEFAULT_LENGTHS.CUSTOM);
@@ -69,8 +66,7 @@ export class FormControls {
      * @returns {void}
      */
     onPresetToggled(callback) {
-        Object.keys(this.presetButtons).forEach((identifier) => {
-            const buttonElement = this.presetButtons[identifier];
+        this.presetViews.forEach(({ identifier, buttonElement }) => {
             buttonElement.addEventListener("click", () => {
                 if (this.activePresetIdentifier === identifier) {
                     callback({ identifier, isActive: false, length: null });
@@ -98,8 +94,8 @@ export class FormControls {
      */
     setActivePreset(identifier) {
         this.activePresetIdentifier = identifier;
-        Object.keys(this.presetButtons).forEach((presetIdentifier) => {
-            const buttonElement = this.presetButtons[presetIdentifier];
+        this.presetViews.forEach(({ identifier: presetIdentifier, buttonElement }) => {
+            buttonElement.setAttribute("aria-pressed", String(identifier !== null && presetIdentifier === identifier));
             if (identifier !== null && presetIdentifier === identifier) {
                 buttonElement.classList.add(CLASS_NAMES.ACTIVE);
             } else {
@@ -114,8 +110,9 @@ export class FormControls {
      * @returns {void}
      */
     setCustomActive() {
-        Object.values(this.presetButtons).forEach((buttonElement) => {
+        this.presetViews.forEach(({ buttonElement }) => {
             buttonElement.classList.remove(CLASS_NAMES.ACTIVE);
+            buttonElement.setAttribute("aria-pressed", "false");
         });
         this.activePresetIdentifier = null;
         this.customButtonElement.classList.add(CLASS_NAMES.ACTIVE);
@@ -236,4 +233,3 @@ export class FormControls {
         return parsedValue;
     }
 }
-
