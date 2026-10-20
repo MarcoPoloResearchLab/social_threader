@@ -52,7 +52,7 @@ test-installed-gateway:
 
 test: test-installed-gateway test-product-catalog browser-test go-test
 
-ci: test lint go-mod-verify mobile-check test-apple-cloud
+ci: test lint go-mod-verify mobile-check test-ios-build
 
 MPRLAB_GATEWAY_EXECUTABLE ?= mprlab-gateway
 
@@ -111,7 +111,14 @@ run-android: mobile-install
 	@cd "$(MOBILE_DIR)" && ANDROID_HOME="$(ANDROID_HOME)" ANDROID_SDK_ROOT="$(ANDROID_SDK_ROOT)" SOCIAL_THREADER_MOBILE_PORT="$(MOBILE_PORT)" PATH="$(ANDROID_TOOL_PATH):$$PATH" $(MOBILE_NPM) run android -- --port "$(MOBILE_PORT)" --localhost --clear
 
 build-ios:
-	@/bin/sh "$(CURDIR)/$(MOBILE_DIR)/scripts/build-ios.sh" $(MOBILE_APPLE_BUILD_ARGS)
+	@CI=1 node "$(CURDIR)/$(MOBILE_DIR)/scripts/build-ios.mjs" $(MOBILE_APPLE_BUILD_ARGS) </dev/null
+
+.PHONY: prepare-ios verify-ios
+prepare-ios:
+	@cd "$(MOBILE_DIR)" && CI=1 npm run prepare:ios </dev/null
+
+verify-ios:
+	@cd "$(MOBILE_DIR)" && CI=1 npm run verify:ios </dev/null
 
 build-android: mobile-android-bundle
 
@@ -123,9 +130,9 @@ submit-android:
 	@echo "==> [submit-android] Submitting Social Threader Android App Bundle to Google Play"
 	@node "$(MOBILE_ANDROID_PUBLISH_SCRIPT)" --mobile-dir "$(MOBILE_DIR)" $(MOBILE_ANDROID_PUBLISH_ARGS)
 
-.PHONY: test-apple-cloud
-test-apple-cloud:
-	node --test mobile/scripts/apple-cloud.integration.mjs
+.PHONY: test-ios-build
+test-ios-build:
+	node --test mobile/scripts/ios-build.integration.mjs
 
 .PHONY: mobile-resolve-dependencies
 mobile-resolve-dependencies:
