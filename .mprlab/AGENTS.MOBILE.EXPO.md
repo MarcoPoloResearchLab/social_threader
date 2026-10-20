@@ -9,8 +9,9 @@ Obey root `AGENTS.md`, `.mprlab/POLICY.md`, and `.mprlab/AGENTS.MOBILE.md`.
 ## Expo And React Native Contract
 
 - Use Expo as the application framework and source config system.
-- Use Expo CLI only for local development and native project generation.
-- The release, publication, and deployment paths must not invoke Expo CLI.
+- Use Expo CLI for local development, native project generation, and the declared native bundle step.
+- The iOS Xcode bundle phase can invoke `expo export:embed` with `CI=1` and closed standard input.
+- Keep Expo prebuild, dependency repair, and interactive Expo commands outside release, publication, and deployment.
 - The release, publication, and deployment paths must not invoke EAS Build, EAS Submit, or EAS Update.
 - Use `.mprlab/AGENTS.APPLE.md` for Apple release builds and distribution.
 - The Android store publisher must submit the signed prebuilt artifact directly to Google Play.
@@ -68,8 +69,9 @@ Obey root `AGENTS.md`, `.mprlab/POLICY.md`, and `.mprlab/AGENTS.MOBILE.md`.
 ## Review Checklist
 
 - [ ] Expo config and native identifiers are aligned.
-- [ ] Apple release builds use Xcode Cloud, and Android publication uses the signed prebuilt artifact.
-- [ ] The production lifecycle does not invoke Expo CLI or EAS.
+- [ ] iOS release builds use the native iOS contract. Android publication uses the signed prebuilt artifact.
+- [ ] The production lifecycle uses Expo CLI only for the declared noninteractive iOS bundle step.
+- [ ] The production lifecycle does not invoke EAS.
 - [ ] Native generated files were updated through source config or documented scripts.
 - [ ] API, auth, storage, purchase, and native-module payloads are validated at adapters.
 - [ ] Screens do not own transport or persistence contracts.

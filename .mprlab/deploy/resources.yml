@@ -117,9 +117,15 @@ mprlab_resources:
       build_system: local
       build:
         android: mobile/scripts/build-android-bundle.mjs
+        ios: mobile/scripts/build-ios.mjs
       android:
         package_name: com.mprlab.socialthreader
         destination: google_play
+        track: production
+      ios:
+        bundle_identifier: com.mprlab.threader
+        app_store_id: '6788578080'
+        destination: app_store
         track: production
     authentication:
       kind: tauth_tenant
