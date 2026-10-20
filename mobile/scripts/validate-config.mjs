@@ -19,6 +19,7 @@ const packageJson = readJson("package.json");
 const appJson = readJson("app.json");
 const packageLock = readJson("package-lock.json");
 const androidReleaseIdentity = readJson("android-release-identity.json");
+const iosReleaseIdentity = readJson("ios-release-identity.json");
 const makefileSource = fs.readFileSync(path.join(REPOSITORY_ROOT, "Makefile"), "utf8");
 const deploymentManifestSource = fs.readFileSync(
   path.join(REPOSITORY_ROOT, ".mprlab", "deploy", "resources.yml"),
@@ -30,12 +31,12 @@ const androidBuildEnvironmentSource = fs.readFileSync(path.join(MOBILE_ROOT, "sc
 const androidPublishSource = fs.readFileSync(path.join(MOBILE_ROOT, "scripts", "publish-android-play.mjs"), "utf8");
 const jestConfigSource = fs.readFileSync(path.join(MOBILE_ROOT, "jest.config.js"), "utf8");
 
-assertEqual(packageJson.main, "expo/AppEntry", "mobile package must use Expo AppEntry");
+assertEqual(packageJson.main, "index.js", "mobile package must use the committed native entry point");
 assertIncludes(packageJson.scripts?.check || "", "npm run test:coverage", "mobile check must run coverage");
 assertIncludes(packageJson.scripts?.check || "", "expo install --check", "mobile check must validate Expo dependency alignment");
 assertIncludes(packageJson.scripts?.ios || "", "scripts/ios-run.mjs", "iOS local run must use the prompt-safe Expo launcher");
 assertIncludes(packageJson.scripts?.android || "", "scripts/android-run.mjs", "Android local run must use the adb reverse launcher");
-assertEqual(packageJson.dependencies?.expo, "57.0.26", "mobile package must use the Expo SDK 57 runtime");
+assertEqual(packageJson.dependencies?.expo, "57.0.30", "mobile package must use the Expo SDK 57 runtime");
 assertEqual(packageJson.dependencies?.react, "19.2.3", "mobile package must use the Expo SDK React version");
 assertEqual(packageJson.dependencies?.["react-native"], "0.86.3", "mobile package must use the Expo SDK React Native version");
 assertEqual(packageJson.dependencies?.["expo-clipboard"], "57.0.2", "mobile package must use Expo SDK clipboard for native image copies");
@@ -87,7 +88,10 @@ assertPluginOption(
 );
 assertProjectFile(appJson.expo?.icon, "Expo icon must be stored inside mobile/");
 assertProjectFile(appJson.expo?.splash?.image, "Expo splash image must be stored inside mobile/");
-assertEqual(appJson.expo?.ios?.bundleIdentifier, "com.mprlab.socialthreader", "iOS bundle id must be explicit");
+assertEqual(appJson.expo?.ios?.bundleIdentifier, "com.mprlab.threader", "iOS bundle id must be explicit");
+assertEqual(iosReleaseIdentity.bundleIdentifier, appJson.expo?.ios?.bundleIdentifier, "iOS release identity must match the app bundle");
+assertEqual(iosReleaseIdentity.appStoreId, "6788578080", "iOS release identity must use the selected Apple record");
+assertEqual(appJson.expo?.version, "1.0.0", "mobile marketing version must match the first Apple version");
 assertMatches(appJson.expo?.ios?.buildNumber, /^[1-9][0-9]*$/, "iOS build number must be a positive integer string");
 assertEqual(appJson.expo?.android?.package, "com.mprlab.socialthreader", "Android package must be explicit");
 assertNumber(appJson.expo?.android?.versionCode, "Android versionCode must be numeric");
@@ -115,6 +119,9 @@ assertIncludes(deploymentManifestSource, "kind: mobile_application", "the canoni
 assertIncludes(deploymentManifestSource, "source: mobile", "the mobile resource must use the mobile source folder");
 assertIncludes(deploymentManifestSource, "build_system: local", "the mobile resource must use repository-owned local scripts");
 assertIncludes(deploymentManifestSource, "android: mobile/scripts/build-android-bundle.mjs", "the mobile resource must declare the Android builder");
+assertIncludes(deploymentManifestSource, "ios: mobile/scripts/build-ios.mjs", "the mobile resource must declare the iOS builder");
+assertIncludes(deploymentManifestSource, `bundle_identifier: ${iosReleaseIdentity.bundleIdentifier}`, "the mobile resource must use the selected Apple bundle");
+assertIncludes(deploymentManifestSource, `app_store_id: '${iosReleaseIdentity.appStoreId}'`, "the mobile resource must use the selected Apple record");
 assertIncludes(deploymentManifestSource, "package_name: com.mprlab.socialthreader", "the mobile resource must use the Android package");
 assertIncludes(deploymentManifestSource, "track: production", "the mobile resource must declare the production destination track");
 assertIncludes(androidBuildSource, "releaseIdentity.googleCloudProjectId", "Android bundle builder must use the release identity quota project");

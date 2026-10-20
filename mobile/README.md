@@ -26,9 +26,14 @@ Each command passes the selected Git root through `--app-root`.
 Make sure that `mprlab-gateway` is on `PATH`.
 Use `MPRLAB_GATEWAY_EXECUTABLE` to select an explicit installed command path.
 
-`.mprlab/deploy/resources.yml` declares the Android artifact, Pages frontend, and API service. The installed Gateway runtime owns each lifecycle transaction.
+`.mprlab/deploy/resources.yml` declares the Android and iOS artifacts, Pages frontend, and API service.
+The installed Gateway runtime owns each lifecycle transaction.
 
-Release runs the local Android builder with the sealed version and timestamp. Publish preflights Google Play and reconciles an interrupted submission.
+Release runs the declared native builders with the sealed release timestamp.
+Publication uses the sealed Android bundle and iOS IPA.
+The application marketing version is `1.0.0`.
+This version applies to the next Android binary and the first iOS binary.
+The repository release version is separate.
 
 The operator owns production deployment. Do not run `make deploy` as an implementation or local-development check.
 
@@ -38,14 +43,22 @@ Lower-level development helpers remain available when working on a specific mobi
 make mobile-check
 make run-ios
 make run-android
-make build-ios
+make prepare-ios
+make verify-ios
 make build-android
 make submit-android
 ```
 
-`make build-ios` forwards the shared Gateway cloud operation through the repository shell adapter.
-Its arguments come from `MOBILE_APPLE_BUILD_ARGS`, and `MPRLAB_GATEWAY_EXECUTABLE` selects the authoritative compiled executable.
-I004 retains the native project, product declaration, account setup, and hosted acceptance gates.
+`make prepare-ios` generates the native iOS project and resolves CocoaPods dependencies before release.
+The command requires Xcode 27.1 and CocoaPods.
+Preparation uses Expo CLI to generate the native project.
+The Xcode build uses the noninteractive `expo export:embed` command to make the JavaScript bundle.
+Expo prebuild, dependency repair, and EAS remain outside the release lifecycle.
+Commit the generated project, shared scheme, workspace, lockfile, and preparation record.
+`make verify-ios` rejects changed config or native output after preparation.
+The release adapter sends one JSON request to Gateway through standard input.
+Gateway installs locked dependencies, verifies preparation, signs the archive, and exports an App Store IPA.
+`make build-ios` requires the lifecycle inputs that Gateway supplies during release.
 
 `make build-android` is a lower-level development helper. Expo prebuilds Android in a temporary directory. Gradle creates a signed App Bundle. The script writes a checked build manifest beside the `.aab`.
 
@@ -65,11 +78,11 @@ Keep App Store Connect keys, Google service account JSON files, Android upload k
 ### Shared preflight
 
 - [ ] Confirm App Store Connect and Google Play app records exist for:
-  - iOS bundle identifier: `com.mprlab.socialthreader`
+  - iOS bundle identifier: `com.mprlab.threader`. Apple app ID: `6788578080`
   - Android package name: `com.mprlab.socialthreader`
 - [ ] Confirm the Apple Developer agreement and Google Play Console account setup are current.
-- [ ] Commit the Apple release version before the cloud build.
-- [ ] Use the build number that Xcode Cloud assigns.
+- [ ] Commit the application version and prepared native source before release.
+- [ ] Let the release timestamp set the iOS build number.
 - [ ] Let the gateway release timestamp set the Android `versionCode`.
 - [ ] Confirm privacy policy URL, support URL, description, screenshots, app category, content rating, and release notes are ready in both stores.
 - [ ] Run:
@@ -81,22 +94,39 @@ make mobile-check
 
 ### Apple App Store / TestFlight
 
-I004 migrates Apple release builds to the shared Xcode Cloud flow.
-The current source uses `com.mprlab.socialthreader`.
-The existing App Store app uses `com.mprlab.threader`.
-The owner must select the product identity before native preparation and cloud setup.
+The selected Apple record uses `com.mprlab.threader` and app ID `6788578080`.
+`ios-release-identity.json` declares the workspace, scheme, export intent, and private input names.
+Android retains its published package, `com.mprlab.socialthreader`.
+The platform identifiers do not need to be identical.
 
-After the identity decision:
+1. Complete native preparation and verify its recorded hashes.
+2. Supply the private inputs in the ignored repository file `configs/.env.social-threader`.
+3. Run repository CI before the selected release operation.
+4. Build and seal the signed IPA through the canonical lifecycle.
+5. Verify the processed build in App Store Connect.
+6. Complete the store description, screenshots, support URL, category, age rating, privacy, review information, and availability.
+7. Submit the selected version for review after operator authorization.
 
-1. Prepare and commit the native project and shared scheme.
-2. Declare the product in `.mprlab/apple-build.json` and the selected application manifest.
-3. Configure the Xcode Cloud workflow through `.mprlab/AGENTS.APPLE.md`.
-4. Put the Apple API credentials in the ignored `configs/.env.social-threader` input.
-5. Run the selected Gateway release lifecycle after source delivery and version alignment.
-6. Verify the successful hosted build and processed App Store Connect record.
+The private file requires these assignments without example secret values:
 
-The shared operation owns build submission, recovery, and provider verification.
-Public App Store release remains under operator control.
+```sh
+SOCIAL_THREADER_APPLE_TEAM_ID=
+SOCIAL_THREADER_IOS_PROVISIONING_PROFILE=
+SOCIAL_THREADER_IOS_SIGNING_IDENTITY=
+SOCIAL_THREADER_IOS_CERTIFICATE_BASE64=
+SOCIAL_THREADER_IOS_CERTIFICATE_PASSWORD=
+APP_STORE_CONNECT_API_KEY_ID=
+APP_STORE_CONNECT_API_ISSUER_ID=
+APP_STORE_CONNECT_API_KEY_PATH=
+```
+
+The certificate input contains a base64 PKCS#12 signing identity with its private key.
+The API key path identifies the existing Apple `.p8` file.
+Gateway reads these values from the canonical private file and uses a temporary keychain.
+Missing inputs stop the build without an interactive prompt.
+A browser login does not supply these native build inputs.
+Simulators are sufficient for application tests.
+A signed IPA and a processed Apple build remain separate release evidence.
 
 ### Google Play
 

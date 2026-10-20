@@ -2,7 +2,7 @@
   "expo": {
     "name": "Social Threader",
     "slug": "social-threader-mobile",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "socialthreader",
     "userInterfaceStyle": "light",
@@ -19,12 +19,16 @@
           "photosPermission": "Social Threader lets you attach selected images as thread chunks.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "./plugins/with-ios-release"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mprlab.socialthreader",
-      "buildNumber": "1"
+      "bundleIdentifier": "com.mprlab.threader",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.mprlab.socialthreader",

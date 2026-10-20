@@ -1,0 +1,23 @@
+{
+  "schema": "social-threader.mobile-ios-release-identity.v1",
+  "bundleIdentifier": "com.mprlab.threader",
+  "appStoreId": "6788578080",
+  "owner": "social-threader",
+  "workspace": "ios/SocialThreader.xcworkspace",
+  "scheme": "SocialThreader",
+  "appName": "SocialThreader",
+  "entryFile": "index.js",
+  "exportIntent": "app-store",
+  "signing": {
+    "team_environment": "SOCIAL_THREADER_APPLE_TEAM_ID",
+    "profile_environment": "SOCIAL_THREADER_IOS_PROVISIONING_PROFILE",
+    "identity_environment": "SOCIAL_THREADER_IOS_SIGNING_IDENTITY",
+    "certificate_environment": "SOCIAL_THREADER_IOS_CERTIFICATE_BASE64",
+    "certificate_password_environment": "SOCIAL_THREADER_IOS_CERTIFICATE_PASSWORD"
+  },
+  "provisioning": {
+    "key_id_environment": "APP_STORE_CONNECT_API_KEY_ID",
+    "issuer_id_environment": "APP_STORE_CONNECT_API_ISSUER_ID",
+    "private_key_environment": "APP_STORE_CONNECT_API_KEY_PATH"
+  }
+}
