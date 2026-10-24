@@ -1,0 +1,28 @@
+{
+  "schema": "tauth.test-fixture.v1",
+  "test_only": true,
+  "app_id": "social-threader-local",
+  "server": { "listen_addr": ":8082" },
+  "tenant": {
+    "id": "social-threader",
+    "display_name": "Social Threader Local",
+    "origin": "http://localhost:4173",
+    "google_web_client_id": "${GOOGLE_CLIENT_ID}",
+    "google_native_client_id": "fixture-native.apps.googleusercontent.com",
+    "jwt_signing_key": "${TAUTH_JWT_SIGNING_KEY}",
+    "session_cookie_name": "social_threader_development_session",
+    "refresh_cookie_name": "social_threader_development_refresh",
+    "session_ttl": "30m",
+    "refresh_ttl": "720h",
+    "nonce_ttl": "10m"
+  },
+  "accounts": {
+    "smoke": {
+      "subject": "fixture-social-threader-smoke",
+      "email": "local-smoke@social-threader.invalid",
+      "display_name": "Local Smoke User",
+      "avatar_url": "https://social-threader.invalid/avatar.png",
+      "state": "active"
+    }
+  }
+}

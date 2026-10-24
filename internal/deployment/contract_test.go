@@ -231,6 +231,19 @@ func TestLocalBlackBoxStackContract(t *testing.T) {
 			t.Errorf("local Compose service %q is missing", serviceName)
 		}
 	}
+	tauthService, serviceOK := composeDocument.Services["tauth"].(map[string]any)
+	if !serviceOK {
+		t.Fatal("local TAuth service must be a mapping")
+	}
+	if tauthService["image"] != "ghcr.io/tyemirov/tauth:2.2.23" {
+		t.Fatalf("local TAuth image=%v", tauthService["image"])
+	}
+	if !reflect.DeepEqual(tauthService["command"], []any{"--config", "/tauth-fixture/service.yaml"}) {
+		t.Fatalf("local TAuth must use the fixture-generated service config: %v", tauthService["command"])
+	}
+	if !reflect.DeepEqual(tauthService["volumes"], []any{"${SOCIAL_THREADER_TAUTH_FIXTURE_DIR:?run make local-tauth-prepare}:/tauth-fixture"}) {
+		t.Fatalf("local TAuth must use the separate retained fixture store: %v", tauthService["volumes"])
+	}
 
 	dockerfile := string(readRepositoryFile(t, repositoryRoot, "Dockerfile"))
 	for _, target := range []string{"AS api", "AS fake-llm-proxy", "AS local-web", "AS pages"} {
@@ -250,17 +263,26 @@ func TestLocalBlackBoxStackContract(t *testing.T) {
 		}
 	}
 
-	tauthConfig := string(readRepositoryFile(t, repositoryRoot, "configs/tauth.local.yml"))
-	for _, requiredValue := range []string{
-		`id: "social-threader"`,
-		`http://localhost:4173`,
-		`session_cookie_name: "social_threader_development_session"`,
-		`refresh_cookie_name: "social_threader_development_refresh"`,
-		`allow_insecure_http: true`,
+	fixtureBytes := readRepositoryFile(t, repositoryRoot, "configs/tauth.local.json")
+	var fixture map[string]any
+	if decodeError := json.Unmarshal(fixtureBytes, &fixture); decodeError != nil {
+		t.Fatalf("decode local TAuth fixture declaration: %v", decodeError)
+	}
+	if fixture["schema"] != "tauth.test-fixture.v1" || fixture["test_only"] != true || fixture["app_id"] != "social-threader-local" {
+		t.Fatalf("local TAuth fixture identity=%v", fixture)
+	}
+	tenant := fixture["tenant"].(map[string]any)
+	for field, expected := range map[string]any{
+		"id": "social-threader", "origin": "http://localhost:4173",
+		"session_cookie_name": "social_threader_development_session",
+		"refresh_cookie_name": "social_threader_development_refresh",
 	} {
-		if !strings.Contains(tauthConfig, requiredValue) {
-			t.Errorf("local TAuth configuration does not contain %q", requiredValue)
+		if tenant[field] != expected {
+			t.Errorf("local TAuth fixture %s=%v, want %v", field, tenant[field], expected)
 		}
+	}
+	if _, statError := os.Stat(filepath.Join(repositoryRoot, "configs/tauth.local.yml")); !os.IsNotExist(statError) {
+		t.Error("obsolete inline-tenant service configuration must be absent")
 	}
 
 	dockerIgnore := string(readRepositoryFile(t, repositoryRoot, ".dockerignore"))

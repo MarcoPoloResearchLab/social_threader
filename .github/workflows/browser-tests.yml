@@ -58,7 +58,8 @@ jobs:
 
       - name: Validate and build container contracts
         run: |
-          SOCIAL_THREADER_ENV_FILE=.env.example docker compose --env-file .env.example config --quiet
+          make local-config LOCAL_ENV_FILE=.env.example
+          make test-local-tauth-fixture
           make container-check
 
       - name: Start the local black-box stack
@@ -67,10 +68,18 @@ jobs:
       - name: Verify the TAuth and fake-proxy lifecycle
         run: make local-smoke
 
-      - name: Stop the local black-box stack
+      - name: Record the local black-box stack diagnostics
         if: always()
         run: |
-          SOCIAL_THREADER_ENV_FILE=.env.example docker compose --env-file .env.example down --volumes
+          export SOCIAL_THREADER_ENV_FILE=.env.example
+          export SOCIAL_THREADER_TAUTH_FIXTURE_DIR="$PWD/.cache/local-tauth/prepared"
+          docker compose --env-file .env.example ps --all
+          docker compose --env-file .env.example logs --no-color
+          docker image inspect ghcr.io/tyemirov/tauth:2.2.23 --format '{{json .RepoDigests}}'
+
+      - name: Stop the local black-box stack
+        if: always()
+        run: make local-down LOCAL_ENV_FILE=.env.example
 
   mobile:
     name: Mobile checks

@@ -66,8 +66,23 @@ test("iOS adapter request passes the Gateway decoder before build execution", ()
       mkdirSync(dirname(join(fixtureRoot, filename)), { recursive: true });
       writeFileSync(join(fixtureRoot, filename), readFileSync(join(mobileRoot, filename)));
     }
+    const signingInputs = [...Object.values(identity.signing), ...Object.values(identity.provisioning)];
+    const manifestDirectory = join(fixtureRoot, ".mprlab/deploy");
+    mkdirSync(manifestDirectory, { recursive: true });
+    writeFileSync(join(manifestDirectory, "resources.yml"), JSON.stringify({ mprlab_resources: {
+      owner: identity.owner,
+      release: { scheme: "semver" },
+      ci: { enabled: false },
+      defaults: { timeouts: {
+        startup: "30s", completion: "1m", readiness: "30s", request: "30s", shutdown: "30s"
+      } },
+      inputs: Object.fromEntries(signingInputs.map((name, index) => [name, `synthetic-decoder-input-${index}`])),
+      resources: { private: { kind: "private_values",
+        bindings: Object.fromEntries(signingInputs.map((name, index) => [`decoder-input-${index}`, name]))
+      } }
+    } }));
     const result = spawnSync(process.env.MPRLAB_GATEWAY_EXECUTABLE, [
-      "bootstrap-run", "--repo-root", REPOSITORY_ROOT, "--operation", "app-release", "--",
+      "bootstrap-run", "--repo-root", fixtureRoot, "--operation", "app-release", "--",
       process.execPath, ADAPTER_PATH,
       "--mobile-dir", fixtureRoot, "--output", join(fixtureRoot, "output.ipa"),
       "--manifest", join(fixtureRoot, "output.json"), "--release-timestamp", TIMESTAMP

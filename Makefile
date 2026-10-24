@@ -8,6 +8,9 @@ MOBILE_ANDROID_PUBLISH_ARGS ?=
 MOBILE_ANDROID_BUNDLE_SCRIPT := $(MOBILE_DIR)/scripts/build-android-bundle.mjs
 MOBILE_ANDROID_PUBLISH_SCRIPT := $(MOBILE_DIR)/scripts/publish-android-play.mjs
 LOCAL_ENV_FILE ?= .env
+LOCAL_TAUTH_ROOT ?= .cache/local-tauth
+TAUTH_TEST_FIXTURE_BIN ?=
+export SOCIAL_THREADER_TAUTH_FIXTURE_DIR := $(abspath $(LOCAL_TAUTH_ROOT))/prepared
 MOBILE_PORT ?= 8081
 MOBILE_EXPECT ?= /usr/bin/expect
 ANDROID_SDK_ROOT ?= $(HOME)/Library/Android/sdk
@@ -40,6 +43,8 @@ go-format-check:
 
 shell-check:
 	bash -n scripts/local-smoke.sh
+	node --check scripts/local-tauth-fixture.mjs
+	node --check scripts/local-tauth-session.mjs
 
 lint: go-vet go-format-check shell-check
 
@@ -50,7 +55,7 @@ go-mod-verify:
 test-installed-gateway:
 	bash tests/installed-gateway.sh
 
-test: test-installed-gateway test-product-catalog browser-test go-test
+test: test-installed-gateway test-product-catalog test-local-tauth-fixture browser-test go-test
 
 ci: test lint go-mod-verify mobile-check test-ios-build
 
@@ -67,7 +72,14 @@ release publish deploy:
 	fi; \
 	exec "$(MPRLAB_GATEWAY_EXECUTABLE)" "app-$@" --app-root "$${application_root}"
 
-local-config:
+.PHONY: local-tauth-prepare test-local-tauth-fixture
+local-tauth-prepare:
+	@env -u GOOGLE_CLIENT_ID -u TAUTH_JWT_SIGNING_KEY TAUTH_TEST_FIXTURE_BIN="$(TAUTH_TEST_FIXTURE_BIN)" bash -ceu 'set -a; source "$$1"; set +a; exec node scripts/local-tauth-fixture.mjs prepare "$$2"' -- "$(abspath $(LOCAL_ENV_FILE))" "$(abspath $(LOCAL_TAUTH_ROOT))"
+
+test-local-tauth-fixture:
+	node --test tests/localTauthFixture.integration.mjs
+
+local-config: local-tauth-prepare
 	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" config --quiet
 
 .PHONY: up down
@@ -75,7 +87,7 @@ up: local-up
 
 down: local-down
 
-local-up:
+local-up: local-tauth-prepare
 	@test -f "$(LOCAL_ENV_FILE)" || { printf 'missing local environment file: %s\n' "$(LOCAL_ENV_FILE)" >&2; exit 2; }
 	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" up --build --detach --wait --wait-timeout 120
 
@@ -86,7 +98,7 @@ local-logs:
 	@SOCIAL_THREADER_ENV_FILE="$(LOCAL_ENV_FILE)" docker compose --env-file "$(LOCAL_ENV_FILE)" logs --follow
 
 local-smoke:
-	@bash scripts/local-smoke.sh
+	@LOCAL_TAUTH_ROOT="$(abspath $(LOCAL_TAUTH_ROOT))" bash scripts/local-smoke.sh
 
 container-check:
 	docker build --target api .
