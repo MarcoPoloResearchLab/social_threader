@@ -132,7 +132,7 @@ submit-android:
 
 .PHONY: test-ios-build
 test-ios-build:
-	node --test mobile/scripts/ios-build.integration.mjs
+	MPRLAB_GATEWAY_EXECUTABLE="$(MPRLAB_GATEWAY_EXECUTABLE)" node --test mobile/scripts/ios-build.integration.mjs
 
 .PHONY: mobile-resolve-dependencies
 mobile-resolve-dependencies:

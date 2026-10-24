@@ -24,7 +24,7 @@
     "verify:ios": "node scripts/verify-ios-preparation.mjs"
   },
   "dependencies": {
-    "expo": "57.0.30",
+    "expo": "57.0.31",
     "expo-clipboard": "57.0.2",
     "expo-image-picker": "57.0.20",
     "expo-status-bar": "57.0.1",

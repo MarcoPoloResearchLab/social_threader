@@ -47,13 +47,12 @@ try {
       entry_file: identity.entryFile,
       ...identity.signing,
       export_intent: identity.exportIntent,
-      environment: { EXPO_NO_TELEMETRY: "1" },
       provisioning: identity.provisioning
     }
   };
   const result = spawnSync(executable, ["mobile-build-operation"], {
     cwd: mobileRoot,
-    env: { ...process.env, CI: "1" },
+    env: { ...process.env, CI: "1", EXPO_NO_TELEMETRY: "1" },
     input: JSON.stringify(request),
     stdio: ["pipe", "inherit", "inherit"]
   });

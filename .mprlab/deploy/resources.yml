@@ -1,8 +1,111 @@
 ---
 mprlab_resources:
   owner: social-threader
+  environment_file: .mprlab/deploy/.env
+  inputs:
+    APP_STORE_CONNECT_API_ISSUER_ID: ${APP_STORE_CONNECT_API_ISSUER_ID}
+    APP_STORE_CONNECT_API_KEY_ID: ${APP_STORE_CONNECT_API_KEY_ID}
+    APP_STORE_CONNECT_API_KEY_PATH: ${APP_STORE_CONNECT_API_KEY_PATH}
+    GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_PATH: ${GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_PATH}
+    SOCIAL_THREADER_APPLE_TEAM_ID: ${SOCIAL_THREADER_APPLE_TEAM_ID}
+    SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID: ${SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID}
+    SOCIAL_THREADER_IOS_CERTIFICATE_BASE64: ${SOCIAL_THREADER_IOS_CERTIFICATE_BASE64}
+    SOCIAL_THREADER_IOS_CERTIFICATE_PASSWORD: ${SOCIAL_THREADER_IOS_CERTIFICATE_PASSWORD}
+    SOCIAL_THREADER_IOS_PROVISIONING_PROFILE: ${SOCIAL_THREADER_IOS_PROVISIONING_PROFILE}
+    SOCIAL_THREADER_IOS_SIGNING_IDENTITY: ${SOCIAL_THREADER_IOS_SIGNING_IDENTITY}
+    SOCIAL_THREADER_LLM_PROXY_SECRET: ${SOCIAL_THREADER_LLM_PROXY_SECRET}
+    SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY: ${SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY}
+    DEPLOY_SUDO_PASSWORD_TUTOSH: ${DEPLOY_SUDO_PASSWORD_TUTOSH}
+    MPRLAB_TAUTH_MANAGEMENT_URL: ${MPRLAB_TAUTH_MANAGEMENT_URL}
+    MPRLAB_TAUTH_PROVISIONING_CREDENTIALS: ${MPRLAB_TAUTH_PROVISIONING_CREDENTIALS}
+  ci:
+    enabled: true
+    command:
+      '0': make
+      '1': ci
+  defaults:
+    timeouts:
+      startup: 2m
+      completion: 30m
+      readiness: 5m
+      request: 30s
+      shutdown: 30s
+  hosts:
+    tutosh:
+      ansible_become_password: DEPLOY_SUDO_PASSWORD_TUTOSH
   release:
     scheme: semver
+  operations:
+    ci:
+      timeouts:
+        completion: 2h
+      polling:
+        initial: 2s
+        maximum: 15s
+        increment: 2s
+        multiplier: 2
+        attempt_limit: 60
+    app-plan-release:
+      timeouts:
+        completion: 2m
+      polling:
+        initial: 2s
+        maximum: 15s
+        increment: 2s
+        multiplier: 2
+        attempt_limit: 60
+    app-plan-publish:
+      timeouts:
+        completion: 2m
+      polling:
+        initial: 2s
+        maximum: 15s
+        increment: 2s
+        multiplier: 2
+        attempt_limit: 60
+    app-plan-deploy:
+      timeouts:
+        completion: 2m
+      polling:
+        initial: 2s
+        maximum: 15s
+        increment: 2s
+        multiplier: 2
+        attempt_limit: 60
+    app-release:
+      timeouts:
+        completion: 2h
+      polling:
+        initial: 2s
+        maximum: 15s
+        increment: 2s
+        multiplier: 2
+        attempt_limit: 60
+    app-publish:
+      timeouts:
+        completion: 4h
+      polling:
+        initial: 2s
+        maximum: 15s
+        increment: 2s
+        multiplier: 2
+        attempt_limit: 60
+    app-deploy:
+      timeouts:
+        completion: 20m
+      polling:
+        initial: 2s
+        maximum: 15s
+        increment: 2s
+        multiplier: 2
+        attempt_limit: 60
+    app_lifecycle.repository_read:
+      polling:
+        initial: 2s
+        maximum: 15s
+        increment: 2s
+        multiplier: 2
+        attempt_limit: 60
   resources:
     private:
       kind: private_values

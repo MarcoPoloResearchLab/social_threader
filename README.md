@@ -135,6 +135,12 @@ Run the repository CI gate:
 make ci
 ```
 
+The iOS adapter qualification requires an installed physical Gateway runtime executable.
+Set `MPRLAB_GATEWAY_EXECUTABLE` to its absolute `runtime/bin/mprlab-gateway` path before `make ci`.
+The test uses `bootstrap-run` to capture the selected manifest policy.
+It validates the request without compilation, signing, or a provider call.
+
+
 To validate an MPR-UI change before its release, select the shared library source directory:
 
 ```bash

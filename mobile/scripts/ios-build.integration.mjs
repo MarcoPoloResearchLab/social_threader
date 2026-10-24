@@ -22,7 +22,7 @@ test("iOS adapter sends the selected application contract through a closed JSON 
     writeFileSync(join(fixtureRoot, "mobile-build-operation"), `
       const fs = require("node:fs");
       const request = JSON.parse(fs.readFileSync(0, "utf8"));
-      process.stdout.write(JSON.stringify({ request, ci: process.env.CI }));
+      process.stdout.write(JSON.stringify({ request, ci: process.env.CI, telemetry: process.env.EXPO_NO_TELEMETRY }));
       process.stderr.write("provider diagnostic");
       process.exit(31);
     `);
@@ -30,11 +30,12 @@ test("iOS adapter sends the selected application contract through a closed JSON 
       "--mobile-dir", fixtureRoot, "--output", join(fixtureRoot, "output.ipa"),
       "--manifest", join(fixtureRoot, "output.json"), "--release-timestamp", TIMESTAMP
     ], { cwd: fixtureRoot, env: { PATH: "", MPRLAB_GATEWAY_EXECUTABLE: process.execPath,
-      MPRLAB_ARTIFACT_VERSION: "v1.2.0", MPRLAB_MOBILE_BUILD_INTENT: join(fixtureRoot, "intent.json") },
+      EXPO_NO_TELEMETRY: "0", MPRLAB_ARTIFACT_VERSION: "v1.2.0", MPRLAB_MOBILE_BUILD_INTENT: join(fixtureRoot, "intent.json") },
       input: "", encoding: "utf8" });
     assert.equal(result.status, 31, result.stderr);
     const response = JSON.parse(result.stdout);
     assert.equal(response.ci, "1");
+    assert.equal(response.telemetry, "1");
     assert.equal(response.request.schema_version, 3);
     assert.equal(response.request.source_root, fixtureRoot);
     assert.equal(response.request.platform, "ios");
@@ -44,9 +45,43 @@ test("iOS adapter sends the selected application contract through a closed JSON 
     assert.match(response.request.build_number, /^[1-9][0-9]*$/);
     assert.equal(response.request.ios.export_intent, "app-store");
     assert.equal(response.request.ios.owner, "social-threader");
+    assert.equal(Object.hasOwn(response.request.ios, "environment"), false);
     assert.equal(response.request.verify_script, "scripts/verify-ios-preparation.mjs");
     assert.equal(response.request.android, undefined);
     assert.equal(result.stderr, "provider diagnostic");
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test("iOS adapter request passes the Gateway decoder before build execution", () => {
+  assert.ok(process.env.MPRLAB_GATEWAY_EXECUTABLE, "MPRLAB_GATEWAY_EXECUTABLE must select the installed physical runtime binary");
+  const fixtureRoot = mkdtempSync(join(tmpdir(), "social-ios-gateway-"));
+  try {
+    const mobileRoot = join(REPOSITORY_ROOT, "mobile");
+    const identity = JSON.parse(readFileSync(join(mobileRoot, "ios-release-identity.json"), "utf8"));
+    for (const filename of ["app.json", "ios-release-identity.json", "package.json", "package-lock.json",
+      "scripts/verify-ios-preparation.mjs", "ios/Podfile", "ios/Podfile.lock", identity.entryFile,
+      `${identity.workspace}/contents.xcworkspacedata`]) {
+      mkdirSync(dirname(join(fixtureRoot, filename)), { recursive: true });
+      writeFileSync(join(fixtureRoot, filename), readFileSync(join(mobileRoot, filename)));
+    }
+    const result = spawnSync(process.env.MPRLAB_GATEWAY_EXECUTABLE, [
+      "bootstrap-run", "--repo-root", REPOSITORY_ROOT, "--operation", "app-release", "--",
+      process.execPath, ADAPTER_PATH,
+      "--mobile-dir", fixtureRoot, "--output", join(fixtureRoot, "output.ipa"),
+      "--manifest", join(fixtureRoot, "output.json"), "--release-timestamp", TIMESTAMP
+    ], { cwd: fixtureRoot, env: {
+      MPRLAB_GATEWAY_EXECUTABLE: process.env.MPRLAB_GATEWAY_EXECUTABLE,
+      MPRLAB_ARTIFACT_VERSION: "v1.2.0",
+      MPRLAB_MOBILE_BUILD_INTENT: "invalid-relative-intent",
+      MPRLAB_APPLICATION_LIFECYCLE_LOCK: "exclusive", MPRLAB_LIFECYCLE_OPERATION: "release"
+    }, input: "", encoding: "utf8", timeout: 15_000 });
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 2, result.stderr);
+    // Gateway checks the intent path only after decoding and validating the complete request.
+    assert.match(result.stderr, /requires an absolute MPRLAB_MOBILE_BUILD_INTENT/);
+    assert.equal(result.stdout, "");
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
