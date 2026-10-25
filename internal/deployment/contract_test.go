@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -86,12 +87,65 @@ func TestProductionLifecycleContract(t *testing.T) {
 	if !shapeOK {
 		t.Fatal("deployment manifest must contain the mprlab_resources mapping")
 	}
-	if len(resourceEnvelopeShape) != 3 {
-		t.Fatalf("manifest envelope keys = %#v, want owner, release, and resources", resourceEnvelopeShape)
+	expectedEnvelopeKeys := []string{"owner", "release", "resources", "environment_file", "inputs", "hosts", "ci", "defaults", "operations"}
+	if len(resourceEnvelopeShape) != len(expectedEnvelopeKeys) {
+		t.Fatalf("manifest envelope has %d keys, want %d", len(resourceEnvelopeShape), len(expectedEnvelopeKeys))
 	}
-	for _, requiredKey := range []string{"owner", "release", "resources"} {
+	for _, requiredKey := range expectedEnvelopeKeys {
 		if _, present := resourceEnvelopeShape[requiredKey]; !present {
 			t.Fatalf("manifest envelope lacks %q", requiredKey)
+		}
+	}
+	if resourceEnvelopeShape["environment_file"] != ".mprlab/deploy/.env" {
+		t.Fatal("manifest must explicitly select the deployment environment file")
+	}
+	expectedInputs := map[string]any{}
+	for _, name := range []string{
+		"APP_STORE_CONNECT_API_ISSUER_ID", "APP_STORE_CONNECT_API_KEY_ID", "APP_STORE_CONNECT_API_KEY_PATH",
+		"GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_PATH", "SOCIAL_THREADER_APPLE_TEAM_ID",
+		"SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID", "SOCIAL_THREADER_IOS_CERTIFICATE_BASE64",
+		"SOCIAL_THREADER_IOS_CERTIFICATE_PASSWORD", "SOCIAL_THREADER_IOS_PROVISIONING_PROFILE",
+		"SOCIAL_THREADER_IOS_SIGNING_IDENTITY", "SOCIAL_THREADER_LLM_PROXY_SECRET",
+		"SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY", "DEPLOY_SUDO_PASSWORD_TUTOSH",
+		"MPRLAB_TAUTH_MANAGEMENT_URL", "MPRLAB_TAUTH_PROVISIONING_CREDENTIALS",
+	} {
+		expectedInputs[name] = "${" + name + "}"
+	}
+	if !reflect.DeepEqual(resourceEnvelopeShape["inputs"], expectedInputs) {
+		t.Fatal("manifest must declare every private lifecycle input")
+	}
+	if !reflect.DeepEqual(resourceEnvelopeShape["hosts"], map[string]any{
+		"tutosh": map[string]any{"ansible_become_password": "DEPLOY_SUDO_PASSWORD_TUTOSH"},
+	}) {
+		t.Fatal("manifest must declare the selected host authorization input")
+	}
+	if !reflect.DeepEqual(resourceEnvelopeShape["ci"], map[string]any{
+		"enabled": true, "command": map[string]any{"0": "make", "1": "ci"},
+	}) {
+		t.Fatal("manifest must enable repository CI")
+	}
+	if !reflect.DeepEqual(resourceEnvelopeShape["defaults"], map[string]any{"timeouts": map[string]any{
+		"startup": "2m", "completion": "30m", "readiness": "5m", "request": "30s", "shutdown": "30s",
+	}}) {
+		t.Fatal("manifest must declare lifecycle timeout defaults")
+	}
+	operations, validOperations := resourceEnvelopeShape["operations"].(map[string]any)
+	if !validOperations || len(operations) != 8 {
+		t.Fatal("manifest must declare all selected lifecycle operation policies")
+	}
+	for name, completion := range map[string]string{
+		"ci": "2h", "app-release": "2h", "app-publish": "4h", "app-deploy": "20m",
+		"app-plan-release": "2m", "app-plan-publish": "2m", "app-plan-deploy": "2m",
+		"app_lifecycle.repository_read": "",
+	} {
+		expected := map[string]any{"polling": map[string]any{
+			"initial": "2s", "maximum": "15s", "increment": "2s", "multiplier": 2, "attempt_limit": 60,
+		}}
+		if completion != "" {
+			expected["timeouts"] = map[string]any{"completion": completion}
+		}
+		if !reflect.DeepEqual(operations[name], expected) {
+			t.Errorf("operation %s must declare the selected execution policy", name)
 		}
 	}
 	if _, present := resourceEnvelopeShape["schema_version"]; present {
@@ -177,6 +231,19 @@ func TestLocalBlackBoxStackContract(t *testing.T) {
 			t.Errorf("local Compose service %q is missing", serviceName)
 		}
 	}
+	tauthService, serviceOK := composeDocument.Services["tauth"].(map[string]any)
+	if !serviceOK {
+		t.Fatal("local TAuth service must be a mapping")
+	}
+	if tauthService["image"] != "ghcr.io/tyemirov/tauth:2.2.24" {
+		t.Fatalf("local TAuth image=%v", tauthService["image"])
+	}
+	if !reflect.DeepEqual(tauthService["command"], []any{"--config", "/tauth-fixture/service.yaml"}) {
+		t.Fatalf("local TAuth must use the fixture-generated service config: %v", tauthService["command"])
+	}
+	if !reflect.DeepEqual(tauthService["volumes"], []any{"${SOCIAL_THREADER_TAUTH_FIXTURE_DIR:?run make local-tauth-prepare}:/tauth-fixture"}) {
+		t.Fatalf("local TAuth must use the separate retained fixture store: %v", tauthService["volumes"])
+	}
 
 	dockerfile := string(readRepositoryFile(t, repositoryRoot, "Dockerfile"))
 	for _, target := range []string{"AS api", "AS fake-llm-proxy", "AS local-web", "AS pages"} {
@@ -196,17 +263,26 @@ func TestLocalBlackBoxStackContract(t *testing.T) {
 		}
 	}
 
-	tauthConfig := string(readRepositoryFile(t, repositoryRoot, "configs/tauth.local.yml"))
-	for _, requiredValue := range []string{
-		`id: "social-threader"`,
-		`http://localhost:4173`,
-		`session_cookie_name: "social_threader_development_session"`,
-		`refresh_cookie_name: "social_threader_development_refresh"`,
-		`allow_insecure_http: true`,
+	fixtureBytes := readRepositoryFile(t, repositoryRoot, "configs/tauth.local.json")
+	var fixture map[string]any
+	if decodeError := json.Unmarshal(fixtureBytes, &fixture); decodeError != nil {
+		t.Fatalf("decode local TAuth fixture declaration: %v", decodeError)
+	}
+	if fixture["schema"] != "tauth.test-fixture.v1" || fixture["test_only"] != true || fixture["app_id"] != "social-threader-local" {
+		t.Fatalf("local TAuth fixture identity=%v", fixture)
+	}
+	tenant := fixture["tenant"].(map[string]any)
+	for field, expected := range map[string]any{
+		"id": "social-threader", "origin": "http://localhost:4173",
+		"session_cookie_name": "social_threader_development_session",
+		"refresh_cookie_name": "social_threader_development_refresh",
 	} {
-		if !strings.Contains(tauthConfig, requiredValue) {
-			t.Errorf("local TAuth configuration does not contain %q", requiredValue)
+		if tenant[field] != expected {
+			t.Errorf("local TAuth fixture %s=%v, want %v", field, tenant[field], expected)
 		}
+	}
+	if _, statError := os.Stat(filepath.Join(repositoryRoot, "configs/tauth.local.yml")); !os.IsNotExist(statError) {
+		t.Error("obsolete inline-tenant service configuration must be absent")
 	}
 
 	dockerIgnore := string(readRepositoryFile(t, repositoryRoot, ".dockerignore"))

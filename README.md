@@ -92,9 +92,21 @@ Install Go 1.26.5, Node.js 20 or later, Docker, and Docker Compose.
    make down
    ```
 
-The smoke test uses a seeded local-only TAuth user. It verifies session issuance, API authorization, logout, and fake-proxy routing.
+`make up` retrieves the published TAuth `v2.2.24` fixture for `darwin/arm64` or `linux/amd64`.
+It verifies the archive SHA-256 and records the executable identity in `.cache/local-tauth/artifact-identity.json`.
+The ordinary TAuth service uses `ghcr.io/tyemirov/tauth:2.2.24`.
+The local fixture reads only the selected `LOCAL_ENV_FILE` for its signing key and Google client ID.
+Use an absolute `TAUTH_TEST_FIXTURE_BIN` path to select an explicit candidate fixture.
 
-The smoke user password is `social-threader-local-smoke`. Do not use this local profile or credential in a hosted environment.
+The fixture creates an isolated account and tenant from `configs/tauth.local.json`.
+The generated store remains in `.cache/local-tauth/prepared` for service restarts.
+If the fixture inputs change, select a new `LOCAL_TAUTH_ROOT` to preserve the previous store.
+`make down` preserves fixture state and existing Docker volumes.
+
+The smoke test signs a synthetic session with the receipt public user ID.
+It verifies the persisted profile through the real TAuth `/me` endpoint before the protected thread transformation.
+It then verifies logout cookie removal and subsequent `401` responses from `/me` and the protected API.
+These checks cover local authorization and cookie removal. They do not verify password login, Google login, or session revocation.
 
 ## Configuration
 
@@ -134,6 +146,12 @@ Run the repository CI gate:
 ```bash
 make ci
 ```
+
+The iOS adapter qualification requires an installed physical Gateway runtime executable.
+Set `MPRLAB_GATEWAY_EXECUTABLE` to its absolute `runtime/bin/mprlab-gateway` path before `make ci`.
+The test uses `bootstrap-run` to capture the selected manifest policy.
+It validates the request without compilation, signing, or a provider call.
+
 
 To validate an MPR-UI change before its release, select the shared library source directory:
 

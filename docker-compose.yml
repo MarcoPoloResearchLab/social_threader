@@ -16,15 +16,13 @@ services:
     restart: unless-stopped
 
   tauth:
-    image: ghcr.io/tyemirov/tauth:latest
+    image: ghcr.io/tyemirov/tauth:2.2.24
     pull_policy: always
     env_file:
       - "${SOCIAL_THREADER_ENV_FILE:-.env}"
-    environment:
-      TAUTH_CONFIG_FILE: /config/tauth.local.yml
+    command: ["--config", "/tauth-fixture/service.yaml"]
     volumes:
-      - ./configs/tauth.local.yml:/config/tauth.local.yml:ro
-      - tauth-data:/data
+      - "${SOCIAL_THREADER_TAUTH_FIXTURE_DIR:?run make local-tauth-prepare}:/tauth-fixture"
     healthcheck:
       test: ["CMD", "nc", "-z", "127.0.0.1", "8082"]
       start_interval: 1s

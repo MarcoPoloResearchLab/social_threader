@@ -15,6 +15,33 @@ Current dependency declarations supersede the earlier patch versions in this his
 
 ## BugFixes
 
+- [x] [B015] (P1) Use the iOS scene lifecycle
+  Evidence:
+  The Release application compiled but exited after launch on the iOS 27.0 simulator.
+  UIKit required the scene lifecycle for the Xcode 27.1 SDK.
+  Requirements:
+  - Use the scene delegate supplied by Expo through a source-owned configuration plugin.
+  - Verify launch of the generated Release application in a simulator.
+  Validation:
+  The generated-output test failed before the correction and passed after it.
+  The Release application launched on the iOS 27.0 simulator and displayed its compose controls.
+  Resolution:
+  The source-owned Expo plugin selects the supplied scene delegate and removes duplicate startup.
+
+- [x] [B016] (P1) Apply the selected iOS build number
+  Evidence:
+  The generated plist contained build number `1`.
+  Gateway supplies the selected number through `CURRENT_PROJECT_VERSION`.
+  The literal plist value prevents the signed artifact check from accepting that number.
+  Requirements:
+  - Generate plist references to `CURRENT_PROJECT_VERSION` and `MARKETING_VERSION`.
+  - Verify the compiled application with an explicit build number other than `1`.
+  Validation:
+  The compiled Release application reported version `1.0.0` and build `214000001`.
+  Resolution:
+  The source-owned plugin generates the plist references from the selected build settings.
+
+
 - [x] [B043] (P0) Align the Expo SDK 57 dependency contract.
   Goal: Pass the mobile dependency check with the current SDK 57 packages.
   Requirements:
@@ -367,6 +394,42 @@ Current dependency declarations supersede the earlier patch versions in this his
   The Android release receipt check remains in `OPERATIONS.md`.
 
 ## Improvements
+
+- [x] [I004] (P1) Use the shared local iOS release flow
+  Goal:
+  Build and seal iOS artifacts through the installed Gateway native builder.
+
+  Requirements:
+  - Use the existing Apple app `6788578080` and bundle identifier `com.mprlab.threader`.
+  - Preserve the published Android package `com.mprlab.socialthreader`.
+  - Use the local `.mjs` adapter and `mobile-build-operation`.
+  - Keep native preparation outside the release lifecycle.
+  - Preserve the generated project, shared scheme, lockfiles, and preparation hashes in source control.
+  - Use noninteractive commands and the canonical private inputs.
+
+  Implementation:
+  The operator selected the local iOS build path on 2026-10-19.
+  This decision replaces the earlier Xcode Cloud migration requirement.
+  The app configuration, identity record, and deployment manifest use the verified Apple identifier.
+  The mobile marketing version is `1.0.0` for the next iOS and Android builds.
+  The cloud adapter is replaced by the native request adapter.
+  The source includes the native preparation command and stale-input checks.
+  The Expo patch update resolves the baseline dependency check failure.
+
+  Validation:
+  The native Release build succeeded for the iOS simulator SDK with Xcode 27.1.
+  The adapter and preparation tests passed.
+  The Release application launched on the iOS 27.0 simulator and displayed its compose controls.
+  B015 and B016 record the corrected scene lifecycle and build-number defects.
+  No signed IPA, publication, or store review completed.
+  The source and store checks are recorded in `OPERATIONS.md`.
+
+  Resolution:
+  Final CI and independent source review passed.
+  The canonical private inputs passed API and certificate checks.
+  The selected bundle has an active App Store provisioning profile.
+  Signed artifact qualification and store operations remain in `OPERATIONS.md`.
+
 
 - [x] [I002] (P1) Standardize HTTP health at `/healthz`.
   Goal:

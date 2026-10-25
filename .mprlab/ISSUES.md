@@ -8,6 +8,7 @@ The following source issues are closed. Their production checks stay open with t
 
 | Source issue | Priority | Open production checks |
 | --- | --- | --- |
+| I004 | P1 | [iOS signing and App Store release](OPERATIONS.md#i004-ios-release-readiness) |
 | B008 | P0 | [Policy publication and Google Play review](OPERATIONS.md#b008-privacy-policy-and-google-play) |
 | B001 | P1 | [Android release receipt and Metro result](OPERATIONS.md#b001-android-release-receipt) |
 | I003 | P1 | [Shared assets, cache transition, and live Google acceptance](OPERATIONS.md#i003-shared-ui-publication-and-google-acceptance) |
@@ -21,49 +22,6 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 ## BugFixes
 
 ## Improvements
-
-- [!] [I004] (P1) Use the shared Xcode Cloud release flow
-  Goal:
-  Build Apple release artifacts through the single MPR Lab Xcode Cloud flow.
-
-  Requirements:
-  - Apply the shared Apple guide from MPR Governor.
-  - Declare each native project and shared scheme in `.mprlab/apple-build.json`.
-  - Use the shared Gateway cloud operation and its recorded Apple build number.
-  - Use the App Store Connect build that Xcode Cloud submits.
-  - Remove local Apple release signing during the migration.
-  - Keep public store release under operator control.
-
-  Implementation:
-  The shared Apple guide and related mobile rules are installed.
-  Gateway F010 supplies the shared operation.
-  The Apple build target now forwards the canonical shell adapter.
-  The EAS build and submission commands and their configuration are removed.
-  The public adapter tests and final CI passed.
-  Native preparation and product declaration remain open.
-  Apple account setup and a hosted build remain required provider acceptance steps.
-
-  Validation:
-  The shared Apple and mobile guide checks passed.
-  The full Governor check retains unrelated differences observed before this migration.
-  The current iOS bundle identifier differs from the existing App Store Connect record.
-  The three new integration tests first failed against the EAS implementation.
-  The shared shell adapter preserves exact arguments, provider output, and exit status with an empty tool search path.
-  B009 corrects the dependency mismatch that blocked mobile validation.
-  The final log is `/tmp/social-apple-final-ci-corrected.log`.
-  I005 records the remaining dependency audit findings.
-
-  Review: 2026-10-01.
-  The shared shell adapter and its three integration tests passed in the review CI.
-  The native project, shared scheme, and `.mprlab/apple-build.json` are missing.
-  Blocked: The source uses `com.mprlab.socialthreader`.
-  The existing App Store record uses `com.mprlab.threader`.
-  The operator must select the Apple product identity before native preparation.
-  Deliverables:
-  - Prepare and commit the native project and shared scheme after the identity decision.
-  - Declare the selected product in `.mprlab/apple-build.json` and the application manifest.
-  - Verify the shared Apple build contract.
-  - Record account setup and hosted build results separately in `OPERATIONS.md`.
 
 - [ ] [I005] (P1) Resolve the mobile dependency audit findings
   Goal:
@@ -169,7 +127,7 @@ Format: `- [ ] [B042] (P1) {I007} Title`
 
   Last run: 2026-10-01.
   Reviewed the three remaining implementation entries and added I007.
-  I004 requires an Apple product identity decision.
+  I004 selected the existing Apple identity and local iOS build path.
   I005 and I007 require dependency corrections. F002 requires the native authentication contract first.
 
 - [ ] [M402R] (P2) Architecture and policy review

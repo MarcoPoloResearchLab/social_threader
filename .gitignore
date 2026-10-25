@@ -5,12 +5,15 @@ shelf/
 node_modules/
 .expo/
 configs/AuthKey_*.p8
+configs/*.p12
+configs/*.mobileprovision
 configs/*service-account*.json
 configs/google-play*.json
 configs/*keystore*.properties
 configs/*upload-key*.jks
 mobile/dist/
 test-results/
+.cache/local-tauth/
 # Managed by gix gitignore workflow
 .env
 .env.*

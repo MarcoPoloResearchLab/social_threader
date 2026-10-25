@@ -2,101 +2,113 @@
 
 ## Scope
 
-Use this guide for release builds and distribution of applications for Apple platforms, including iOS and macOS.
+Use this guide for iOS and macOS application release builds and distribution.
 Obey root `AGENTS.md` and `.mprlab/POLICY.md`.
 
-## Canonical Flow
+## Canonical iOS Flow
 
-Use Xcode Cloud for each Apple release build.
-Use automatic signing and Apple cloud-managed certificates.
-Xcode Cloud owns the build environment, signing operation, and build number.
-The release operator needs account authorization and source access, not a prepared personal Mac.
+Build iOS release artifacts locally on a Mac.
+Use `app-store-connect` as the only iOS export method.
+Sign and seal each IPA, then publish it through Gateway's App Store Connect adapter.
+Use this flow for both TestFlight and App Store destinations.
+Do not use development, ad hoc, or enterprise exports for iOS deployment.
+Do not use Xcode Cloud for iOS release builds.
+Use the same method for each application repository and each authorized team member.
 
-- Keep one Xcode Cloud flow for each application target.
-- Keep the product declarations in `.mprlab/apple-build.json`.
-- Remove local release signing, certificate imports, provisioning profile installation, and Keychain commands during the application migration.
-- Remove alternative release builders during the Xcode Cloud migration.
-- Require a successful hosted build before release acceptance.
-- Keep simulator builds and local development separate from release acceptance.
-- Keep public App Store release under operator control.
+- Require `build_system: local` and a repository-relative `.mjs` path in `build.ios`.
+- Preserve the declared TestFlight or App Store destination and its export restriction.
+- Reject iOS `.sh` adapters, cloud requests, and cloud publication receipts.
+- Remove obsolete iOS cloud adapters and disable their release workflows.
+- Preserve stored releases, credentials, and deployment state.
+- Keep simulator builds and development separate from release acceptance.
+- Require the declared Xcode toolchain and repository dependencies on the build Mac.
+- Keep the build independent of a personal cache, personal signing identity, or registered test device.
+- Keep public store release under the declared lifecycle authorization.
+
+## macOS Distribution
+
+Keep Xcode Cloud for declared macOS store builds and direct notarized downloads.
+Use Gateway's shared cloud operation with `platform: MACOS`.
+Keep separate named products and workflows when an application has both distribution channels.
+
+- Use `APP_STORE_ELIGIBLE` or `INTERNAL_ONLY` for macOS store distribution.
+- Use `DEVELOPER_ID` for direct notarized distribution.
+- Declare direct distribution with `macos_application` and publish through GitHub Releases.
+- Preserve cloud signing, notarization, provider checks, and retained build evidence for macOS.
+- Keep local iOS toolchain and signing requirements out of the macOS cloud operation.
 
 ## Ownership
 
-MPRLab-Gateway owns shared App Store Connect API operations and build evidence.
-Each application owns its product identifiers, native project, shared scheme, dependencies, workflow declaration, and release version.
+MPRLab-Gateway owns shared native build execution, signing, store publication, and release evidence.
+Each application owns its identifiers, native project, shared scheme, dependencies, version policy, and selected private inputs.
 
-- Use the shared Gateway operation from the application build target.
-- Use Gateway's `apple-cloud-operation` command and its documented configuration flags.
-- Keep the application adapter limited to command forwarding and exit-status propagation.
-- Use the POSIX shell adapter template supplied with MPR Governor.
-- Declare iOS store releases with `mobile_application` and its `build.ios` shell adapter.
-- Declare direct macOS releases with `macos_application` and its `build.macos` shell adapter.
-- Publish the notarized macOS ZIP through the shared Gateway release and publication lifecycle.
-- Run the adapter through `/bin/sh` and invoke the compiled Gateway executable directly.
-- Keep Node.js dependencies in the cloud build environment.
-- Let Gateway read the selected repository's `configs/.env.<owner>` for cloud API credentials.
-- Keep provider authentication, build requests, status checks, and artifact collection in Gateway.
-- Use the existing App Store Connect API credentials through the documented private input channel.
-- Keep private keys and secret values outside source control and build output.
-- Require an exact match between the requested source commit and the commit that Apple builds.
-- Record the Apple build identifier, build number, workflow identifier, source commit, and final result.
-- Preserve the build identifier before another status check or artifact request.
-- Resume the recorded build after an interruption.
-- Report an uncertain build submission before another submission.
+- Keep iOS identifiers and build inputs in the application adapter and the selected deployment manifest.
+- Keep macOS cloud declarations in `.mprlab/apple-build.json` and the selected deployment manifest.
+- For iOS, invoke the shared Gateway builder through the repository-owned application adapter.
+- For iOS, use `mobile_application`, its `build.ios` adapter, and Gateway's `mobile-build-operation` command.
+- Keep the adapter limited to application request construction and exit-status propagation.
+- Execute the adapter and native inputs from the selected source commit.
+- Let Gateway read the selected repository's `configs/.env.<owner>` for private inputs.
+- Keep provider authentication, artifact checks, submission journals, and retry decisions in Gateway.
+- Keep each macOS product within its declared shared Gateway contract.
 
-## Project And Dependency Inputs
+## iOS Signing Inputs
 
-- Put the Xcode project or workspace and its shared scheme in source control before cloud setup.
-- Commit the release version before the cloud build.
-- Use automatic signing in the project settings.
-- Declare the Xcode version and each required tool in the workflow or repository.
-- Keep application dependencies and their lockfiles in the repository contract.
-- Install declared dependencies in the cloud environment through repository scripts.
-- Require no dependency on another local checkout, a personal cache, or a user-installed signing identity.
-- For Expo applications, generate native projects before the release build and retain the governed output in source control.
-- Keep the cloud build independent of an Expo account and EAS services.
+A certificate alone cannot sign an application.
+A signing identity contains the certificate and its corresponding private key.
+A PKCS#12 file can carry that identity between Macs.
+The repository's private inputs must supply that file, its password, and the required App Store Connect API credentials.
+An ignored environment file does not arrive with a Git clone.
+
+- Declare how authorized team members receive the private inputs before release acceptance.
+- Keep private keys, passwords, and secret values outside source control and build output.
+- Require the same team signing identity on each build Mac.
+- Use a temporary keychain that the shared builder creates and unlocks with its own generated password.
+- Import the declared signing identity and permit the required Apple signing tools to use it without a prompt.
+- Delete the temporary keychain and extracted private files when the build ends.
+- Use App Store Connect API authentication for provisioning profile access and store publication.
+- Select the provisioning profile for the declared application and distribution method.
+- Do not require registered devices for App Store or TestFlight distribution.
+- Stop before the build when a required private input is absent or invalid.
+- Do not request account login or personal keychain passwords during a release.
+
+## iOS Project And Dependency Inputs
+
+- Commit the Xcode project or workspace, shared scheme, dependency declarations, and lockfiles.
+- Declare the required Xcode version and other build tools in the repository.
+- Install the declared dependencies through the shared build operation.
+- For Expo applications, generate native projects before release and commit the governed output.
+- Record the native preparation inputs and their content hashes.
+- Reject stale prepared inputs before a release build.
+- Keep Expo CLI and EAS outside release, publication, and deployment.
+- When precompiled libraries are required, stop if those libraries are unavailable.
 
 ## Build And Distribution Evidence
 
-Xcode Cloud assigns an integer build number.
-App Store Connect uses that number for the uploaded build.
-Use the Apple number as the canonical Apple build number in release evidence.
-For iOS, a new app version can start with cloud build number `1`.
-For macOS, keep build numbers increasing across app versions.
+- For iOS, allocate the version and build number through the repository's release policy.
+- For macOS, retain the build number and build identifier from the declared cloud operation.
+- For iOS, record the source commit, preparation digest, toolchain, version, build number, and artifact digest.
+- For macOS, record the source commit, workflow, provider build identifier, distribution result, and artifact identity.
+- Require the signed application to match the declared identifier, version, and build number.
+- Seal the signed artifact before publication.
+- Publish only the sealed artifact or verified cloud build to its declared destination.
+- Record each submission intent before the remote operation.
+- After an interruption, verify provider state before another submission.
+- Reuse an exact completed artifact after its content checks pass.
+- Reject conflicting source, artifact, or provider state.
+- Keep store processing, review, public availability, and device acceptance as separate results.
 
-- During migration, set the next cloud build number when the existing application requires a larger number.
-- For store workflows, use the build that Xcode Cloud uploads to App Store Connect.
-- Retain the cloud receipt and downloaded artifacts in one release directory.
-- Preserve the submission journal when a build is interrupted.
-- Publish through Gateway verification of the existing Apple build.
-- Require the selected source, version, build number, distribution, and processed store build to match.
-- Keep TestFlight notes in `TestFlight/WhatToTest.<LOCALE>.txt` beside the native project or workspace.
-- Let Xcode Cloud attach those notes to the uploaded build.
-- Keep store review and public release as separate operations after a successful build.
-- For direct macOS distribution, require the workflow's signed and notarized artifact.
-- Download release artifacts, symbols, and logs before Apple's 30-day retention period ends.
-- Verify the product identifier, release version, source commit, and provider result before release acceptance.
-- Report cloud build failure with its build identifier and available diagnostics.
+## Validation
 
-## Setup And Validation
-
-1. Verify the application record and authorized Apple team.
-2. Prepare the tracked project and shared scheme.
-3. Configure the first Xcode Cloud workflow in Xcode.
-4. Authorize access to the source repository.
-5. Record the workflow declaration in the application repository.
-6. Run the shared Gateway operation for an authorized source commit.
-7. Verify the hosted build, retained artifacts, and App Store Connect build record when applicable.
-
-For a behavior change, start with an integration test through the real public entry point.
-Use `.mprlab/POLICY.md` for validation.
-Local protocol tests prove the Gateway contract.
-A successful hosted build proves Apple provider acceptance for that application.
+Use `.mprlab/POLICY.md` for integration tests and final validation.
+Controlled native tools prove the shared command contract.
+A successful local build with actual Apple signing inputs proves native signing for that application.
+A verified store record proves submission of the selected artifact.
+Require a successful iOS release from another Mac before acceptance of team portability.
 
 ## Apple References
 
-- [Initial cloud setup](https://developer.apple.com/documentation/xcode/configuring-your-first-xcode-cloud-workflow)
-- [Cloud build numbers](https://developer.apple.com/documentation/xcode/setting-the-next-build-number-for-xcode-cloud-builds)
-- [Workflow and build API](https://developer.apple.com/documentation/appstoreconnectapi/xcode-cloud-workflows-and-builds)
-- [Distribution workflows](https://developer.apple.com/documentation/xcode/creating-a-workflow-that-builds-your-app-for-distribution)
-- [TestFlight notes](https://developer.apple.com/documentation/xcode/including-notes-for-testers-with-a-beta-release-of-your-app)
+- [Unattended code signing](https://developer.apple.com/forums/thread/712005)
+- [App Store provisioning profiles](https://developer.apple.com/help/account/provisioning-profiles/create-an-app-store-provisioning-profile/)
+- [Build and distribution automation](https://developer.apple.com/videos/play/wwdc2021/10204/)
+- [Build uploads](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/)

@@ -51,11 +51,11 @@ After validation, core mobile state and UI code must use domain values, not raw 
 
 ## Build And Store Publication
 
-- For Apple release builds, use the Xcode Cloud contract in `.mprlab/AGENTS.APPLE.md`.
+- For iOS release builds, use the local native contract in `.mprlab/AGENTS.APPLE.md`.
 - Build each Android store artifact with the native toolchain on an operator-controlled build host.
 - Seal each Android artifact before publication to Google Play.
 - Keep release and publication commands in repository Make targets or package scripts.
-- Use the accepted cloud build for Apple distribution and the sealed artifact for Android publication.
+- Use the sealed IPA for iOS publication and the sealed Android artifact for Google Play publication.
 
 ## UI And UX
 
@@ -85,5 +85,5 @@ After validation, core mobile state and UI code must use domain values, not raw 
 - [ ] Platform-specific code is isolated in named adapters.
 - [ ] iOS and Android differences are explicit and tested or documented.
 - [ ] Native/generated files were changed only through documented ownership paths.
-- [ ] Store publication uses the accepted platform build.
+- [ ] Store publication uses the sealed platform artifact.
 - [ ] Repo-native mobile validation passed or blockers are documented.

@@ -5,6 +5,8 @@ base_url="${SOCIAL_THREADER_LOCAL_URL:-http://localhost:4173}"
 temporary_directory="$(mktemp -d "${TMPDIR:-/tmp}/social-threader-smoke.XXXXXX")"
 cookie_jar="${temporary_directory}/cookies.txt"
 response_file="${temporary_directory}/response.json"
+logout_headers="${temporary_directory}/logout-headers.txt"
+fixture_root="${LOCAL_TAUTH_ROOT:?make local-smoke requires the prepared fixture root}"
 
 cleanup() {
   rm -rf "${temporary_directory}"
@@ -37,14 +39,20 @@ unauthenticated_status="$(request_status \
   "${base_url}/v1/thread-transformations")"
 [[ "${unauthenticated_status}" == "401" ]]
 
-login_status="$(request_status \
+nonce_status="$(request_status \
   --request POST \
-  --header 'Content-Type: application/json' \
   --header 'Origin: http://localhost:4173' \
-  --cookie-jar "${cookie_jar}" \
-  --data '{"email":"local-smoke@social-threader.invalid","password":"social-threader-local-smoke"}' \
-  "${base_url}/auth/password/login")"
-[[ "${login_status}" == "200" ]]
+  "${base_url}/auth/nonce")"
+[[ "${nonce_status}" == "200" ]]
+node scripts/local-tauth-session.mjs verify-nonce "${fixture_root}" "${response_file}"
+
+node scripts/local-tauth-session.mjs issue-synthetic "${fixture_root}" "${cookie_jar}"
+profile_status="$(request_status \
+  --header 'Origin: http://localhost:4173' \
+  --cookie "${cookie_jar}" \
+  "${base_url}/me")"
+[[ "${profile_status}" == "200" ]]
+node scripts/local-tauth-session.mjs verify-profile "${fixture_root}" "${response_file}"
 
 transformation_status="$(request_status \
   --request POST \
@@ -71,12 +79,20 @@ if (JSON.stringify(response) !== JSON.stringify(expected)) {
 JS
 
 logout_status="$(request_status \
+  --dump-header "${logout_headers}" \
   --request POST \
   --header 'Origin: http://localhost:4173' \
   --cookie "${cookie_jar}" \
   --cookie-jar "${cookie_jar}" \
   "${base_url}/auth/logout")"
 [[ "${logout_status}" == "204" ]]
+node scripts/local-tauth-session.mjs verify-logout "${fixture_root}" "${logout_headers}"
+
+post_logout_profile_status="$(request_status \
+  --header 'Origin: http://localhost:4173' \
+  --cookie "${cookie_jar}" \
+  "${base_url}/me")"
+[[ "${post_logout_profile_status}" == "401" ]]
 
 post_logout_status="$(request_status \
   --request POST \
@@ -87,4 +103,4 @@ post_logout_status="$(request_status \
   "${base_url}/v1/thread-transformations")"
 [[ "${post_logout_status}" == "401" ]]
 
-printf '%s\n' 'local Social Threader TAuth and fake-proxy smoke test passed'
+printf '%s\n' 'local synthetic-session /me, transformation, and logout cookie-clear checks passed'

@@ -1,9 +1,9 @@
 {
   "name": "social-threader-mobile",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Universal iOS and Android app for Social Threader.",
-  "main": "expo/AppEntry",
+  "main": "index.js",
   "scripts": {
     "sync-shared": "node scripts/sync-shared-web.mjs",
     "prestart": "npm run sync-shared",
@@ -19,10 +19,12 @@
     "pretest:coverage": "npm run sync-shared",
     "test:coverage": "jest --watchman=false --runInBand --coverage",
     "bundle:check": "node scripts/validate-bundle.mjs",
-    "check": "npm run sync-shared && npm run test:coverage && node scripts/validate-config.mjs && npx --no-install expo config --type public >/dev/null && npx --no-install expo install --check && npm run bundle:check"
+    "check": "npm run sync-shared && npm run test:coverage && node scripts/validate-config.mjs && npx --no-install expo config --type public >/dev/null && npx --no-install expo install --check && npm run bundle:check",
+    "prepare:ios": "node scripts/prepare-ios.mjs",
+    "verify:ios": "node scripts/verify-ios-preparation.mjs"
   },
   "dependencies": {
-    "expo": "57.0.26",
+    "expo": "57.0.31",
     "expo-clipboard": "57.0.2",
     "expo-image-picker": "57.0.20",
     "expo-status-bar": "57.0.1",
