@@ -21,7 +21,10 @@
     "bundle:check": "node scripts/validate-bundle.mjs",
     "check": "npm run sync-shared && npm run test:coverage && node scripts/validate-config.mjs && npx --no-install expo config --type public >/dev/null && npx --no-install expo install --check && npm run bundle:check",
     "prepare:ios": "node scripts/prepare-ios.mjs",
-    "verify:ios": "node scripts/verify-ios-preparation.mjs"
+    "verify:ios": "node scripts/verify-ios-preparation.mjs",
+    "prepare:android": "node scripts/prepare-android.mjs",
+    "verify:android": "node scripts/verify-android-preparation.mjs",
+    "test:android-build": "node --test scripts/android-build.integration.mjs"
   },
   "dependencies": {
     "expo": "57.0.31",
@@ -37,7 +40,10 @@
     "babel-jest": "30.4.1",
     "babel-preset-expo": "57.0.5",
     "jest": "30.4.1",
-    "test-renderer": "1.2.0"
+    "test-renderer": "1.2.0",
+    "@react-native-community/cli": "20.1.0",
+    "@react-native-community/cli-platform-android": "20.1.0",
+    "@react-native/metro-config": "0.86.3"
   },
   "overrides": {
     "@jest/reporters": {

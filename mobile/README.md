@@ -45,6 +45,11 @@ make run-ios
 make run-android
 make prepare-ios
 make verify-ios
+make prepare-android
+make verify-android
+make verify-mobile-source
+make test-android-build
+make test-android-native-bundle
 make build-android
 make submit-android
 ```
@@ -60,10 +65,37 @@ The release adapter sends one JSON request to Gateway through standard input.
 Gateway installs locked dependencies, verifies preparation, signs the archive, and exports an App Store IPA.
 `make build-ios` requires the lifecycle inputs that Gateway supplies during release.
 
-`make build-android` is a lower-level development helper. Expo prebuilds Android in a temporary directory. Gradle creates a signed App Bundle. The script writes a checked build manifest beside the `.aab`.
+`make prepare-android` installs locked dependencies and generates the native Android project.
+The command applies the repository Gradle changes and records the source inputs and native outputs.
+Commit the generated Android source and its `android/preparation.json` record.
+`make verify-android` checks the record through a dependency-free Node command.
+A changed lock, asset, local config plugin, script, or native output requires preparation again.
+`make verify-mobile-source` checks iOS first and Android second.
+CI completes both checks before tests or dependency installation, including parallel Make execution.
+
+`make build-android` verifies Android preparation before dependency installation or build effects.
+The builder copies only the recorded native source into its temporary build directory.
+Gradle creates the signed App Bundle through the declared React Native CLI.
+The builder sets the computed version and build number before Gradle starts.
+The builder verifies the signature, upload certificate, package, version, and R8 mapping.
+The builder writes a public build manifest beside the `.aab`.
+`make test-android-build` tests the public build and preparation contracts with synthetic inputs.
+`make test-android-native-bundle` verifies preparation and creates an actual Android JavaScript bundle.
+This bundle check requires the installed locked dependencies.
+
+For lifecycle operations, declare `SOCIAL_THREADER_ANDROID_KEYSTORE_PROPERTIES` in the selected manifest inputs.
+The manifest captures this path before lifecycle effects.
+The builder requests this captured value from Gateway.
+The selected properties file must contain `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`.
+A relative `storeFile` uses the selected properties directory as its root.
+For direct development builds, specify the properties path explicitly:
+
+```sh
+MOBILE_ANDROID_BUNDLE_ARGS="--keystore-properties /absolute/path/to/keystore.properties" make build-android
+```
 
 Use `make mobile-resolve-dependencies` after a mobile dependency declaration changes.
-Then run `make mobile-check` and `make ci`.
+Then run both preparation commands before `make mobile-check` and `make ci`.
 
 The Android build tool removes `NODE_ENV` and operates `npm ci --include=dev`. This command installs all devDependencies in every environment. The Gradle step sets `NODE_ENV` to `production`.
 
@@ -100,7 +132,7 @@ Android retains its published package, `com.mprlab.socialthreader`.
 The platform identifiers do not need to be identical.
 
 1. Complete native preparation and verify its recorded hashes.
-2. Supply the private inputs in the ignored repository file `configs/.env.social-threader`.
+2. Supply the private inputs through the sources specified in `.mprlab/deploy/resources.yml`.
 3. Run repository CI before the selected release operation.
 4. Build and seal the signed IPA through the canonical lifecycle.
 5. Verify the processed build in App Store Connect.
@@ -122,7 +154,15 @@ APP_STORE_CONNECT_API_KEY_PATH=
 
 The certificate input contains a base64 PKCS#12 signing identity with its private key.
 The API key path identifies the existing Apple `.p8` file.
-Gateway reads these values from the canonical private file and uses a temporary keychain.
+The current manifest selects `.mprlab/deploy/.env` through the optional `environment_file` field.
+Relative paths use the consuming repository root.
+When the manifest selects a file, that file must exist and be readable.
+When the field is absent, Gateway uses only process values.
+Process values take precedence over values from the selected file.
+
+Gateway reads the values once at the manifest boundary.
+Subsequent build operations receive the validated configuration.
+Apple signing uses a temporary keychain.
 Missing inputs stop the build without an interactive prompt.
 A browser login does not supply these native build inputs.
 Simulators are sufficient for application tests.
@@ -131,7 +171,8 @@ A signed IPA and a processed Apple build remain separate release evidence.
 ### Google Play
 
 - [ ] Create or confirm a Google Play app with package name `com.mprlab.socialthreader`.
-- [ ] Create an Android upload keystore and keep it outside git. The local builder defaults to `~/.local/share/social_threader/android-upload/keystore.properties` and `~/.local/share/social_threader/android-upload/socialthreader-upload-key.jks`.
+- [ ] Select the existing Android upload keystore through the explicit properties file.
+- [ ] Supply `SOCIAL_THREADER_ANDROID_KEYSTORE_PROPERTIES` through the manifest-selected environment inputs.
 - [ ] Add the Play upload-key SHA-256 and Google Cloud quota project to `mobile/android-release-identity.json` with the tracked example as the template.
 - [ ] Configure Google Application Default Credentials with Android Publisher access:
 

@@ -233,9 +233,15 @@ The default operator root is `$HOME/.config/mprlab-gateway`.
 
 Use `make test-installed-gateway` for the Make wrapper integration checks.
 
-Configure the Android upload key and Google Application Default Credentials before `make release`. See [mobile/README.md](mobile/README.md).
+Run `make prepare-android` and `make prepare-ios` after mobile config or dependency changes.
+Run `make verify-mobile-source` before release.
+Commit the prepared native source and both preparation records.
+Supply the explicit Android properties path through `SOCIAL_THREADER_ANDROID_KEYSTORE_PROPERTIES` in the manifest inputs.
+Configure Google Application Default Credentials before `make release`.
+See [mobile/README.md](mobile/README.md) for the mobile commands and credential contract.
 
-Create `.mprlab/deploy/.env` as a private mode-`0600` file before `make deploy`. Supply these operator values:
+Create the manifest-selected `.mprlab/deploy/.env` private file before lifecycle operations.
+Supply these operator values:
 
 ```dotenv
 SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID=
