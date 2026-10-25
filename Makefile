@@ -57,7 +57,11 @@ test-installed-gateway:
 
 test: test-installed-gateway test-product-catalog test-local-tauth-fixture browser-test go-test
 
-ci: test lint go-mod-verify mobile-check test-ios-build
+ci: verify-mobile-source
+	@$(MAKE) ci-verified
+
+.PHONY: ci-verified
+ci-verified: test lint go-mod-verify mobile-check test-ios-build test-android-build
 
 MPRLAB_GATEWAY_EXECUTABLE ?= mprlab-gateway
 
@@ -130,11 +134,15 @@ prepare-ios:
 	@cd "$(MOBILE_DIR)" && CI=1 npm run prepare:ios </dev/null
 
 verify-ios:
-	@cd "$(MOBILE_DIR)" && CI=1 npm run verify:ios </dev/null
+	@CI=1 node "$(MOBILE_DIR)/scripts/verify-ios-preparation.mjs" </dev/null
 
 build-android: mobile-android-bundle
 
-mobile-android-bundle: mobile-check
+mobile-android-bundle: verify-android
+	@$(MAKE) mobile-android-bundle-verified
+
+.PHONY: mobile-android-bundle-verified
+mobile-android-bundle-verified: mobile-check
 	@echo "==> [mobile-android-bundle] Building signed Social Threader Android App Bundle"
 	@ANDROID_HOME="$(ANDROID_HOME)" ANDROID_SDK_ROOT="$(ANDROID_SDK_ROOT)" ANDROID_STUDIO_JAVA_HOME="$(ANDROID_STUDIO_JAVA_HOME)" node "$(MOBILE_ANDROID_BUNDLE_SCRIPT)" --mobile-dir "$(MOBILE_DIR)" --build-dir "$(MOBILE_ANDROID_BUILD_DIR)" --android-sdk-root "$(ANDROID_SDK_ROOT)" --version-code "$(MOBILE_ANDROID_VERSION_CODE)" $(MOBILE_ANDROID_BUNDLE_ARGS)
 
@@ -149,3 +157,22 @@ test-ios-build:
 .PHONY: mobile-resolve-dependencies
 mobile-resolve-dependencies:
 	@cd "$(MOBILE_DIR)" && $(MOBILE_NPM) install --package-lock-only --ignore-scripts
+
+.PHONY: test-android-build
+test-android-build:
+	node --test mobile/scripts/android-build.integration.mjs
+
+.PHONY: prepare-android verify-android verify-mobile-source
+prepare-android:
+	@cd "$(MOBILE_DIR)" && CI=1 node scripts/prepare-android.mjs </dev/null
+
+verify-android:
+	@CI=1 node "$(MOBILE_DIR)/scripts/verify-android-preparation.mjs" </dev/null
+
+verify-mobile-source:
+	@$(MAKE) verify-ios
+	@$(MAKE) verify-android
+
+.PHONY: test-android-native-bundle
+test-android-native-bundle: verify-android
+	@CI=1 node "$(MOBILE_DIR)/scripts/validate-android-bundle.mjs" </dev/null

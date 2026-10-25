@@ -26,3 +26,10 @@ bin/
 # BEGIN MPRLAB-GOVERNANCE
 /.mprlab/*-PLAN.md
 # END MPRLAB-GOVERNANCE
+
+mobile/android/.gradle/
+mobile/android/.kotlin/
+mobile/android/**/build/
+mobile/android/**/.cxx/
+mobile/android/local.properties
+mobile/android/app/debug.keystore

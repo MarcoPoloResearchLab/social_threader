@@ -111,7 +111,6 @@ assertNotIncludes(
   "prepare_release.sh",
   "root lifecycle commands must not use the removed app-owned release scripts"
 );
-assertIncludes(makefileSource, "mobile-android-bundle: mobile-check", "the Android development build helper must remain available");
 assertIncludes(makefileSource, "submit-android:", "the Android development publish helper must remain available");
 assertNotIncludes(deploymentManifestSource, "schema_version:", "the canonical manifest must remain versionless");
 assertIncludes(deploymentManifestSource, "scheme: semver", "the canonical manifest must own the SemVer release scheme");
@@ -134,21 +133,6 @@ assertIncludes(
 );
 assertIncludes(androidPublishSource, "PROVIDER_MODES.RECONCILE", "Android publisher must reconcile an interrupted publication");
 assertIncludes(androidPublishSource, 'publisherAccess: "verified"', "Android publisher must report verified provider access");
-assertIncludes(
-  androidBuildSource,
-  "patchGeneratedAndroidDependencySources(buildMobileDir)",
-  "Android bundle builder must patch generated third-party native deprecation sources"
-);
-assertIncludes(androidBuildSource, "react::RawPropsParser()", "Android bundle builder must replace the deprecated RawPropsParser call");
-assertIncludes(androidBuildSource, "ForwardingCookieHandler()", "Android bundle builder must replace the deprecated cookie handler constructor");
-assertIncludes(androidBuildSource, "sharedObjectDidRelease()", "Android bundle builder must replace the deprecated shared-object release hook");
-assertIncludes(androidBuildSource, "patchGeneratedAndroidGradleFiles(buildMobileDir)", "Android bundle builder must patch generated Gradle syntax");
-assertIncludes(androidBuildSource, "org.gradle.java.installations.auto-download", "Android bundle builder must avoid Gradle toolchain auto-provisioning warnings");
-assertIncludes(androidBuildSource, `"none"`, "Android bundle builder must suppress remaining upstream Gradle warning-mode noise");
-assertIncludes(androidBuildSource, "NativeModulesProxyModule.kt", "Android bundle builder must patch the Expo native modules proxy DSL warning");
-assertIncludes(androidBuildSource, "ModuleRegistryAdapter.java", "Android bundle builder must patch Expo ReactPackage Java deprecations");
-assertIncludes(androidBuildSource, "EventEmitterModule.java", "Android bundle builder must patch Expo event dispatcher Java deprecations");
-assertIncludes(androidBuildSource, "-Xlint:none", "Android bundle builder must suppress upstream Expo Java deprecation notes");
 assertIncludes(androidBuildSource, "./lib/build-environment.mjs", "Android bundle builder must import the shared build environment module");
 assertIncludes(androidBuildSource, "...NPM_CI_ARGUMENTS", "Android bundle builder must use the shared npm ci arguments");
 assertIncludes(androidBuildEnvironmentSource, "delete environment.FORCE_COLOR", "Android bundle builder must avoid Metro color environment warnings");
