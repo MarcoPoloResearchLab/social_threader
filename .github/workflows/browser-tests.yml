@@ -75,7 +75,7 @@ jobs:
           export SOCIAL_THREADER_TAUTH_FIXTURE_DIR="$PWD/.cache/local-tauth/prepared"
           docker compose --env-file .env.example ps --all
           docker compose --env-file .env.example logs --no-color
-          docker image inspect ghcr.io/tyemirov/tauth:2.2.23 --format '{{json .RepoDigests}}'
+          docker image inspect ghcr.io/tyemirov/tauth:2.2.24 --format '{{json .RepoDigests}}'
 
       - name: Stop the local black-box stack
         if: always()

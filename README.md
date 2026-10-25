@@ -92,9 +92,9 @@ Install Go 1.26.5, Node.js 20 or later, Docker, and Docker Compose.
    make down
    ```
 
-`make up` retrieves the published TAuth `v2.2.23` fixture for `darwin/arm64` or `linux/amd64`.
+`make up` retrieves the published TAuth `v2.2.24` fixture for `darwin/arm64` or `linux/amd64`.
 It verifies the archive SHA-256 and records the executable identity in `.cache/local-tauth/artifact-identity.json`.
-The ordinary TAuth service uses `ghcr.io/tyemirov/tauth:2.2.23`.
+The ordinary TAuth service uses `ghcr.io/tyemirov/tauth:2.2.24`.
 The local fixture reads only the selected `LOCAL_ENV_FILE` for its signing key and Google client ID.
 Use an absolute `TAUTH_TEST_FIXTURE_BIN` path to select an explicit candidate fixture.
 

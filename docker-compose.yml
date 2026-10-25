@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
 
   tauth:
-    image: ghcr.io/tyemirov/tauth:2.2.23
+    image: ghcr.io/tyemirov/tauth:2.2.24
     pull_policy: always
     env_file:
       - "${SOCIAL_THREADER_ENV_FILE:-.env}"

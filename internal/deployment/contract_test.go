@@ -235,7 +235,7 @@ func TestLocalBlackBoxStackContract(t *testing.T) {
 	if !serviceOK {
 		t.Fatal("local TAuth service must be a mapping")
 	}
-	if tauthService["image"] != "ghcr.io/tyemirov/tauth:2.2.23" {
+	if tauthService["image"] != "ghcr.io/tyemirov/tauth:2.2.24" {
 		t.Fatalf("local TAuth image=%v", tauthService["image"])
 	}
 	if !reflect.DeepEqual(tauthService["command"], []any{"--config", "/tauth-fixture/service.yaml"}) {

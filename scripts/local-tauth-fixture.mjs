@@ -6,10 +6,10 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
-const VERSION = "v2.2.23";
+const VERSION = "v2.2.24";
 const ARCHIVES = Object.freeze({
-    "darwin-arm64": "68fa0d5e14c76ba3390ede857b84277d10b7f699fc319857cc44178f8d2d712b",
-    "linux-amd64": "8d2885965bd1d1b88b717d1284807f52bb57f7bbb527f7b64a78c872cbe9d306"
+    "darwin-arm64": "ce252c4efb37050d7f2b1982533dc66050cc6152b2cfee4d666570cf77ce8356",
+    "linux-amd64": "fc0064b47c658c6868ef9db519a6394f8423dad6dfbc844ca8847e3b1e86c6ba"
 });
 const fixtureRoot = path.resolve(process.argv[3]);
 const hash = contents => crypto.createHash("sha256").update(contents).digest("hex");
