@@ -1,0 +1,152 @@
+// @ts-check
+/**
+ * @fileoverview Renders computed chunks and handles copy interactions.
+ */
+
+import {
+    TEXT_CONTENT,
+    CHUNK_CONTAINER_STATE_CLASSES,
+    COPY_BUTTON_STATE_CLASSES,
+    CHUNK_ATTRIBUTE_NAMES
+} from "../constants.js";
+import { templateHelpers } from "../utils/templates.js";
+
+/**
+ * View responsible for rendering thread chunks.
+ */
+export class ChunkListView {
+    /**
+     * @param {HTMLElement} resultsContainer Container where chunk markup is rendered.
+     * @param {typeof import("../core/chunking.js").chunkingService} chunkingService Service for computing statistics.
+     */
+    constructor(resultsContainer, chunkingService) {
+        this.resultsContainer = resultsContainer;
+        this.chunkingService = chunkingService;
+        this.pendingAnimationFrame = null;
+    }
+
+    /**
+     * Clears the results pane and cancels any scheduled render work.
+     * @returns {void}
+     */
+    clear() {
+        if (this.pendingAnimationFrame !== null) {
+            window.cancelAnimationFrame(this.pendingAnimationFrame);
+            this.pendingAnimationFrame = null;
+        }
+        this.resultsContainer.innerHTML = "";
+    }
+
+    /**
+     * Renders the provided chunk contents.
+     * @param {import("../types.d.js").ChunkContent[]} chunks Ordered list of chunk content objects.
+     * @param {(context: { chunk: import("../types.d.js").ChunkContent; containerElement: HTMLDivElement; buttonElement: HTMLButtonElement }) => void} onCopyRequest Handler invoked when the user clicks the copy button.
+     * @returns {void}
+     */
+    renderChunks(chunks, onCopyRequest) {
+        this.clear();
+        if (chunks.length === 0) {
+            return;
+        }
+
+        this.pendingAnimationFrame = window.requestAnimationFrame(() => {
+            this.pendingAnimationFrame = null;
+            const threadWrapper = document.createElement("div");
+            threadWrapper.className = "threadWrapper";
+
+            chunks.forEach((chunkContent) => {
+                const containerElement = document.createElement("div");
+                containerElement.className = "chunkContainer";
+
+                if (chunkContent.variant === "image") {
+                    containerElement.classList.add("imageChunk");
+                }
+
+                const contentElement = document.createElement("div");
+                contentElement.className = "chunkContent";
+                contentElement.innerHTML = chunkContent.htmlContent;
+
+                const copyButtonElement = document.createElement("button");
+                copyButtonElement.className = "copyButton";
+                copyButtonElement.textContent = TEXT_CONTENT.COPY_BUTTON_LABEL;
+                copyButtonElement.addEventListener("click", () => {
+                    onCopyRequest({
+                        chunk: chunkContent,
+                        containerElement,
+                        buttonElement: copyButtonElement
+                    });
+                });
+
+                const infoRow = document.createElement("div");
+                infoRow.className = "chunkInfo";
+
+                if (chunkContent.variant !== "image") {
+                    const statisticsSource =
+                        typeof chunkContent.statisticsText === "string"
+                            ? chunkContent.statisticsText
+                            : chunkContent.plainText;
+                    const statistics = this.chunkingService.calculateStatistics(statisticsSource);
+                    const statsElement = document.createElement("div");
+                    statsElement.className = "stats";
+                    statsElement.textContent = templateHelpers.interpolate(TEXT_CONTENT.CHUNK_STATS_TEMPLATE, {
+                        characters: statistics.characters,
+                        words: statistics.words,
+                        sentences: statistics.sentences
+                    });
+                    infoRow.append(statsElement);
+                } else {
+                    infoRow.classList.add("imageOnly");
+                }
+
+                infoRow.append(copyButtonElement);
+
+                containerElement.appendChild(contentElement);
+                containerElement.appendChild(infoRow);
+                threadWrapper.appendChild(containerElement);
+            });
+
+            this.resultsContainer.appendChild(threadWrapper);
+        });
+    }
+
+    /**
+     * Marks a chunk as copied and reverts the button state after a delay.
+     * @param {HTMLDivElement} containerElement Container representing the chunk.
+     * @param {HTMLButtonElement} buttonElement Button element used to trigger the copy action.
+     * @param {number} copyOrder Sequence number representing the copy order.
+     * @returns {void}
+     */
+    markChunkAsCopied(containerElement, buttonElement, copyOrder) {
+        containerElement.setAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER, String(copyOrder));
+        containerElement.classList.remove(CHUNK_CONTAINER_STATE_CLASSES.ERROR);
+        containerElement.classList.add(CHUNK_CONTAINER_STATE_CLASSES.COPIED);
+        buttonElement.textContent = TEXT_CONTENT.COPY_BUTTON_SUCCESS_LABEL;
+        buttonElement.classList.remove(COPY_BUTTON_STATE_CLASSES.ERROR);
+        buttonElement.classList.add(COPY_BUTTON_STATE_CLASSES.SUCCESS);
+        buttonElement.disabled = true;
+
+        window.setTimeout(() => {
+            buttonElement.textContent = TEXT_CONTENT.COPY_BUTTON_LABEL;
+            buttonElement.classList.remove(COPY_BUTTON_STATE_CLASSES.SUCCESS);
+            buttonElement.disabled = false;
+        }, 2000);
+    }
+
+    /**
+     * Highlights a chunk when a copy request fails.
+     * @param {HTMLDivElement} containerElement Container representing the chunk.
+     * @param {HTMLButtonElement} buttonElement Button element used to trigger the copy action.
+     * @returns {void}
+     */
+    markChunkCopyError(containerElement, buttonElement) {
+        containerElement.classList.remove(CHUNK_CONTAINER_STATE_CLASSES.COPIED);
+        containerElement.classList.add(CHUNK_CONTAINER_STATE_CLASSES.ERROR);
+        if (containerElement.hasAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER)) {
+            containerElement.removeAttribute(CHUNK_ATTRIBUTE_NAMES.COPY_ORDER);
+        }
+        buttonElement.textContent = TEXT_CONTENT.COPY_BUTTON_LABEL;
+        buttonElement.classList.remove(COPY_BUTTON_STATE_CLASSES.SUCCESS);
+        buttonElement.classList.add(COPY_BUTTON_STATE_CLASSES.ERROR);
+        buttonElement.disabled = false;
+    }
+}

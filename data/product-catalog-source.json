@@ -1,0 +1,20 @@
+{
+  "sourceRepository": "https://github.com/MarcoPoloResearchLab/mpr-ui",
+  "files": [
+    {
+      "source": "data/product-catalog.json",
+      "destination": "data/product-catalog.json",
+      "sha256": "ccbb39ab3389c1bec9d46ab9037e0fe15635c5b1a82adc0b013a34d49205b5fe"
+    },
+    {
+      "source": "product-catalog.mjs",
+      "destination": "js/core/productCatalog.js",
+      "sha256": "17435ef95c5362c52c0255504b3723e06f7f1f7759b04d3dceecf4b57dcc0fd7"
+    },
+    {
+      "source": "product-directory.css",
+      "destination": "assets/css/product-directory.css",
+      "sha256": "faa202a014374298c91036f57ffc582594e6c570548a79ff2729eb8b2d54665f"
+    }
+  ]
+}

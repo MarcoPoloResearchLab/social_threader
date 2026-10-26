@@ -1,0 +1,9 @@
+/* Application footer geometry; menu controls use the standard MPR UI styles. */
+mpr-footer[data-product-directory] { display: block; margin-top: auto; line-height: 1.55; }
+mpr-footer[data-product-directory] footer.mpr-footer { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+mpr-footer[data-product-directory] .mpr-footer__horizontal-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}
