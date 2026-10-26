@@ -60,21 +60,25 @@ Preparation uses Expo CLI to generate the native project.
 The Xcode build uses the noninteractive `expo export:embed` command to make the JavaScript bundle.
 Expo prebuild, dependency repair, and EAS remain outside the release lifecycle.
 Commit the generated project, shared scheme, workspace, lockfile, and preparation record.
-`make verify-ios` rejects changed config or native output after preparation.
+`make verify-ios` checks required native files, application identity, build settings, dependency versions, and the recorded toolchain.
+CocoaPods owns dependency resolution and native lock metadata.
 The release adapter sends one JSON request to Gateway through standard input.
 Gateway installs locked dependencies, verifies preparation, signs the archive, and exports an App Store IPA.
 `make build-ios` requires the lifecycle inputs that Gateway supplies during release.
 
 `make prepare-android` installs locked dependencies and generates the native Android project.
-The command applies the repository Gradle changes and records the source inputs and native outputs.
+The command applies the repository Gradle changes and records application configuration, dependency versions, and the Gradle version.
 Commit the generated Android source and its `android/preparation.json` record.
 `make verify-android` checks the record through a dependency-free Node command.
-A changed lock, asset, local config plugin, script, or native output requires preparation again.
+The checks permit native metadata changes when the selected application configuration remains valid.
+They do not establish asset or plugin freshness.
+Use the native preparation commands after changes that require native generation.
 `make verify-mobile-source` checks iOS first and Android second.
 CI completes both checks before tests or dependency installation, including parallel Make execution.
 
 `make build-android` verifies Android preparation before dependency installation or build effects.
-The builder copies only the recorded native source into its temporary build directory.
+The builder copies the current public Android files into its temporary build directory.
+It excludes local configuration, private signing files, and build caches.
 Gradle creates the signed App Bundle through the declared React Native CLI.
 The builder sets the computed version and build number before Gradle starts.
 The builder verifies the signature, upload certificate, package, version, and R8 mapping.
@@ -131,7 +135,7 @@ The selected Apple record uses `com.mprlab.threader` and app ID `6788578080`.
 Android retains its published package, `com.mprlab.socialthreader`.
 The platform identifiers do not need to be identical.
 
-1. Complete native preparation and verify its recorded hashes.
+1. Complete native preparation and verify its application configuration.
 2. Supply the private inputs through the sources specified in `.mprlab/deploy/resources.yml`.
 3. Run repository CI before the selected release operation.
 4. Build and seal the signed IPA through the canonical lifecycle.
