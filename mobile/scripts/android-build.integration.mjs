@@ -77,7 +77,7 @@ async function prepareFixture(root) {
     "app/build.gradle", "app/src/main/AndroidManifest.xml"]) {
     const destination = path.join(mobileRoot, "android", filename);
     fs.mkdirSync(path.dirname(destination), { recursive: true });
-    fs.writeFileSync(destination, "synthetic governed native source\n");
+    fs.copyFileSync(path.join(MOBILE_ROOT, "android", filename), destination);
   }
   const { recordAndroidPreparation } = await import("./lib/android-preparation.mjs");
   recordAndroidPreparation(mobileRoot);
@@ -108,23 +108,111 @@ async function withPreparedFixture(scenario) {
   }
 }
 
-for (const changedPath of ["package-lock.json", "assets/icon.png", "plugins/with-ios-release.js", "android/app/build.gradle"]) {
-  test(`Android verifier and builder reject stale ${changedPath} before signing or native effects`, async () => {
+test("Android preparation records semantic facts without file fingerprints", async () => {
+  await withPreparedFixture(async root => {
+    const record = JSON.parse(fs.readFileSync(path.join(root, "mobile/android/preparation.json"), "utf8"));
+    assert.equal(Object.hasOwn(record, "inputs"), false);
+    assert.equal(Object.hasOwn(record, "outputs"), false);
+  });
+});
+
+test("Android verification accepts regenerated native metadata without a configuration change", async () => {
+  await withPreparedFixture(async root => {
+    fs.appendFileSync(path.join(root, "mobile/android/app/build.gradle"), "\n// Native tooling regenerated project metadata\n");
+    fs.writeFileSync(path.join(root, "mobile/android/local.properties"), "sdk.dir=/synthetic/local-sdk\n");
+    const result = spawnSync(process.execPath, [VERIFIER, "--mobile-dir", path.join(root, "mobile")], {
+      env: closedEnvironment(root), encoding: "utf8", input: "", timeout: 5000
+    });
+    assert.equal(result.status, 0, result.stderr);
+  });
+});
+
+for (const scenario of [
+  { name: "missing Gradle settings", change: root => fs.rmSync(path.join(root, "mobile/android/settings.gradle")) },
+  { name: "application identifier mismatch", change: root => {
+    const filename = path.join(root, "mobile/app.json");
+    const app = JSON.parse(fs.readFileSync(filename, "utf8"));
+    app.expo.android.package = "com.mprlab.wrong";
+    fs.writeFileSync(filename, JSON.stringify(app));
+  } },
+  { name: "application version mismatch", change: root => {
+    const filename = path.join(root, "mobile/app.json");
+    const app = JSON.parse(fs.readFileSync(filename, "utf8"));
+    app.expo.version = "1.0.1";
+    fs.writeFileSync(filename, JSON.stringify(app));
+  } },
+  { name: "native namespace mismatch", change: root => {
+    const filename = path.join(root, "mobile/android/app/build.gradle");
+    fs.writeFileSync(filename, fs.readFileSync(filename, "utf8").replace("namespace 'com.mprlab.socialthreader'", "namespace 'com.mprlab.wrong'"));
+  } }
+]) {
+  test(`Android verifier and builder reject ${scenario.name} before signing or native effects`, async () => {
     await withPreparedFixture(async root => {
-      const verifierArguments = [VERIFIER, "--mobile-dir", path.join(root,"mobile")];
-      const fresh = spawnSync(process.execPath,verifierArguments,{env:closedEnvironment(root),encoding:"utf8",input:"",timeout:5000});
-      assert.equal(fresh.status,0,fresh.stderr);
-      fs.appendFileSync(path.join(root,"mobile",changedPath),"changed");
-      const stale = spawnSync(process.execPath,verifierArguments,{env:closedEnvironment(root),encoding:"utf8",input:"",timeout:5000});
-      assert.equal(stale.status,2,stale.stderr);
-      assert.match(stale.stderr,/Android preparation/);
-      const builder = invokeBuilder(root,["--keystore-properties",path.join(root,"missing.properties")]);
-      assert.equal(builder.status,2,builder.stderr);
-      assert.match(builder.stderr,/Android preparation/);
-      assert.equal(fs.readFileSync(path.join(root,"build/preserve.txt"),"utf8"),"existing build remains intact");
+      scenario.change(root);
+      const rejected = spawnSync(process.execPath, [VERIFIER, "--mobile-dir", path.join(root, "mobile")], {
+        env: closedEnvironment(root), encoding: "utf8", input: "", timeout: 5000
+      });
+      assert.equal(rejected.status, 2, rejected.stderr);
+      assert.match(rejected.stderr, /Android preparation/);
+      const builder = invokeBuilder(root, ["--keystore-properties", path.join(root, "missing.properties")]);
+      assert.equal(builder.status, 2, builder.stderr);
+      assert.match(builder.stderr, /Android preparation/);
+      assert.equal(fs.readFileSync(path.join(root, "build/preserve.txt"), "utf8"), "existing build remains intact");
     });
   });
 }
+
+for (const [setting, environmentName, constant] of [
+  ["versionName", "SOCIAL_THREADER_ANDROID_ARTIFACT_VERSION_NAME", '\"1.0.0\"'],
+  ["versionCode", "SOCIAL_THREADER_ANDROID_ARTIFACT_VERSION_CODE", "1"]
+]) {
+  test(`Android verifier rejects a constant ${setting} with the lifecycle input mentioned only in a comment`, async () => {
+    await withPreparedFixture(async root => {
+      const filename = path.join(root, "mobile/android/app/build.gradle");
+      const gradle = fs.readFileSync(filename, "utf8");
+      fs.writeFileSync(filename, gradle.replace(new RegExp(`^\\s*${setting} .+$`, "m"), `        ${setting} ${constant} // ${environmentName}`));
+      const result = spawnSync(process.execPath, [VERIFIER, "--mobile-dir", path.join(root, "mobile")], {
+        env: closedEnvironment(root), encoding: "utf8", input: "", timeout: 5000
+      });
+      assert.equal(result.status, 2, result.stderr);
+      assert.match(result.stderr, new RegExp(`${setting} lifecycle assignment`));
+      const builder = invokeBuilder(root, ["--keystore-properties", path.join(root, "missing.properties")]);
+      assert.equal(builder.status, 2, builder.stderr);
+      assert.match(builder.stderr, new RegExp(`${setting} lifecycle assignment`));
+    });
+  });
+}
+
+test("Android prepared file copy selects public files and excludes private, local, and cached inputs", async () => {
+  await withPreparedFixture(async root => {
+    const mobile = path.join(root, "mobile");
+    const added = "android/app/src/main/generated/NativeMetadata.txt";
+    fs.mkdirSync(path.dirname(path.join(mobile, added)), { recursive: true });
+    fs.writeFileSync(path.join(mobile, added), "current native metadata\n");
+    const excluded = ["android/local.properties", "android/.env.release", "android/upload.jks",
+      "android/release.keystore", "android/distribution.p12", "android/AuthKey_fixture.p8",
+      "android/release-keystore.properties", "android/.gradle/cache.txt", "android/.kotlin/cache.txt",
+      "android/.cxx/cache.txt", "android/build/generated.txt", "android/app/build/generated.txt"];
+    for (const filename of excluded) {
+      fs.mkdirSync(path.dirname(path.join(mobile, filename)), { recursive: true });
+      fs.writeFileSync(path.join(mobile, filename), "synthetic private or local input\n");
+    }
+    const destination = path.join(root, "copied");
+    const { copyPreparedAndroid } = await import("./lib/android-preparation.mjs");
+    copyPreparedAndroid(mobile, destination);
+    assert.equal(fs.readFileSync(path.join(destination, added), "utf8"), "current native metadata\n");
+    for (const filename of excluded) assert.equal(fs.existsSync(path.join(destination, filename)), false, filename);
+  });
+});
+
+test("Android prepared file copy rejects a native symlink", async () => {
+  await withPreparedFixture(async root => {
+    const mobile = path.join(root, "mobile");
+    fs.symlinkSync(path.join(mobile, "android/settings.gradle"), path.join(mobile, "android/native-settings-link"));
+    const { copyPreparedAndroid } = await import("./lib/android-preparation.mjs");
+    assert.throws(() => copyPreparedAndroid(mobile, path.join(root, "copied")), /rejects a non-file entry/);
+  });
+});
 
 test("Android signing requires an explicit direct selection and ignores ambient private-path bait", async () => {
   await withPreparedFixture(async root => {
@@ -178,10 +266,10 @@ function makeFixture(root) {
   return { effect, record:path.join(root,"effects.jsonl") };
 }
 
-test("parallel Make rejects stale Android preparation before install, checks and build", async () => {
+test("parallel Make rejects missing Android preparation before install, checks and build", async () => {
   await withPreparedFixture(async root => {
     const fixture=makeFixture(root);
-    fs.appendFileSync(path.join(root,"mobile/package-lock.json"),"stale");
+    fs.rmSync(path.join(root,"mobile/android/settings.gradle"));
     const result=spawnSync("/usr/bin/make",["-j8","mobile-android-bundle",
       `MOBILE_NPM=${process.execPath} ${fixture.effect}`,`MOBILE_ANDROID_BUNDLE_SCRIPT=${fixture.effect}`],{
       cwd:root,env:{...closedEnvironment(root),PATH:path.dirname(process.execPath)},encoding:"utf8",input:"",timeout:5000
@@ -206,7 +294,7 @@ test("parallel Make reaches install, check and build only after fresh Android pr
   });
 });
 
-test("parallel CI rejects stale iOS source before any Android or CI effect", async () => {
+test("parallel CI rejects absent iOS preparation before any Android or CI effect", async () => {
   await withPreparedFixture(async root => {
     const fixture=makeFixture(root);
     const overrides=path.join(root,"ci-effects.mk");
@@ -290,7 +378,7 @@ test("real Android builder forces computed versions over ambient bait and preser
   });
 });
 
-test("parallel CI checks Android freshness after fresh iOS source and before CI effects", async () => {
+test("parallel CI checks Android configuration after valid iOS preparation and before CI effects", async () => {
   await withPreparedFixture(async root => {
     const mobile=path.join(root,"mobile");
     fs.copyFileSync(path.join(MOBILE_ROOT,"ios-release-identity.json"),path.join(mobile,"ios-release-identity.json"));
@@ -300,17 +388,17 @@ test("parallel CI checks Android freshness after fresh iOS source and before CI 
       "SocialThreader.xcodeproj/xcshareddata/xcschemes/SocialThreader.xcscheme","SocialThreader/Info.plist"]){
       const destination=path.join(mobile,"ios",filename);
       fs.mkdirSync(path.dirname(destination),{recursive:true});
-      fs.writeFileSync(destination,`PRODUCT_BUNDLE_IDENTIFIER = ${identity.bundleIdentifier};\n`);
+      fs.copyFileSync(path.join(MOBILE_ROOT,"ios",filename),destination);
     }
     const {recordIosPreparation}=await import("./lib/ios-preparation.mjs");
-    recordIosPreparation(mobile,{xcode:"synthetic",cocoapods:"synthetic"});
-    fs.appendFileSync(path.join(mobile,"android/app/build.gradle"),"stale");
+    recordIosPreparation(mobile,{xcode:"Xcode 27.1\nBuild version 27A9275",cocoapods:"1.17.0"});
+    fs.rmSync(path.join(mobile,"android/settings.gradle"));
     const fixture=makeFixture(root);
     const result=spawnSync("/usr/bin/make",["-j8","ci",`MOBILE_NPM=${process.execPath} ${fixture.effect}`],{
       cwd:root,env:{...closedEnvironment(root),PATH:`${path.dirname(process.execPath)}:/usr/bin:/bin`},encoding:"utf8",input:"",timeout:5000
     });
     assert.equal(result.status,2,result.stderr);
-    assert.match(result.stdout,/iOS preparation matches/);
+    assert.match(result.stdout,/iOS preparation satisfies/);
     assert.match(result.stderr,/Android preparation/);
     assert.equal(fs.existsSync(fixture.record),false);
   });
@@ -374,7 +462,7 @@ test("Android capture remains authoritative after the authored selection changes
   });
 });
 
-test("public Android preparation normalizes known generated text before recording exact receipt bytes", async () => {
+test("public Android preparation records provider success and accepts regenerated metadata", async () => {
   await withPreparedFixture(async root => {
     makeFixture(root);
     const mobile=path.join(root,"mobile");
@@ -394,7 +482,9 @@ react {
     bundleCommand = "export:embed"
 }
 android {
+    namespace 'com.mprlab.socialthreader'
     defaultConfig {
+        applicationId 'com.mprlab.socialthreader'
         versionCode 1
         versionName "1.0.0"
     }
@@ -432,11 +522,36 @@ android {
     assert.deepEqual(fs.readFileSync(path.join(mobile,"android/gradle/wrapper/gradle-wrapper.jar")),binary);
     const verifier=spawnSync(process.execPath,[VERIFIER,"--mobile-dir",mobile],{env:closedEnvironment(root),encoding:"utf8",input:"",timeout:5000});
     assert.equal(verifier.status,0,verifier.stderr);
-    const receipt=fs.readFileSync(path.join(mobile,"android/preparation.json"));
+    const receipt=JSON.parse(fs.readFileSync(path.join(mobile,"android/preparation.json"),"utf8"));
+    assert.equal(Object.hasOwn(receipt,"inputs"),false);
+    assert.equal(Object.hasOwn(receipt,"outputs"),false);
     fs.writeFileSync(path.join(mobile,"android/gradlew.bat"),"@echo off\ncall gradle %*\n");
     fs.writeFileSync(path.join(mobile,"android/settings.gradle"),"pluginManagement { }\ninclude ':app'\n");
     const retained=spawnSync(process.execPath,[VERIFIER,"--mobile-dir",mobile],{env:closedEnvironment(root),encoding:"utf8",input:"",timeout:5000});
     assert.equal(retained.status,0,retained.stderr);
-    assert.deepEqual(fs.readFileSync(path.join(mobile,"android/preparation.json")),receipt);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(mobile,"android/preparation.json"),"utf8")).schema,receipt.schema);
+  });
+});
+
+
+test("public Android preparation does not record success after the native generator fails", async () => {
+  await withPreparedFixture(async root => {
+    makeFixture(root);
+    const mobile = path.join(root, "mobile");
+    fs.rmSync(path.join(mobile, "android/preparation.json"));
+    nativeFixtureProgram(path.join(root, "programs/npm"), `
+      if(process.argv.includes("prebuild")) {
+        process.stderr.write("controlled Android generator failure");
+        process.exit(23);
+      }
+    `);
+    const result = spawnSync("/usr/bin/make", ["prepare-android"], {
+      cwd: root,
+      env: { ...closedEnvironment(root), PATH: `${path.join(root,"programs")}:${path.dirname(process.execPath)}:/usr/bin:/bin` },
+      encoding: "utf8", input: "", timeout: 5000
+    });
+    assert.equal(result.status, 2, result.stderr);
+    assert.match(result.stderr, /controlled Android generator failure/);
+    assert.equal(fs.existsSync(path.join(mobile, "android/preparation.json")), false);
   });
 });

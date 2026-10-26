@@ -139,6 +139,19 @@ Use this gate when credentials are necessary for the selected task.
 - Show a credential blocker only after this gate finds the missing or incorrect input.
 - Keep certificate and key artifact paths specified in the validated configuration.
 
+## Native Preparation Authority
+
+The operator selected this contract on October 26, 2026.
+
+- Let CocoaPods and Gradle own dependency resolution and native metadata.
+- Use ordinary `pod install` for native dependency preparation.
+- Keep preparation records limited to application identity, configuration, dependency versions, toolchain versions, and completed command results.
+- Do not use file hashes, fingerprints, whole-file comparisons, or lock restoration as readiness gates.
+- Verify required native files and their selected application configuration.
+- Permit native metadata changes that retain the required configuration.
+- Keep asset and plugin freshness outside configuration verification claims.
+- Preserve native command failures, signing checks, application versions, build numbers, and provider results.
+
 ## Validation
 
 - Preserve the expected failing integration-test result as implementation evidence.

@@ -1,6 +1,6 @@
 // @ts-check
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, copyFileSync, cpSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve, join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -55,7 +55,7 @@ test("iOS adapter sends the selected application contract through a closed JSON 
 });
 
 test("iOS adapter request passes the Gateway decoder before build execution", () => {
-  assert.ok(process.env.MPRLAB_GATEWAY_EXECUTABLE, "MPRLAB_GATEWAY_EXECUTABLE must select the installed physical runtime binary");
+  assert.ok(process.env.MPRLAB_GATEWAY_EXECUTABLE, "MPRLAB_GATEWAY_EXECUTABLE must select the installed runtime executable");
   const fixtureRoot = mkdtempSync(join(tmpdir(), "social-ios-gateway-"));
   try {
     const mobileRoot = join(REPOSITORY_ROOT, "mobile");
@@ -87,12 +87,13 @@ test("iOS adapter request passes the Gateway decoder before build execution", ()
       "--mobile-dir", fixtureRoot, "--output", join(fixtureRoot, "output.ipa"),
       "--manifest", join(fixtureRoot, "output.json"), "--release-timestamp", TIMESTAMP
     ], { cwd: fixtureRoot, env: {
+      PATH: process.env.PATH,
       MPRLAB_GATEWAY_EXECUTABLE: process.env.MPRLAB_GATEWAY_EXECUTABLE,
       MPRLAB_ARTIFACT_VERSION: "v1.2.0",
       MPRLAB_MOBILE_BUILD_INTENT: "invalid-relative-intent",
       MPRLAB_APPLICATION_LIFECYCLE_LOCK: "exclusive", MPRLAB_LIFECYCLE_OPERATION: "release"
     }, input: "", encoding: "utf8", timeout: 15_000 });
-    assert.equal(result.error, undefined);
+    assert.ifError(result.error);
     assert.equal(result.status, 2, result.stderr);
     // Gateway checks the intent path only after decoding and validating the complete request.
     assert.match(result.stderr, /requires an absolute MPRLAB_MOBILE_BUILD_INTENT/);
@@ -125,33 +126,120 @@ test("iOS adapter rejects identifier drift and absent lifecycle identity before 
   }
 });
 
-test("prepared native verification rejects changed application config and native output", () => {
+/** @param {(root:string) => void} scenario */
+async function withPreparedIosFixture(scenario) {
   const mobileRoot = join(REPOSITORY_ROOT, "mobile");
   const fixtureRoot = mkdtempSync(join(tmpdir(), "social-ios-preparation-"));
   try {
-    const record = JSON.parse(readFileSync(join(mobileRoot, "ios/preparation.json"), "utf8"));
-    for (const filename of [...Object.keys(record.inputs), ...Object.keys(record.outputs), "ios/preparation.json"]) {
-      mkdirSync(dirname(join(fixtureRoot, filename)), { recursive: true });
-      writeFileSync(join(fixtureRoot, filename), readFileSync(join(mobileRoot, filename)));
+    for (const filename of ["app.json", "app.config.js", "package.json", "package-lock.json",
+      "babel.config.js", "metro.config.js", "index.js", "ios-release-identity.json"]) {
+      copyFileSync(join(mobileRoot, filename), join(fixtureRoot, filename));
     }
-    const verifier = join(fixtureRoot, "scripts/verify-ios-preparation.mjs");
-    const runVerifier = () => spawnSync(process.execPath, [verifier], { cwd: fixtureRoot, input: "", encoding: "utf8" });
-    assert.equal(runVerifier().status, 0);
-    const configPath = join(fixtureRoot, "app.json");
-    const originalConfig = readFileSync(configPath, "utf8");
-    writeFileSync(configPath, originalConfig.replace("1.0.0", "1.0.1"));
-    const changedConfig = runVerifier();
-    assert.equal(changedConfig.status, 2);
-    assert.match(changedConfig.stderr, /stale iOS preparation input/);
-    writeFileSync(configPath, originalConfig);
-    const nativePath = join(fixtureRoot, "ios/SocialThreader/Info.plist");
-    writeFileSync(nativePath, `${readFileSync(nativePath, "utf8")}\n`);
-    const changedNative = runVerifier();
-    assert.equal(changedNative.status, 2);
-    assert.match(changedNative.stderr, /stale iOS preparation native output/);
+    for (const directory of ["assets", "scripts", "plugins"]) {
+      cpSync(join(mobileRoot, directory), join(fixtureRoot, directory), { recursive: true });
+    }
+    for (const filename of ["Podfile", "Podfile.lock", "Podfile.properties.json",
+      "SocialThreader.xcworkspace/contents.xcworkspacedata", "SocialThreader.xcodeproj/project.pbxproj",
+      "SocialThreader.xcodeproj/xcshareddata/xcschemes/SocialThreader.xcscheme", "SocialThreader/Info.plist"]) {
+      mkdirSync(dirname(join(fixtureRoot, "ios", filename)), { recursive: true });
+      copyFileSync(join(mobileRoot, "ios", filename), join(fixtureRoot, "ios", filename));
+    }
+    const { recordIosPreparation } = await import("./lib/ios-preparation.mjs");
+    recordIosPreparation(fixtureRoot, { xcode: "Xcode 27.1\nBuild version 27A9275", cocoapods: "1.17.0" });
+    scenario(fixtureRoot);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
+}
+
+/** @param {string} root */
+function verifyIosFixture(root) {
+  return spawnSync(process.execPath, [join(root, "scripts/verify-ios-preparation.mjs")], {
+    cwd: root, input: "", encoding: "utf8"
+  });
+}
+
+test("iOS preparation records semantic facts without file fingerprints", async () => {
+  await withPreparedIosFixture(root => {
+    const record = JSON.parse(readFileSync(join(root, "ios/preparation.json"), "utf8"));
+    assert.equal(Object.hasOwn(record, "inputs"), false);
+    assert.equal(Object.hasOwn(record, "outputs"), false);
+    assert.equal(verifyIosFixture(root).status, 0);
+  });
+});
+
+test("iOS verification accepts regenerated native metadata with the selected application configuration", async () => {
+  await withPreparedIosFixture(root => {
+    writeFileSync(join(root, "ios/Podfile.lock"), `${readFileSync(join(root, "ios/Podfile.lock"), "utf8")}\n# CocoaPods regenerated local metadata\n`);
+    writeFileSync(join(root, "ios/SocialThreader/Info.plist"), `${readFileSync(join(root, "ios/SocialThreader/Info.plist"), "utf8")}\n`);
+    const result = verifyIosFixture(root);
+    assert.equal(result.status, 0, result.stderr);
+  });
+});
+
+for (const scenario of [
+  { name: "missing workspace", change: root => rmSync(join(root, "ios/SocialThreader.xcworkspace/contents.xcworkspacedata")), diagnostic: /missing prepared iOS file/ },
+  { name: "missing native scheme", change: root => rmSync(join(root, "ios/SocialThreader.xcodeproj/xcshareddata/xcschemes/SocialThreader.xcscheme")), diagnostic: /missing prepared iOS file/ },
+  { name: "selected workspace mismatch", change: root => {
+    const filename = join(root, "ios-release-identity.json");
+    const identity = JSON.parse(readFileSync(filename, "utf8"));
+    identity.workspace = "ios/Other.xcworkspace";
+    writeFileSync(filename, JSON.stringify(identity));
+  }, diagnostic: /workspace/ },
+  { name: "selected scheme mismatch", change: root => {
+    const filename = join(root, "ios-release-identity.json");
+    const identity = JSON.parse(readFileSync(filename, "utf8"));
+    identity.scheme = "Other";
+    writeFileSync(filename, JSON.stringify(identity));
+  }, diagnostic: /scheme/ },
+  { name: "bundle identifier mismatch", change: root => {
+    const app = JSON.parse(readFileSync(join(root, "app.json"), "utf8"));
+    app.expo.ios.bundleIdentifier = "com.mprlab.wrong";
+    writeFileSync(join(root, "app.json"), JSON.stringify(app));
+  }, diagnostic: /bundle identifier/ },
+  { name: "application version mismatch", change: root => {
+    const app = JSON.parse(readFileSync(join(root, "app.json"), "utf8"));
+    app.expo.version = "1.0.1";
+    writeFileSync(join(root, "app.json"), JSON.stringify(app));
+  }, diagnostic: /version/ },
+  { name: "native bundle configuration mismatch", change: root => {
+    const project = join(root, "ios/SocialThreader.xcodeproj/project.pbxproj");
+    writeFileSync(project, readFileSync(project, "utf8").replaceAll("PRODUCT_BUNDLE_IDENTIFIER = com.mprlab.threader;", "PRODUCT_BUNDLE_IDENTIFIER = com.mprlab.wrong;"));
+  }, diagnostic: /bundle identifier/ }
+]) {
+  test(`iOS preparation rejects ${scenario.name} through the public verifier`, async () => {
+    await withPreparedIosFixture(root => {
+      scenario.change(root);
+      const result = verifyIosFixture(root);
+      assert.equal(result.status, 2, result.stderr);
+      assert.match(result.stderr, scenario.diagnostic);
+    });
+  });
+}
+
+test("public iOS preparation does not record success after CocoaPods fails", async () => {
+  await withPreparedIosFixture(root => {
+    rmSync(join(root, "ios/preparation.json"));
+    const programs = join(root, "programs");
+    mkdirSync(programs);
+    for (const [name, source] of [
+      ["npm", "process.exit(0);"],
+      ["xcodebuild", 'process.stdout.write("Xcode 27.1\\nBuild version 27A9275\\n");'],
+      ["pod", 'if(process.argv.includes("--version"))process.stdout.write("1.17.0\\n");else{process.stderr.write("controlled CocoaPods failure");process.exit(23);}']
+    ]) {
+      const filename = join(programs, name);
+      copyFileSync(process.execPath, filename);
+      writeFileSync(filename, `#!${process.execPath}\n${source}\n`);
+    }
+    const result = spawnSync(process.execPath, [join(root, "scripts/prepare-ios.mjs")], {
+      cwd: root, env: { ...process.env, PATH: `${programs}:${dirname(process.execPath)}`, NODE_ENV: "production" },
+      input: "", encoding: "utf8"
+    });
+    assert.equal(result.status, 2, result.stderr);
+    assert.match(result.stderr, /controlled CocoaPods failure/);
+    assert.match(result.stderr, /pod failed with exit status 23/);
+    assert.equal(existsSync(join(root, "ios/preparation.json")), false);
+  });
 });
 
 test("generated iOS project adopts Expo scenes and resolves release version build settings", () => {

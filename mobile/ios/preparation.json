@@ -1,43 +1,23 @@
 {
-  "schema": "social-threader.ios-preparation.v1",
+  "schema": "social-threader.ios-preparation.v2",
+  "status": "prepared",
+  "application": {
+    "bundleIdentifier": "com.mprlab.threader",
+    "version": "1.0.0",
+    "workspace": "ios/SocialThreader.xcworkspace",
+    "scheme": "SocialThreader"
+  },
+  "configuration": {
+    "deploymentTarget": "16.4",
+    "javascriptEngine": "hermes"
+  },
+  "dependencies": {
+    "expo": "57.0.31",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
   "toolchain": {
     "xcode": "Xcode 27.1\nBuild version 27A9275",
     "cocoapods": "1.17.0"
-  },
-  "inputs": {
-    "app.config.js": "4dec9d1d78576beabd680600deaea9a1418b8cf2bafe6b395cd0b992817f939f",
-    "app.json": "787956f524b3b5a00d42c1c41cfbff408857a2cd9ec64f30f9b80003b7ff0b93",
-    "assets/favicon.png": "15fc8da49c0351e8474a6e466a6766886786ac2dcccb8dcf06d3dc8394a47c5e",
-    "assets/icon.png": "c5dc3c4f64fac195090a508a3d0f540c0b7699787bf8991709446dc6f0524d1b",
-    "babel.config.js": "2c90b5e4c44655a1ae8c39c45dc33bb8eb0d59cc2ae95440b868ca5ca1900b3e",
-    "index.js": "03e2dea4363f9c3b90223302b6f2e7e11d94b4162b622b04652aa6b93b8d9c45",
-    "ios-release-identity.json": "fdfab99251db41af1498ae008694616686846172676bbcab165ac470324f0d85",
-    "metro.config.js": "4768923afcdef5fbbfe867f79889295a5f9be962c95b3de29812fe469764b65b",
-    "package-lock.json": "e9f2fbaa3913f519312af9e2302f78dfa9028c87f6f036b89df5f97c675202ae",
-    "package.json": "722ff3bafca73a67961db0bf0994ddca925a3da35e9e2a030bec765f0e781281",
-    "plugins/with-ios-release.js": "edd21304215ffbccbd81aec7528d3236d41cf41d4aa6bd0f0220ddd0a6899d78",
-    "scripts/lib/ios-preparation.mjs": "2d585751f1834aab92ba332b4180a77023f3712aead69608743b9846a4654ccb",
-    "scripts/prepare-ios.mjs": "629ad988777cc976067f914b696b108c9d4fcc2ccb29fd0198f236178b59beb4",
-    "scripts/verify-ios-preparation.mjs": "eab2f274bb71c42447148c469785cd2d6f45014d994bb1328e0f60a4a43e4f9c"
-  },
-  "outputs": {
-    "ios/.gitignore": "f8042134be9ad24176d8d630255be93f8a0223925ae88c34b603c8989baa8345",
-    "ios/.xcode.env": "3c02dca07775b31ce4e77dfb3bb660d7c6e577474d65a6216f1ea9bef54e1ca6",
-    "ios/Podfile": "57d6cfc4f40537a11d215b01d9ba31d2a97c1e7ed1d698c453ca9b67e02fc607",
-    "ios/Podfile.lock": "a9f2cb5b340220cf4dc761bb7ed315c92dec0915026b392cae4f4951a66b7a3d",
-    "ios/Podfile.properties.json": "34d82c1491c1cb242272363f77de073f65b6266f2599ed7ca390933c9f1eb081",
-    "ios/SocialThreader.xcodeproj/project.pbxproj": "6a5267db063ddaffd1e066b05b9c5b56aebbdd4faeae691fd580c70d13d6e9e4",
-    "ios/SocialThreader.xcodeproj/xcshareddata/xcschemes/SocialThreader.xcscheme": "57a3a5ba101f15f525806a44bd9a2bfa1ee3c510b7b8f25900e10d42d84843ea",
-    "ios/SocialThreader.xcworkspace/contents.xcworkspacedata": "9d05b6a6e59bc6b9e635a8cec3776cbd26865227c74313ef5ddcfc3890e2cfe5",
-    "ios/SocialThreader/AppDelegate.swift": "233ec340746ebac2ad21c33b3c5909b84f7a38cd2bc4108585ade124fd3b8432",
-    "ios/SocialThreader/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png": "d7c5fd0872166e70172070db8b669583f77ec9b147d58870c6523ca17c6e96c3",
-    "ios/SocialThreader/Images.xcassets/AppIcon.appiconset/Contents.json": "344a731ecf43e614be1d95fc1549918fae139fc41bce5db8d00c8359f712e3b2",
-    "ios/SocialThreader/Images.xcassets/Contents.json": "632a1481b9e3b957f3b34267728744d61272e3db32751432551b9eb7c58ad7a2",
-    "ios/SocialThreader/Info.plist": "6db4e63c94c9a344b0bcb2d6d02fdea099890cc1b174ea4e4a25e2c63f1fafbd",
-    "ios/SocialThreader/PrivacyInfo.xcprivacy": "06949f6d09a83cea00c3a4895bb7300f2580d52852c6ade1a9caa169934a1001",
-    "ios/SocialThreader/SocialThreader-Bridging-Header.h": "4a625b53abd4333ca454a4161ba62ab1b0cb44e8a4581326c0bcfe03dc26dd5c",
-    "ios/SocialThreader/SocialThreader.entitlements": "eb80c580e7af55cd9c76b062dd7a3651c94123dc0d695acb613dfe477edbd6a5",
-    "ios/SocialThreader/SplashScreen.storyboard": "0763588212466aaec0b9121db1e318eba07aff23b29940f7df97728c6f69f2d1",
-    "ios/SocialThreader/Supporting/Expo.plist": "9e93c2a9d202979e3b37d5b3e4e20f4dd6e88c2d48add9769a7ea98bfc7556a8"
   }
 }

@@ -78,8 +78,8 @@ An ignored environment file does not arrive with a Git clone.
 - Declare the required Xcode version and other build tools in the repository.
 - Install the declared dependencies through the shared build operation.
 - For Expo applications, generate native projects before release and commit the governed output.
-- Record the native preparation inputs and their content hashes.
-- Reject stale prepared inputs before a release build.
+- Apply the Native Preparation Authority contract in `.mprlab/POLICY.md`.
+- Record application identity, configuration, dependency versions, toolchain versions, and completed native command results.
 - Keep Expo CLI and EAS outside release, publication, and deployment.
 - When precompiled libraries are required, stop if those libraries are unavailable.
 
@@ -87,7 +87,7 @@ An ignored environment file does not arrive with a Git clone.
 
 - For iOS, allocate the version and build number through the repository's release policy.
 - For macOS, retain the build number and build identifier from the declared cloud operation.
-- For iOS, record the source commit, preparation digest, toolchain, version, build number, and artifact digest.
+- For iOS, record the preparation result, toolchain, application identifier, version, build number, and provider artifact identity.
 - For macOS, record the source commit, workflow, provider build identifier, distribution result, and artifact identity.
 - Require the signed application to match the declared identifier, version, and build number.
 - Seal the signed artifact before publication.
@@ -104,7 +104,8 @@ Use `.mprlab/POLICY.md` for integration tests and final validation.
 Controlled native tools prove the shared command contract.
 A successful local build with actual Apple signing inputs proves native signing for that application.
 A verified store record proves submission of the selected artifact.
-Require a successful iOS release from another Mac before acceptance of team portability.
+Use available native builds, simulators, and automated tests for validation.
+Report the actual environment and the limits of its evidence.
 
 ## Apple References
 
