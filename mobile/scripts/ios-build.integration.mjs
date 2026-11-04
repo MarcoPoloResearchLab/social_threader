@@ -1,6 +1,6 @@
 // @ts-check
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, copyFileSync, cpSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, copyFileSync, cpSync, existsSync, readdirSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve, join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -55,51 +55,105 @@ test("iOS adapter sends the selected application contract through a closed JSON 
 });
 
 test("iOS adapter request passes the Gateway decoder before build execution", () => {
-  assert.ok(process.env.MPRLAB_GATEWAY_EXECUTABLE, "MPRLAB_GATEWAY_EXECUTABLE must select the installed runtime executable");
-  const fixtureRoot = mkdtempSync(join(tmpdir(), "social-ios-gateway-"));
+  const gatewayExecutable = process.env.MPRLAB_GATEWAY_EXECUTABLE;
+  assert.ok(gatewayExecutable, "MPRLAB_GATEWAY_EXECUTABLE must select the installed runtime executable");
+  const fixture = realpathSync(mkdtempSync(join(tmpdir(), "social-ios-public-release-")));
+  const source = join(fixture, "application");
+  const origin = join(fixture, "origin.git");
+  const programs = join(fixture, "programs");
+  const boundaryLog = join(fixture, "build-boundary.log");
+  const nativeLog = join(fixture, "native.log");
+  const providerLog = join(fixture, "provider.log");
+  const environment = { PATH: process.env.PATH, HOME: process.env.HOME, CI: "1", GIT_SSH_COMMAND: "/usr/bin/false" };
+  const command = (program, arguments_, cwd = source) => {
+    const result = spawnSync(program, arguments_, { cwd, env: environment, encoding: "utf8" });
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    return result.stdout.trim();
+  };
+  const write = (name, content) => {
+    const filename = join(source, name);
+    mkdirSync(dirname(filename), { recursive: true });
+    writeFileSync(filename, content);
+  };
+  const program = (name, content) => {
+    const filename = join(programs, name);
+    // Use the existing harness pattern to retain an executable's opaque attributes.
+    copyFileSync(process.execPath, filename);
+    writeFileSync(filename, `#!${process.execPath}\n${content}\n`);
+  };
   try {
+    mkdirSync(source);
+    mkdirSync(programs);
     const mobileRoot = join(REPOSITORY_ROOT, "mobile");
     const identity = JSON.parse(readFileSync(join(mobileRoot, "ios-release-identity.json"), "utf8"));
     for (const filename of ["app.json", "ios-release-identity.json", "package.json", "package-lock.json",
-      "scripts/verify-ios-preparation.mjs", "ios/Podfile", "ios/Podfile.lock", identity.entryFile,
-      `${identity.workspace}/contents.xcworkspacedata`]) {
-      mkdirSync(dirname(join(fixtureRoot, filename)), { recursive: true });
-      writeFileSync(join(fixtureRoot, filename), readFileSync(join(mobileRoot, filename)));
+      "scripts/build-ios.mjs", "scripts/release-build-number.mjs", "scripts/verify-ios-preparation.mjs",
+      "ios/Podfile", "ios/Podfile.lock", identity.entryFile, `${identity.workspace}/contents.xcworkspacedata`]) {
+      write(`mobile/${filename}`, readFileSync(join(mobileRoot, filename)));
     }
+    write("mobile/scripts/invalid-intent-build.mjs", `import { writeFileSync } from "node:fs";
+      writeFileSync(${JSON.stringify(boundaryLog)}, "release-owned adapter reached\\n");
+      process.env.MPRLAB_MOBILE_BUILD_INTENT = "invalid-relative-intent";
+      await import("./build-ios.mjs");\n`);
     const signingInputs = [...Object.values(identity.signing), ...Object.values(identity.provisioning)];
-    const manifestDirectory = join(fixtureRoot, ".mprlab/deploy");
-    mkdirSync(manifestDirectory, { recursive: true });
-    writeFileSync(join(manifestDirectory, "resources.yml"), JSON.stringify({ mprlab_resources: {
-      owner: identity.owner,
-      release: { scheme: "semver" },
-      ci: { enabled: false },
-      defaults: { timeouts: {
+    Object.assign(environment, Object.fromEntries(signingInputs.map((name, index) => [name, `synthetic-decoder-input-${index}`])));
+    write(".mprlab/deploy/resources.yml", JSON.stringify({ mprlab_resources: {
+      owner: "anonymous", release: { scheme: "semver" },
+      lifecycle: { ci: { enabled: false }, defaults: { timeouts: {
         startup: "30s", completion: "1m", readiness: "30s", request: "30s", shutdown: "30s"
-      } },
-      inputs: Object.fromEntries(signingInputs.map((name, index) => [name, `synthetic-decoder-input-${index}`])),
-      resources: { private: { kind: "private_values",
-        bindings: Object.fromEntries(signingInputs.map((name, index) => [`decoder-input-${index}`, name]))
-      } }
+      } }, operations: [{ name: "app_lifecycle.repository_read", polling: {
+        initial: "1ms", maximum: "2ms", increment: "0s", multiplier: 2, attempt_limit: 3
+      } }] },
+      environment: { private_inputs: signingInputs.map(name => ({ id: name.toLowerCase().replaceAll("_", "-"), variable: name })) },
+      artifacts: { mobile: [{ id: "mobile", source: "mobile", build_system: "local",
+        build: { ios: "mobile/scripts/invalid-intent-build.mjs" },
+        ios: { bundle_identifier: identity.bundleIdentifier, export_intent: identity.exportIntent }
+      }] }, publications: {}, targets: {}
     } }));
-    const result = spawnSync(process.env.MPRLAB_GATEWAY_EXECUTABLE, [
-      "bootstrap-run", "--repo-root", fixtureRoot, "--operation", "app-release", "--",
-      process.execPath, ADAPTER_PATH,
-      "--mobile-dir", fixtureRoot, "--output", join(fixtureRoot, "output.ipa"),
-      "--manifest", join(fixtureRoot, "output.json"), "--release-timestamp", TIMESTAMP
-    ], { cwd: fixtureRoot, env: {
-      PATH: process.env.PATH,
-      MPRLAB_GATEWAY_EXECUTABLE: process.env.MPRLAB_GATEWAY_EXECUTABLE,
-      MPRLAB_ARTIFACT_VERSION: "v1.2.0",
-      MPRLAB_MOBILE_BUILD_INTENT: "invalid-relative-intent",
-      MPRLAB_APPLICATION_LIFECYCLE_LOCK: "exclusive", MPRLAB_LIFECYCLE_OPERATION: "release"
-    }, input: "", encoding: "utf8", timeout: 15_000 });
+    command("git", ["init", "--bare", "--initial-branch=fixture-default", origin], fixture);
+    command("git", ["init", "--initial-branch=fixture-default"]);
+    command("git", ["config", "user.name", "Anonymous fixture"]);
+    command("git", ["config", "user.email", "fixture@example.invalid"]);
+    command("git", ["config", "commit.gpgSign", "false"]);
+    command("git", ["add", "."]);
+    command("git", ["commit", "-m", "Declare anonymous mobile release"]);
+    command("git", ["remote", "add", "origin", origin]);
+    command("git", ["push", "-u", "origin", "fixture-default"]);
+    const repository = "example/anonymous";
+    const canonical = `git@github.com:${repository}.git`;
+    command("git", ["remote", "set-url", "origin", canonical]);
+    command("git", ["config", `url.file://${origin}.insteadOf`, canonical]);
+    command("git", ["remote", "set-head", "origin", "--auto"]);
+    writeFileSync(providerLog, "");
+    program("gh", `const fs = require("node:fs"); const args = process.argv.slice(2);
+      fs.appendFileSync(${JSON.stringify(providerLog)}, JSON.stringify(args) + "\\n");
+      if (JSON.stringify(args) !== JSON.stringify(["api", "--method", "GET", "repos/${repository}", "--jq", ".full_name"])) {
+        throw new Error("unexpected provider operation: " + args.join(" "));
+      }
+      process.stdout.write("${repository}\\n");`);
+    for (const name of ["xcodebuild", "codesign", "security", "pod"]) {
+      program(name, `require("node:fs").appendFileSync(${JSON.stringify(nativeLog)}, ${JSON.stringify(name + "\n")});
+        throw new Error("native signing or build must not run");`);
+    }
+    const result = spawnSync(gatewayExecutable, ["app-release", "--app-root", source,
+      "--operator-root", join(fixture, "operator")], {
+      cwd: source, env: { ...environment, PATH: `${programs}:${environment.PATH}` },
+      input: "", encoding: "utf8", timeout: 90_000
+    });
     assert.ifError(result.error);
-    assert.equal(result.status, 2, result.stderr);
-    // Gateway checks the intent path only after decoding and validating the complete request.
-    assert.match(result.stderr, /requires an absolute MPRLAB_MOBILE_BUILD_INTENT/);
-    assert.equal(result.stdout, "");
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout + result.stderr, /requires an absolute MPRLAB_MOBILE_BUILD_INTENT/);
+    assert.equal(readFileSync(boundaryLog, "utf8").trim(), "release-owned adapter reached");
+    assert.equal(existsSync(nativeLog), false, "invalid intent must precede signing and native tools");
+    assert.equal(readdirSync(source, { recursive: true }).some(name => /\.(ipa|aab|xcarchive)$/.test(String(name))), false, "invalid intent must not create native artifacts");
+    const currentPath = command("git", ["rev-parse", "--git-path", "mprlab-lifecycle/current-release.json"]);
+    assert.equal(existsSync(resolve(source, currentPath)), false, "invalid intent must not commit a release receipt");
+    assert.doesNotMatch(result.stdout, /MPRLAB_APP_RELEASE_TRANSACTION/);
+    assert.doesNotMatch(readFileSync(providerLog, "utf8"), /"(create|upload)"/, "release failure must not publish artifacts");
+    assert.equal(command("git", ["status", "--porcelain"]), "", "release failure must preserve synchronized source");
   } finally {
-    rmSync(fixtureRoot, { recursive: true, force: true });
+    rmSync(fixture, { recursive: true, force: true });
   }
 });
 

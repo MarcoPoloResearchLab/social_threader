@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @ts-check
 import fs from "node:fs";
+import yaml from "js-yaml";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -112,17 +113,39 @@ assertNotIncludes(
   "root lifecycle commands must not use the removed app-owned release scripts"
 );
 assertIncludes(makefileSource, "submit-android:", "the Android development publish helper must remain available");
-assertNotIncludes(deploymentManifestSource, "schema_version:", "the canonical manifest must remain versionless");
-assertIncludes(deploymentManifestSource, "scheme: semver", "the canonical manifest must own the SemVer release scheme");
-assertIncludes(deploymentManifestSource, "kind: mobile_application", "the canonical manifest must declare the mobile artifact");
-assertIncludes(deploymentManifestSource, "source: mobile", "the mobile resource must use the mobile source folder");
-assertIncludes(deploymentManifestSource, "build_system: local", "the mobile resource must use repository-owned local scripts");
-assertIncludes(deploymentManifestSource, "android: mobile/scripts/build-android-bundle.mjs", "the mobile resource must declare the Android builder");
-assertIncludes(deploymentManifestSource, "ios: mobile/scripts/build-ios.mjs", "the mobile resource must declare the iOS builder");
-assertIncludes(deploymentManifestSource, `bundle_identifier: ${iosReleaseIdentity.bundleIdentifier}`, "the mobile resource must use the selected Apple bundle");
-assertIncludes(deploymentManifestSource, `app_store_id: '${iosReleaseIdentity.appStoreId}'`, "the mobile resource must use the selected Apple record");
-assertIncludes(deploymentManifestSource, "package_name: com.mprlab.socialthreader", "the mobile resource must use the Android package");
-assertIncludes(deploymentManifestSource, "track: production", "the mobile resource must declare the production destination track");
+const selectedManifest = /** @type {any} */ (yaml.load(deploymentManifestSource)).mprlab_resources;
+assertDeepEqual(Object.keys(selectedManifest).sort(), ["artifacts", "environment", "lifecycle", "owner", "publications", "release", "targets"], "the canonical manifest must use the current versionless catalogs");
+assertEqual(selectedManifest.release.scheme, "semver", "the canonical manifest must own the SemVer release scheme");
+const mobileArtifacts = selectedManifest.artifacts.mobile;
+assertEqual(Array.isArray(mobileArtifacts), true, "mobile artifacts must use an explicit declaration list");
+assertEqual(mobileArtifacts.length, 1, "the canonical manifest must declare one mobile artifact");
+const mobileArtifact = mobileArtifacts[0];
+assertEqual(mobileArtifact.id, "mobile", "the mobile artifact identity must remain explicit");
+assertEqual(mobileArtifact.source, "mobile", "the mobile artifact must use the mobile source folder");
+assertEqual(mobileArtifact.build_system, "local", "the mobile artifact must use repository-owned local scripts");
+assertEqual(mobileArtifact.build.android, "mobile/scripts/build-android-bundle.mjs", "the mobile artifact must declare the Android builder");
+assertEqual(mobileArtifact.build.ios, "mobile/scripts/build-ios.mjs", "the mobile artifact must declare the iOS builder");
+assertEqual(mobileArtifact.ios.bundle_identifier, iosReleaseIdentity.bundleIdentifier, "the mobile artifact must use the selected Apple bundle");
+assertEqual(mobileArtifact.android.package_name, "com.mprlab.socialthreader", "the mobile artifact must use the Android package");
+const iosPublications = selectedManifest.publications.app_store_connect.ios;
+assertEqual(Array.isArray(iosPublications), true, "Apple publications must use an explicit declaration list");
+assertEqual(iosPublications.length, 1, "the canonical manifest must declare one Apple publication");
+assertEqual(iosPublications[0].id, "mobile-ios", "the Apple publication identity must remain explicit");
+assertDeepEqual(Object.keys(iosPublications[0].artifact).sort(), ["id", "platform"], "the publication artifact reference must use the current closed shape");
+assertEqual(iosPublications[0].artifact.id, "mobile", "the publication must reference the declared mobile artifact");
+assertEqual(iosPublications[0].artifact.platform, "ios", "the publication must retain its platform");
+assertEqual(iosPublications[0].app_store_id, iosReleaseIdentity.appStoreId, "the Apple publication must use the selected Apple record");
+assertEqual(iosPublications[0].destination, "app_store", "the Apple publication must retain the App Store destination");
+assertEqual(iosPublications[0].track, "production", "the Apple publication must retain the production track");
+const androidPublications = selectedManifest.publications.google_play.applications;
+assertEqual(Array.isArray(androidPublications), true, "Google Play publications must use an explicit declaration list");
+assertEqual(androidPublications.length, 1, "the canonical manifest must declare one Google Play publication");
+assertEqual(androidPublications[0].id, "mobile-android", "the Google Play publication identity must remain explicit");
+assertDeepEqual(Object.keys(androidPublications[0].artifact).sort(), ["id", "platform"], "the publication artifact reference must use the current closed shape");
+assertEqual(androidPublications[0].artifact.id, "mobile", "the publication must reference the declared mobile artifact");
+assertEqual(androidPublications[0].artifact.platform, "android", "the publication must retain its platform");
+assertEqual(androidPublications[0].destination, "google_play", "the Android publication must retain the Google Play destination");
+assertEqual(androidPublications[0].track, "production", "the Android publication must retain the production track");
 assertIncludes(androidBuildSource, "releaseIdentity.googleCloudProjectId", "Android bundle builder must use the release identity quota project");
 assertIncludes(androidBuildSource, "MPRLAB_ARTIFACT_VERSION", "Android bundle builder must seal the gateway artifact version");
 assertIncludes(androidBuildSource, "releaseTimestamp", "Android bundle builder must seal the gateway release timestamp");
