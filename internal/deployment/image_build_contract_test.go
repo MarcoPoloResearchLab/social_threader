@@ -10,14 +10,15 @@ import (
 func TestProductionImageBuildArguments(t *testing.T) {
 	const releaseVersionIdentity = "release_version"
 	var document struct {
-		Resources struct {
-			Resources map[string]struct {
-				Images map[string]struct {
+		Selected struct {
+			Artifacts struct {
+				Images []struct {
+					ID    string `yaml:"id"`
 					Build struct {
-						Arguments map[string]map[string]string `yaml:"arguments"`
+						Arguments []map[string]string `yaml:"arguments"`
 					} `yaml:"build"`
-				} `yaml:"images"`
-			} `yaml:"resources"`
+				} `yaml:"container_images"`
+			} `yaml:"artifacts"`
 		} `yaml:"mprlab_resources"`
 	}
 	manifestBytes := readRepositoryFile(t, findRepositoryRoot(t), ".mprlab/deploy/resources.yml")
@@ -25,26 +26,26 @@ func TestProductionImageBuildArguments(t *testing.T) {
 		t.Fatalf("decode image build arguments: %v", decodeError)
 	}
 	argumentCount := 0
-	for resourceID, resource := range document.Resources.Resources {
-		for imageID, image := range resource.Images {
-			for argumentName, argument := range image.Build.Arguments {
-				argumentCount++
-				t.Run(resourceID+"/"+imageID+"/"+argumentName, func(t *testing.T) {
-					if len(argument) != 1 {
-						t.Fatal("build argument must contain exactly one identity or value")
+	for _, image := range document.Selected.Artifacts.Images {
+		imageID := image.ID
+		for _, argument := range image.Build.Arguments {
+			argumentName := argument["name"]
+			argumentCount++
+			t.Run(imageID+"/"+argumentName, func(t *testing.T) {
+				if len(argument) != 2 || argumentName == "" {
+					t.Fatal("build argument must contain one explicit name and exactly one identity or value")
+				}
+				if identity, present := argument["identity"]; present {
+					if identity != releaseVersionIdentity {
+						t.Fatalf("build argument identity = %q, want %q", identity, releaseVersionIdentity)
 					}
-					if identity, present := argument["identity"]; present {
-						if identity != releaseVersionIdentity {
-							t.Fatalf("build argument identity = %q, want %q", identity, releaseVersionIdentity)
-						}
-						return
-					}
-					value, present := argument["value"]
-					if !present || value == "" || value != strings.TrimSpace(value) {
-						t.Fatal("build argument must contain a nonempty literal value without surrounding whitespace")
-					}
-				})
-			}
+					return
+				}
+				value, present := argument["value"]
+				if !present || value == "" || value != strings.TrimSpace(value) {
+					t.Fatal("build argument must contain a nonempty literal value without surrounding whitespace")
+				}
+			})
 		}
 	}
 	if argumentCount == 0 {

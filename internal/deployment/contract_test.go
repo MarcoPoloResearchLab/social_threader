@@ -6,31 +6,12 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
 )
-
-type manifestDocument struct {
-	Resources manifestEnvelope `yaml:"mprlab_resources"`
-}
-
-type manifestEnvelope struct {
-	Owner     string                      `yaml:"owner"`
-	Release   manifestRelease             `yaml:"release"`
-	Resources map[string]manifestResource `yaml:"resources"`
-}
-
-type manifestRelease struct {
-	Scheme string `yaml:"scheme"`
-}
-
-type manifestResource struct {
-	Kind        string            `yaml:"kind"`
-	BuildSystem string            `yaml:"build_system"`
-	Build       map[string]string `yaml:"build"`
-}
 
 type localComposeDocument struct {
 	Services map[string]any `yaml:"services"`
@@ -75,30 +56,13 @@ type browserUIConfig struct {
 func TestProductionLifecycleContract(t *testing.T) {
 	repositoryRoot := findRepositoryRoot(t)
 	manifestBytes := readRepositoryFile(t, repositoryRoot, ".mprlab/deploy/resources.yml")
-	var document manifestDocument
-	if unmarshalError := yaml.Unmarshal(manifestBytes, &document); unmarshalError != nil {
-		t.Fatalf("deployment manifest must be valid YAML: %v", unmarshalError)
+	resourceEnvelopeShape := currentManifestContract(t, manifestBytes)
+	environment := currentContractMap(t, resourceEnvelopeShape["environment"])
+	if environment["source"] != ".mprlab/deploy/.env" {
+		t.Fatal("manifest must explicitly select its environment source")
 	}
-	var manifestShape map[string]any
-	if unmarshalError := yaml.Unmarshal(manifestBytes, &manifestShape); unmarshalError != nil {
-		t.Fatalf("deployment manifest shape must be valid YAML: %v", unmarshalError)
-	}
-	resourceEnvelopeShape, shapeOK := manifestShape["mprlab_resources"].(map[string]any)
-	if !shapeOK {
-		t.Fatal("deployment manifest must contain the mprlab_resources mapping")
-	}
-	expectedEnvelopeKeys := []string{"owner", "release", "resources", "environment_file", "inputs", "hosts", "ci", "defaults", "operations"}
-	if len(resourceEnvelopeShape) != len(expectedEnvelopeKeys) {
-		t.Fatalf("manifest envelope has %d keys, want %d", len(resourceEnvelopeShape), len(expectedEnvelopeKeys))
-	}
-	for _, requiredKey := range expectedEnvelopeKeys {
-		if _, present := resourceEnvelopeShape[requiredKey]; !present {
-			t.Fatalf("manifest envelope lacks %q", requiredKey)
-		}
-	}
-	if resourceEnvelopeShape["environment_file"] != ".mprlab/deploy/.env" {
-		t.Fatal("manifest must explicitly select the deployment environment file")
-	}
+	lifecycle := currentContractMap(t, resourceEnvelopeShape["lifecycle"])
+	targets := currentContractMap(t, resourceEnvelopeShape["targets"])
 	expectedInputs := map[string]any{}
 	for _, name := range []string{
 		"SOCIAL_THREADER_ANDROID_KEYSTORE_PROPERTIES",
@@ -110,28 +74,28 @@ func TestProductionLifecycleContract(t *testing.T) {
 		"SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY", "DEPLOY_SUDO_PASSWORD_TUTOSH",
 		"MPRLAB_TAUTH_MANAGEMENT_URL", "MPRLAB_TAUTH_PROVISIONING_CREDENTIALS",
 	} {
-		expectedInputs[name] = "${" + name + "}"
+		expectedInputs[name] = true
 	}
-	if !reflect.DeepEqual(resourceEnvelopeShape["inputs"], expectedInputs) {
+	actualInputs := map[string]any{}
+	for variable := range currentContractIndex(t, environment["private_inputs"], "variable") {
+		actualInputs[variable] = true
+	}
+	if !reflect.DeepEqual(actualInputs, expectedInputs) {
 		t.Fatal("manifest must declare every private lifecycle input")
 	}
-	if !reflect.DeepEqual(resourceEnvelopeShape["hosts"], map[string]any{
-		"tutosh": map[string]any{"ansible_become_password": "DEPLOY_SUDO_PASSWORD_TUTOSH"},
-	}) {
-		t.Fatal("manifest must declare the selected host authorization input")
-	}
-	if !reflect.DeepEqual(resourceEnvelopeShape["ci"], map[string]any{
-		"enabled": true, "command": map[string]any{"0": "make", "1": "ci"},
+	requireCurrentContractYAML(t, "targets.access", targets["access"], `hosts: [{host: tutosh, elevation_password: {input: deploy-sudo-password-tutosh}}]`)
+	if !reflect.DeepEqual(lifecycle["ci"], map[string]any{
+		"enabled": true, "command": []any{"make", "ci"},
 	}) {
 		t.Fatal("manifest must enable repository CI")
 	}
-	if !reflect.DeepEqual(resourceEnvelopeShape["defaults"], map[string]any{"timeouts": map[string]any{
+	if !reflect.DeepEqual(lifecycle["defaults"], map[string]any{"timeouts": map[string]any{
 		"startup": "2m", "completion": "30m", "readiness": "5m", "request": "30s", "shutdown": "30s",
 	}}) {
 		t.Fatal("manifest must declare lifecycle timeout defaults")
 	}
-	operations, validOperations := resourceEnvelopeShape["operations"].(map[string]any)
-	if !validOperations || len(operations) != 8 {
+	operations := currentContractIndex(t, lifecycle["operations"], "name")
+	if len(operations) != 8 {
 		t.Fatal("manifest must declare all selected lifecycle operation policies")
 	}
 	for name, completion := range map[string]string{
@@ -139,7 +103,7 @@ func TestProductionLifecycleContract(t *testing.T) {
 		"app-plan-release": "2m", "app-plan-publish": "2m", "app-plan-deploy": "2m",
 		"app_lifecycle.repository_read": "",
 	} {
-		expected := map[string]any{"polling": map[string]any{
+		expected := map[string]any{"name": name, "polling": map[string]any{
 			"initial": "2s", "maximum": "15s", "increment": "2s", "multiplier": 2, "attempt_limit": 60,
 		}}
 		if completion != "" {
@@ -152,48 +116,54 @@ func TestProductionLifecycleContract(t *testing.T) {
 	if _, present := resourceEnvelopeShape["schema_version"]; present {
 		t.Fatal("selected manifest must not declare schema_version")
 	}
-	if document.Resources.Owner != "social-threader" {
-		t.Fatalf("manifest owner = %q, want social-threader", document.Resources.Owner)
+	if resourceEnvelopeShape["owner"] != "social-threader" {
+		t.Fatalf("manifest owner = %q, want social-threader", resourceEnvelopeShape["owner"])
 	}
-	if document.Resources.Release.Scheme != "semver" {
-		t.Fatalf("release scheme = %q, want semver", document.Resources.Release.Scheme)
-	}
-
-	expectedResources := map[string]string{
-		"private":        "private_values",
-		"runtime":        "compose_project",
-		"http":           "runtime_capability",
-		"public-api":     "caddy_route",
-		"public-health":  "health_check",
-		"website-health": "health_check",
-		"website":        "github_pages",
-		"mobile":         "mobile_application",
-		"authentication": "tauth_tenant",
-	}
-	actualResources := make(map[string]string, len(document.Resources.Resources))
-	for resourceID, resource := range document.Resources.Resources {
-		actualResources[resourceID] = resource.Kind
-	}
-	for resourceID, expectedKind := range expectedResources {
-		if actualResources[resourceID] != expectedKind {
-			t.Errorf("resource %q kind = %q, want %q", resourceID, actualResources[resourceID], expectedKind)
-		}
-	}
-	if len(actualResources) != len(expectedResources) {
-		t.Fatalf("manifest has %d resources, want %d", len(actualResources), len(expectedResources))
-	}
-	for resourceID, resource := range document.Resources.Resources {
-		if resourceID != "mobile" {
-			continue
-		}
-		if resource.BuildSystem != "local" {
-			t.Errorf("mobile build system = %q, want local", resource.BuildSystem)
-		}
-		if resource.Build["android"] != "mobile/scripts/build-android-bundle.mjs" {
-			t.Errorf("mobile Android build script = %q", resource.Build["android"])
-		}
+	if currentContractMap(t, resourceEnvelopeShape["release"])["scheme"] != "semver" {
+		t.Fatalf("release scheme = %q, want semver", currentContractMap(t, resourceEnvelopeShape["release"])["scheme"])
 	}
 
+	artifacts := currentContractMap(t, resourceEnvelopeShape["artifacts"])
+	mobile := currentContractIndex(t, artifacts["mobile"], "id")
+	if len(mobile) != 1 || mobile["mobile"] == nil {
+		t.Fatalf("unexpected native mobile artifacts: %#v", mobile)
+	}
+	if mobile["mobile"]["build_system"] != "local" {
+		t.Fatal("mobile build system must remain local")
+	}
+	if currentContractMap(t, mobile["mobile"]["build"])["android"] != "mobile/scripts/build-android-bundle.mjs" {
+		t.Fatal("mobile Android build script changed")
+	}
+	projects := currentContractIndex(t, currentContractMap(t, targets["docker_compose"])["projects"], "id")
+	if len(projects) != 1 || projects["runtime"] == nil {
+		t.Fatal("native runtime project missing")
+	}
+	services := currentContractIndex(t, projects["runtime"]["services"], "id")
+	if len(services) != 1 || services["social-threader-api"] == nil {
+		t.Fatal("unexpected runtime services")
+	}
+	service := currentContractDeclaration(t, projects["runtime"]["services"], "social-threader-api")
+	endpoints := currentContractIndex(t, service["endpoints"], "id")
+	if len(endpoints) != 2 || endpoints["http"] == nil || endpoints["readiness"] == nil {
+		t.Fatal("unexpected runtime endpoints")
+	}
+	requireCurrentContractYAML(t, "readiness-reference", service["readiness"], `endpoint: readiness`)
+	currentContractDeclaration(t, service["endpoints"], "http")
+	caddy := currentContractMap(t, currentContractMap(t, targets["ingress"])["caddy"])
+	if len(currentContractIndex(t, caddy["routes"], "id")) != 1 {
+		t.Fatal("unexpected API route count")
+	}
+	currentContractDeclaration(t, caddy["routes"], "public-api")
+	if len(currentContractIndex(t, currentContractMap(t, targets["github_pages"])["sites"], "id")) != 1 {
+		t.Fatal("unexpected Pages target count")
+	}
+	currentContractDeclaration(t, currentContractMap(t, targets["github_pages"])["sites"], "website")
+	observations := currentContractIndex(t, currentContractMap(t, lifecycle["observations"])["http"], "id")
+	if len(observations) != 2 || observations["public-health"] == nil || observations["website-health"] == nil {
+		t.Fatal("native public health observations missing")
+	}
+	env := currentContractIndex(t, service["environment"], "name")
+	requireCurrentContractYAML(t, "TAUTH_JWT_SIGNING_KEY", env["TAUTH_JWT_SIGNING_KEY"], `{name: TAUTH_JWT_SIGNING_KEY, input: social-threader-tauth-jwt-signing-key}`)
 	makefile := string(readRepositoryFile(t, repositoryRoot, "Makefile"))
 	if strings.Contains(makefile, "scripts/release") {
 		t.Error("Makefile retains the obsolete application-owned release path")
@@ -409,4 +379,136 @@ func readRepositoryFile(t *testing.T, repositoryRoot string, relativePath string
 		t.Fatalf("cannot read %s: %v", relativePath, readError)
 	}
 	return contents
+}
+
+func currentContractMap(t *testing.T, value any) map[string]any {
+	t.Helper()
+	result, ok := value.(map[string]any)
+	if !ok {
+		t.Fatalf("expected native declaration mapping, got %#v", value)
+	}
+	return result
+}
+
+func currentManifestContract(t *testing.T, content []byte) map[string]any {
+	t.Helper()
+	var envelope map[string]any
+	if err := yaml.Unmarshal(content, &envelope); err != nil {
+		t.Fatalf("parse selected manifest: %v", err)
+	}
+	if len(envelope) != 1 {
+		t.Fatalf("unexpected manifest envelope: %#v", envelope)
+	}
+	actual := currentContractMap(t, envelope["mprlab_resources"])
+	keys := make([]string, 0, len(actual))
+	for key := range actual {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+	expected := []string{"artifacts", "environment", "lifecycle", "owner", "publications", "release", "targets"}
+	if !reflect.DeepEqual(keys, expected) {
+		t.Fatalf("selected manifest root keys=%v want=%v", keys, expected)
+	}
+	return actual
+}
+
+func currentContractDeclaration(t *testing.T, value any, identity string) map[string]any {
+	t.Helper()
+	items, ok := value.([]any)
+	if !ok {
+		t.Fatalf("expected explicit declaration list, got %#v", value)
+	}
+	var found map[string]any
+	for _, item := range items {
+		declaration := currentContractMap(t, item)
+		if declaration["id"] == identity {
+			if found != nil {
+				t.Fatalf("duplicate declaration %s", identity)
+			}
+			found = declaration
+		}
+	}
+	if found == nil {
+		t.Fatalf("missing native declaration %s", identity)
+	}
+	return found
+}
+
+func currentContractIndex(t *testing.T, value any, identityKey string) map[string]map[string]any {
+	t.Helper()
+	items, ok := value.([]any)
+	if !ok {
+		t.Fatalf("expected native declaration list, got %#v", value)
+	}
+	result := make(map[string]map[string]any, len(items))
+	for _, item := range items {
+		declaration := currentContractMap(t, item)
+		identity, ok := declaration[identityKey].(string)
+		if !ok || identity == "" || result[identity] != nil {
+			t.Fatalf("invalid or duplicate %s in %#v", identityKey, value)
+		}
+		result[identity] = declaration
+	}
+	return result
+}
+
+func requireCurrentContractYAML(t *testing.T, path string, actual any, expectedText string) {
+	t.Helper()
+	var expected any
+	if err := yaml.Unmarshal([]byte(expectedText), &expected); err != nil {
+		t.Fatalf("parse expected %s: %v", path, err)
+	}
+	requireCurrentContractValue(t, path, actual, expected)
+}
+
+func requireCurrentContractValue(t *testing.T, path string, actual, expected any) {
+	t.Helper()
+	switch wanted := expected.(type) {
+	case map[string]any:
+		mapping, ok := actual.(map[string]any)
+		if !ok {
+			t.Fatalf("%s requires a mapping, got %#v", path, actual)
+		}
+		if !strings.HasSuffix(path, ".assets[]") && len(mapping) != len(wanted) {
+			t.Fatalf("%s has unexpected fields: %#v", path, actual)
+		}
+		for key, value := range wanted {
+			observed, exists := mapping[key]
+			if !exists {
+				t.Fatalf("%s lacks %s", path, key)
+			}
+			requireCurrentContractValue(t, path+"."+key, observed, value)
+		}
+	case []any:
+		items, ok := actual.([]any)
+		if !ok || len(items) != len(wanted) {
+			t.Fatalf("%s list=%#v want=%#v", path, actual, wanted)
+		}
+		for index, value := range wanted {
+			observed := items[index]
+			if declaration, isMapping := value.(map[string]any); isMapping {
+				identityKey := "id"
+				if _, exists := declaration[identityKey]; !exists {
+					identityKey = "name"
+				}
+				if identity, exists := declaration[identityKey]; exists {
+					matches := 0
+					for _, candidate := range items {
+						if entry, valid := candidate.(map[string]any); valid && entry[identityKey] == identity {
+							observed = candidate
+							matches++
+						}
+					}
+					if matches != 1 {
+						t.Fatalf("%s requires one %s=%v, got %d", path, identityKey, identity, matches)
+					}
+				}
+			}
+			requireCurrentContractValue(t, path+"[]", observed, value)
+		}
+	default:
+		if !reflect.DeepEqual(actual, expected) {
+			t.Fatalf("%s=%#v want=%#v", path, actual, expected)
+		}
+	}
 }
