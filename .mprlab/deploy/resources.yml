@@ -1,252 +1,285 @@
----
 mprlab_resources:
-  owner: social-threader
-  environment_file: .mprlab/deploy/.env
-  inputs:
-    SOCIAL_THREADER_ANDROID_KEYSTORE_PROPERTIES: ${SOCIAL_THREADER_ANDROID_KEYSTORE_PROPERTIES}
-    APP_STORE_CONNECT_API_ISSUER_ID: ${APP_STORE_CONNECT_API_ISSUER_ID}
-    APP_STORE_CONNECT_API_KEY_ID: ${APP_STORE_CONNECT_API_KEY_ID}
-    APP_STORE_CONNECT_API_KEY_PATH: ${APP_STORE_CONNECT_API_KEY_PATH}
-    GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_PATH: ${GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_PATH}
-    SOCIAL_THREADER_APPLE_TEAM_ID: ${SOCIAL_THREADER_APPLE_TEAM_ID}
-    SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID: ${SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID}
-    SOCIAL_THREADER_IOS_CERTIFICATE_BASE64: ${SOCIAL_THREADER_IOS_CERTIFICATE_BASE64}
-    SOCIAL_THREADER_IOS_CERTIFICATE_PASSWORD: ${SOCIAL_THREADER_IOS_CERTIFICATE_PASSWORD}
-    SOCIAL_THREADER_IOS_PROVISIONING_PROFILE: ${SOCIAL_THREADER_IOS_PROVISIONING_PROFILE}
-    SOCIAL_THREADER_IOS_SIGNING_IDENTITY: ${SOCIAL_THREADER_IOS_SIGNING_IDENTITY}
-    SOCIAL_THREADER_LLM_PROXY_SECRET: ${SOCIAL_THREADER_LLM_PROXY_SECRET}
-    SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY: ${SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY}
-    DEPLOY_SUDO_PASSWORD_TUTOSH: ${DEPLOY_SUDO_PASSWORD_TUTOSH}
-    MPRLAB_TAUTH_MANAGEMENT_URL: ${MPRLAB_TAUTH_MANAGEMENT_URL}
-    MPRLAB_TAUTH_PROVISIONING_CREDENTIALS: ${MPRLAB_TAUTH_PROVISIONING_CREDENTIALS}
-  ci:
-    enabled: true
-    command:
-      '0': make
-      '1': ci
-  defaults:
-    timeouts:
-      startup: 2m
-      completion: 30m
-      readiness: 5m
-      request: 30s
-      shutdown: 30s
-  hosts:
-    tutosh:
-      ansible_become_password: DEPLOY_SUDO_PASSWORD_TUTOSH
-  release:
-    scheme: semver
-  operations:
-    ci:
-      timeouts:
-        completion: 2h
-      polling:
-        initial: 2s
-        maximum: 15s
-        increment: 2s
-        multiplier: 2
-        attempt_limit: 60
-    app-plan-release:
-      timeouts:
-        completion: 2m
-      polling:
-        initial: 2s
-        maximum: 15s
-        increment: 2s
-        multiplier: 2
-        attempt_limit: 60
-    app-plan-publish:
-      timeouts:
-        completion: 2m
-      polling:
-        initial: 2s
-        maximum: 15s
-        increment: 2s
-        multiplier: 2
-        attempt_limit: 60
-    app-plan-deploy:
-      timeouts:
-        completion: 2m
-      polling:
-        initial: 2s
-        maximum: 15s
-        increment: 2s
-        multiplier: 2
-        attempt_limit: 60
-    app-release:
-      timeouts:
-        completion: 2h
-      polling:
-        initial: 2s
-        maximum: 15s
-        increment: 2s
-        multiplier: 2
-        attempt_limit: 60
-    app-publish:
-      timeouts:
-        completion: 4h
-      polling:
-        initial: 2s
-        maximum: 15s
-        increment: 2s
-        multiplier: 2
-        attempt_limit: 60
-    app-deploy:
-      timeouts:
-        completion: 20m
-      polling:
-        initial: 2s
-        maximum: 15s
-        increment: 2s
-        multiplier: 2
-        attempt_limit: 60
-    app_lifecycle.repository_read:
-      polling:
-        initial: 2s
-        maximum: 15s
-        increment: 2s
-        multiplier: 2
-        attempt_limit: 60
-  resources:
-    private:
-      kind: private_values
-      bindings:
-        google-web-client-id: SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID
-        llm-proxy-secret: SOCIAL_THREADER_LLM_PROXY_SECRET
-        tauth-jwt-signing-key: SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY
-    runtime:
-      kind: compose_project
-      images:
-        api-image:
-          repository: ghcr.io/marcopoloresearchlab/social_threader
-          build:
-            context: .
-            dockerfile: Dockerfile
-            target: api
-            arguments:
-              RELEASE_VERSION:
-                identity: release_version
-            platforms:
-            - linux/amd64
-            - linux/arm64
-      services:
-        social-threader-api:
-          image: api-image
-          placement:
-            group: gateway
-            cardinality: one
-          environment:
-            LLM_PROXY_BASE_URL:
-              capability: llm-proxy.http
-              component: url
-            LLM_PROXY_SECRET:
-              resource: private
-              output: llm-proxy-secret
-            SOCIAL_THREADER_PROFILE:
-              value: hosted
-            TAUTH_JWT_SIGNING_KEY:
-              resource: authentication
-              output: jwt-signing-key
-          assets:
-            /app/configs/config.yml:
-              source: configs/config.yml
-              mode: '0444'
-          ports:
-            '8080': {}
-          readiness:
-            protocol: http
-            port: 8080
-            path: /healthz
-            expected_status: 200
-    http:
-      kind: runtime_capability
-      name: social-threader.http
-      version: 1
-      project: runtime
-      service: social-threader-api
-      endpoint:
-        scope: same_host
-        scheme: http
-        alias: social-threader-api
-        port: 8080
-      health:
-        protocol: http
-        path: /healthz
-        expected_status: 200
-    public-api:
-      kind: caddy_route
-      hostname: threader-api.mprlab.com
-      listener: https
-      handlers:
-        default:
-          path_prefix: /
-          upstream: social-threader.http
-          transport:
-            protocol: http
-            dial_timeout_seconds: 10
-            response_header_timeout_seconds: 180
-            read_timeout_seconds: 180
-      tls:
-        mode: automatic
-      access:
-        rate_limit:
-          events: 30
-          window_seconds: 10
-    public-health:
-      kind: health_check
-      protocol: http
-      url: https://threader-api.mprlab.com/healthz
-      expected_status: 200
-    website-health:
-      kind: health_check
-      protocol: http
-      url: https://threader.mprlab.com/healthz
-      expected_status: 200
-    website:
-      kind: github_pages
-      repository: marcopoloresearchlab/social_threader
-      branch: gh-pages
-      domain: threader.mprlab.com
-      url: https://threader.mprlab.com/
-      source:
-        kind: container
-        context: .
-        dockerfile: Dockerfile
-        target: pages
-      verification:
-        path: /.mprlab-release.json
-    mobile:
-      kind: mobile_application
-      source: mobile
-      build_system: local
-      build:
-        android: mobile/scripts/build-android-bundle.mjs
-        ios: mobile/scripts/build-ios.mjs
-      android:
-        package_name: com.mprlab.socialthreader
-        destination: google_play
-        track: production
-      ios:
-        bundle_identifier: com.mprlab.threader
-        app_store_id: '6788578080'
-        destination: app_store
-        track: production
-    authentication:
-      kind: tauth_tenant
-      capability: tauth.tenants
-      version: 1
-      tenant:
-        id: social-threader
-        display_name: Social Threader
-        origins:
-        - https://threader.mprlab.com
-        google_web_client_id:
-          resource: private
-          output: google-web-client-id
-        jwt_signing_key:
-          resource: private
-          output: tauth-jwt-signing-key
-        cookie:
-          domain: .mprlab.com
-          session_name: social_threader_session
-          refresh_name: social_threader_refresh
+    artifacts:
+        container_images:
+            - build:
+                arguments:
+                    - identity: release_version
+                      name: RELEASE_VERSION
+                context: .
+                dockerfile: Dockerfile
+                platforms:
+                    - linux/amd64
+                    - linux/arm64
+                target: api
+              id: api-image
+        mobile:
+            - android:
+                package_name: com.mprlab.socialthreader
+              build:
+                android: mobile/scripts/build-android-bundle.mjs
+                ios: mobile/scripts/build-ios.mjs
+              build_system: local
+              id: mobile
+              ios:
+                bundle_identifier: com.mprlab.threader
+                export_intent: app-store
+              source: mobile
+        web_bundles:
+            - format: directory
+              id: website
+              source:
+                context: .
+                dockerfile: Dockerfile
+                kind: container
+                target: pages
+    environment:
+        private_inputs:
+            - id: app-store-connect-api-issuer-id
+              variable: APP_STORE_CONNECT_API_ISSUER_ID
+            - id: app-store-connect-api-key-id
+              variable: APP_STORE_CONNECT_API_KEY_ID
+            - id: app-store-connect-api-key-path
+              variable: APP_STORE_CONNECT_API_KEY_PATH
+            - id: deploy-sudo-password-tutosh
+              variable: DEPLOY_SUDO_PASSWORD_TUTOSH
+            - id: google-play-service-account-key-path
+              variable: GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_PATH
+            - id: mprlab-tauth-management-url
+              variable: MPRLAB_TAUTH_MANAGEMENT_URL
+            - id: mprlab-tauth-provisioning-credentials
+              variable: MPRLAB_TAUTH_PROVISIONING_CREDENTIALS
+            - id: social-threader-android-keystore-properties
+              variable: SOCIAL_THREADER_ANDROID_KEYSTORE_PROPERTIES
+            - id: social-threader-apple-team-id
+              variable: SOCIAL_THREADER_APPLE_TEAM_ID
+            - id: social-threader-google-web-client-id
+              variable: SOCIAL_THREADER_GOOGLE_WEB_CLIENT_ID
+            - id: social-threader-ios-certificate-base64
+              variable: SOCIAL_THREADER_IOS_CERTIFICATE_BASE64
+            - id: social-threader-ios-certificate-password
+              variable: SOCIAL_THREADER_IOS_CERTIFICATE_PASSWORD
+            - id: social-threader-ios-provisioning-profile
+              variable: SOCIAL_THREADER_IOS_PROVISIONING_PROFILE
+            - id: social-threader-ios-signing-identity
+              variable: SOCIAL_THREADER_IOS_SIGNING_IDENTITY
+            - id: social-threader-llm-proxy-secret
+              variable: SOCIAL_THREADER_LLM_PROXY_SECRET
+            - id: social-threader-tauth-jwt-signing-key
+              variable: SOCIAL_THREADER_TAUTH_JWT_SIGNING_KEY
+        source: .mprlab/deploy/.env
+    lifecycle:
+        ci:
+            command:
+                - make
+                - ci
+            enabled: true
+        defaults:
+            timeouts:
+                completion: 30m
+                readiness: 5m
+                request: 30s
+                shutdown: 30s
+                startup: 2m
+        observations:
+            http:
+                - expected_status: 200
+                  id: public-health
+                  protocol: http
+                  url: https://threader-api.mprlab.com/healthz
+                - expected_status: 200
+                  id: website-health
+                  protocol: http
+                  url: https://threader.mprlab.com/healthz
+        operations:
+            - name: app-deploy
+              polling:
+                attempt_limit: 60
+                increment: 2s
+                initial: 2s
+                maximum: 15s
+                multiplier: 2
+              timeouts:
+                completion: 20m
+            - name: app-plan-deploy
+              polling:
+                attempt_limit: 60
+                increment: 2s
+                initial: 2s
+                maximum: 15s
+                multiplier: 2
+              timeouts:
+                completion: 2m
+            - name: app-plan-publish
+              polling:
+                attempt_limit: 60
+                increment: 2s
+                initial: 2s
+                maximum: 15s
+                multiplier: 2
+              timeouts:
+                completion: 2m
+            - name: app-plan-release
+              polling:
+                attempt_limit: 60
+                increment: 2s
+                initial: 2s
+                maximum: 15s
+                multiplier: 2
+              timeouts:
+                completion: 2m
+            - name: app-publish
+              polling:
+                attempt_limit: 60
+                increment: 2s
+                initial: 2s
+                maximum: 15s
+                multiplier: 2
+              timeouts:
+                completion: 4h
+            - name: app-release
+              polling:
+                attempt_limit: 60
+                increment: 2s
+                initial: 2s
+                maximum: 15s
+                multiplier: 2
+              timeouts:
+                completion: 2h
+            - name: app_lifecycle.repository_read
+              polling:
+                attempt_limit: 60
+                increment: 2s
+                initial: 2s
+                maximum: 15s
+                multiplier: 2
+            - name: ci
+              polling:
+                attempt_limit: 60
+                increment: 2s
+                initial: 2s
+                maximum: 15s
+                multiplier: 2
+              timeouts:
+                completion: 2h
+        private_inputs:
+            operations: []
+    owner: social-threader
+    publications:
+        app_store_connect:
+            ios:
+                - app_store_id: "6788578080"
+                  artifact:
+                    id: mobile
+                    platform: ios
+                  destination: app_store
+                  id: mobile-ios
+                  track: production
+        ghcr:
+            images:
+                - artifact: api-image
+                  id: api-image
+                  repository: ghcr.io/marcopoloresearchlab/social_threader
+        github_pages:
+            sites:
+                - artifact: website
+                  branch: gh-pages
+                  domain: threader.mprlab.com
+                  id: website
+                  marker:
+                    path: /.mprlab-release.json
+                  repository: marcopoloresearchlab/social_threader
+        google_play:
+            applications:
+                - artifact:
+                    id: mobile
+                    platform: android
+                  destination: google_play
+                  id: mobile-android
+                  track: production
+    release:
+        scheme: semver
+    targets:
+        access:
+            hosts:
+                - elevation_password:
+                    input: deploy-sudo-password-tutosh
+                  host: tutosh
+        docker_compose:
+            projects:
+                - id: runtime
+                  services:
+                    - assets:
+                        - mode: "0444"
+                          source: configs/config.yml
+                          target: /app/configs/config.yml
+                      endpoints:
+                        - endpoint:
+                            alias: social-threader-api
+                            port: 8080
+                            scheme: http
+                            scope: same_host
+                          health:
+                            expected_status: 200
+                            path: /healthz
+                            protocol: http
+                          id: http
+                          name: social-threader.http
+                          version: 1
+                        - endpoint:
+                            alias: runtime-social-threader-api-readiness
+                            port: 8080
+                            scheme: http
+                            scope: same_host
+                          health:
+                            expected_status: 200
+                            path: /healthz
+                            protocol: http
+                          id: readiness
+                          name: social-threader.readiness.runtime.social-threader-api
+                          version: 1
+                      environment:
+                        - capability: llm-proxy.http
+                          component: url
+                          name: LLM_PROXY_BASE_URL
+                        - input: social-threader-llm-proxy-secret
+                          name: LLM_PROXY_SECRET
+                        - name: SOCIAL_THREADER_PROFILE
+                          value: hosted
+                        - input: social-threader-tauth-jwt-signing-key
+                          name: TAUTH_JWT_SIGNING_KEY
+                      id: social-threader-api
+                      image:
+                        publication: api-image
+                      placement:
+                        cardinality: one
+                        group: gateway
+                      ports:
+                        - container_port: 8080
+                      readiness:
+                        endpoint: readiness
+        github_pages:
+            sites:
+                - id: website
+                  publication: website
+                  url: https://threader.mprlab.com/
+        ingress:
+            caddy:
+                routes:
+                    - access:
+                        rate_limit:
+                            events: 30
+                            window_seconds: 10
+                      handlers:
+                        - id: default
+                          path_prefix: /
+                          transport:
+                            dial_timeout_seconds: 10
+                            protocol: http
+                            read_timeout_seconds: 180
+                            response_header_timeout_seconds: 180
+                          upstream: social-threader.http
+                      hostname: threader-api.mprlab.com
+                      id: public-api
+                      listener: https
+                      tls:
+                        mode: automatic
